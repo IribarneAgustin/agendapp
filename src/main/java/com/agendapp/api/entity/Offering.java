@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -25,10 +27,10 @@ import java.util.UUID;
 @Builder
 @Data
 @Entity
-@Table(name = "user")
+@Table(name = "offering")
 @Audited
-@AuditTable(value="user_audit")
-public class User {
+@AuditTable(value="offering_audit")
+public class Offering {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -36,17 +38,25 @@ public class User {
     @Column(name = "id", updatable = false, nullable = false, length = 36)
     private String id;
 
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @Column(name = "name")
     private String name;
 
-    @Column(name = "last_name")
-    private String lastName;
+    @Column(name = "description")
+    private String description;
 
-    @Column(name = "email", unique = true)
-    private String email;
+    private Integer capacity;
 
-    @Column(name = "password")
-    private String password;
+    private Double price;
+
+    private Integer duration;
+
+    private Integer advancePaymentPercentage;
+
+    private Boolean status;
 
     @Column(name = "active")
     private Boolean active;

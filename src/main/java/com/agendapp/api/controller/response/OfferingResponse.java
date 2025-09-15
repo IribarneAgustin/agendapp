@@ -1,0 +1,31 @@
+package com.agendapp.api.controller.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Data
+public class OfferingResponse {
+
+    private UUID id;
+
+    private String name;
+
+    private String description;
+
+    private Integer capacity;
+
+    private Double price;
+
+    private Integer duration;
+
+    private Integer advancePaymentPercentage;
+
+    private Boolean active;
+}
