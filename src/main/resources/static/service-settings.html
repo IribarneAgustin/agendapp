@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración de Servicio - AgendApp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .container {
+            max-width: 960px;
+        }
+        .calendar-day {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            width: 40px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s, transform 0.1s;
+        }
+        .calendar-day:hover {
+            background-color: #e5e7eb;
+        }
+        .calendar-day.selected {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: 600;
+        }
+        .calendar-day.selected:hover {
+            background-color: #2563eb;
+        }
+        .time-slot-button {
+            transition: transform 0.1s;
+        }
+        .time-slot-button:hover {
+            transform: translateY(-2px);
+        }
+        .time-slot-button.selected {
+            background-color: #22c55e;
+            color: white;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+<!-- Navbar -->
+<nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-800">
+            <a href="dashboard.html">AgendApp</a>
+        </h1>
+        <div class="relative">
+            <button id="navDropdownButton" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors">
+                <img src="https://placehold.co/40x40/cbd5e1/4b5563?text=AG" alt="Avatar" class="h-8 w-8 rounded-full border-2 border-gray-300">
+                <span class="font-medium hidden sm:inline">Tu Perfil</span>
+            </button>
+            <div id="navDropdownMenu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden">
+                <button id="logoutBtn" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="flex-grow py-8 px-4">
+    <div class="container mx-auto">
+        <div class="flex items-center space-x-4 mb-8">
+            <a href="dashboard.html" class="flex items-center text-gray-500 hover:text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                </svg>
+                Volver al Dashboard
+            </a>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div class="p-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2" id="serviceNameHeader">Configurar Disponibilidad</h2>
+                <p class="text-gray-500 mb-6">Selecciona una o más fechas y añade los horarios de atención para este servicio.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Calendar Section -->
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <button id="prevMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
+                            <span id="currentMonthYear" class="text-lg font-semibold text-gray-800"></span>
+                            <button id="nextMonthBtn" class="p-2 rounded-full hover:bg-gray-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-7 text-center text-sm font-medium text-gray-500 mb-2">
+                            <div>Lun</div>
+                            <div>Mar</div>
+                            <div>Mié</div>
+                            <div>Jue</div>
+                            <div>Vie</div>
+                            <div>Sáb</div>
+                            <div>Dom</div>
+                        </div>
+                        <div id="calendar" class="grid grid-cols-7 gap-1">
+                            <!-- Calendar days will be rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- Availability Management Section -->
+                    <div class="bg-gray-50 rounded-lg p-6 flex flex-col h-full">
+                        <h3 class="text-xl font-bold text-gray-700 mb-4">Horarios Disponibles</h3>
+                        <div id="availabilityMessage" class="hidden text-red-500 text-sm mb-4"></div>
+
+                        <form id="availabilityForm" class="flex space-x-2 mb-4">
+                            <input type="time" id="availabilityTime" class="flex-grow px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" class="bg-green-500 text-white font-medium px-4 py-2 rounded-md hover:bg-green-600 transition-colors">
+                                Añadir
+                            </button>
+                        </form>
+
+                        <div class="flex-grow overflow-y-auto pr-2 -mr-2">
+                            <ul id="availabilityList" class="space-y-4">
+                                <!-- Availability slots will be rendered here -->
+                            </ul>
+                        </div>
+
+                        <p id="selectedDateText" class="mt-4 text-sm text-gray-500 font-medium"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script src="js/serviceSettings.js"></script>
+
+</body>
+</html>
