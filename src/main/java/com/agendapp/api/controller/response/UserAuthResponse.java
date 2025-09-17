@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 public class UserAuthResponse {
+    private String id;
     private String email;
     private String token;
 }

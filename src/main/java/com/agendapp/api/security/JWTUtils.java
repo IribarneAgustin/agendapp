@@ -22,11 +22,12 @@ public class JWTUtils {
     }
 
     public String generateToken(UserDetails userDetails) {
+        long expirationTime = 1000L * 60 * 60 * 24 * 7;
         return Jwts.builder()
                 .claims()
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 + 24))
+                .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .and()
                 .signWith(getSecretKey())
                 .compact();

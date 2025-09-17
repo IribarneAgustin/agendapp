@@ -16,8 +16,13 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.ReadOnlyProperty;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -28,7 +33,7 @@ import java.util.UUID;
 @Table(name = "user")
 @Audited
 @AuditTable(value="user_audit")
-public class User {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -71,5 +76,15 @@ public class User {
     @PreUpdate
     public void preUpdate() {
         modificationTimestamp = LocalDateTime.now();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+    }
+
+    @Override
+    public String getUsername() {
+        return this.email;
     }
 }

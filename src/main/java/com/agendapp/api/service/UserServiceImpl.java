@@ -9,14 +9,12 @@ import com.agendapp.api.repository.UserRepository;
 import com.agendapp.api.security.JWTUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 
 
 @Service
@@ -44,25 +42,22 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public UserAuthResponse login(UserLoginRequest userLoginRequest) {
-        UserDetails userDetails = this.loadUserByUsername(userLoginRequest.getEmail());
-        if(!passwordEncoder.matches(userLoginRequest.getPassword(), userDetails.getPassword())) {
-            throw new UsernameNotFoundException("Invalid credentials");
+        User user = this.loadUserByUsername(userLoginRequest.getEmail());
+        if(!passwordEncoder.matches(userLoginRequest.getPassword(), user.getPassword())) {
+            throw new BadCredentialsException("Invalid credentials");
         }
-        String jwt = jwtUtils.generateToken(userDetails);
+        String jwt = jwtUtils.generateToken(user);
+        log.info("User logged successfully");
         return UserAuthResponse.builder()
                 .token(jwt)
-                .email(userDetails.getUsername())
+                .id(user.getId())
+                .email(user.getUsername())
                 .build();
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email)
+    public User loadUserByUsername(String email) throws UsernameNotFoundException {
+        return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
-                user.getPassword(),
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
-        );
     }
 }
