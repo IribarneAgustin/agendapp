@@ -3,7 +3,6 @@ package com.agendapp.api.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -17,10 +16,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
-import org.springframework.data.annotation.ReadOnlyProperty;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -48,14 +45,19 @@ public class Offering {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "capacity")
     private Integer capacity;
 
+    @Column(name = "price")
     private Double price;
 
-    private Integer duration;
+    @Column(name = "show_price")
+    private Boolean showPrice;
 
+    @Column(name = "advance_payment_percentage")
     private Integer advancePaymentPercentage;
 
+    @Column(name = "status")
     private Boolean status;
 
     @Column(name = "active")

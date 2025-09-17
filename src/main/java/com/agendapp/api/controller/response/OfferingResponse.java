@@ -15,6 +15,8 @@ public class OfferingResponse {
 
     private UUID id;
 
+    private UUID userId;
+
     private String name;
 
     private String description;
@@ -23,7 +25,7 @@ public class OfferingResponse {
 
     private Double price;
 
-    private Integer duration;
+    private Boolean showPrice;
 
     private Integer advancePaymentPercentage;
 

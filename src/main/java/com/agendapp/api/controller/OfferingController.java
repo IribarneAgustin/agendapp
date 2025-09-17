@@ -39,8 +39,9 @@ public class OfferingController {
                 .body(response);
     }
 
-    @PutMapping
-    public ResponseEntity<OfferingResponse> update(@Valid @RequestBody OfferingRequest offeringRequest) throws Exception {
+    @PutMapping("/{offeringId}")
+    public ResponseEntity<OfferingResponse> update(@PathVariable UUID offeringId, @Valid @RequestBody OfferingRequest offeringRequest) throws Exception {
+        offeringRequest.setId(offeringId);
         OfferingResponse response = offeringService.update(offeringRequest);
         return ResponseEntity
                 .status(HttpStatus.OK)

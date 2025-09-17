@@ -16,7 +16,7 @@ public class OfferingRequest {
 
     private UUID id;
 
-    @NotNull(message = "User ID is required")
+    @NotNull(message = "User is required")
     private UUID userId;
 
     @NotBlank(message = "Name is required")
@@ -33,8 +33,10 @@ public class OfferingRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
     private Double price;
 
-    private Integer duration;
+    private Boolean showPrice = true;
 
+    @Min(value = 0, message = "Advance payment must be at least 0%")
+    @Max(value = 100, message = "Advance payment cannot exceed 100%")
     private Integer advancePaymentPercentage;
 
     private Boolean active = true;
