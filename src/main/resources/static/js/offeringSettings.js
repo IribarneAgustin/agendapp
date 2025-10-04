@@ -1,17 +1,18 @@
 class OfferingManager {
     constructor() {
-        this.baseUrl = 'http://localhost:8080';
+        this.baseUrl = BASE_URL;
         this.token = localStorage.getItem('authToken');
         this.user = this.getStoredUser();
         this.offerings = [];
         this.currentOffering = null;
+        this.currentOfferingId = null;
         this.isEditMode = false;
-        
+
         if (!this.token || !this.user) {
             window.location.href = 'index.html';
             return;
         }
-        
+
         this.init();
     }
 
@@ -37,6 +38,7 @@ class OfferingManager {
         const closeModalBtn = document.getElementById('closeModalBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const offeringForm = document.getElementById('offeringForm');
+        const configureBtn = document.getElementById("configureSlotsBtn");
 
         if (addOfferingBtn) {
             addOfferingBtn.addEventListener('click', () => this.openModal());
@@ -87,6 +89,19 @@ class OfferingManager {
                 }
             });
         }
+
+        if (configureBtn) {
+            configureBtn.addEventListener("click", () => {
+                const serviceId = offeringManager?.currentOfferingId;
+
+                if (!serviceId) {
+                    alert("Debes guardar el servicio antes de configurar horarios.");
+                    return;
+                }
+
+                window.location.href = `/time-slots.html?offeringId=${serviceId}`;
+            });
+        }
     }
 
 
@@ -128,7 +143,6 @@ class OfferingManager {
             loadingState.style.display = 'none';
         }
 
-        // Clear existing offerings (but keep loading and empty states)
         const existingCards = container.querySelectorAll('.offering-card');
         existingCards.forEach(card => card.remove());
 
@@ -182,9 +196,9 @@ class OfferingManager {
                     </button>
                 </div>
             </div>
-            
+
             ${offering.description ? `<p class="text-gray-600 mb-4">${this.escapeHtml(offering.description)}</p>` : ''}
-            
+
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div>
                     <p class="text-sm text-gray-500">Precio</p>
@@ -195,7 +209,7 @@ class OfferingManager {
                     <p class="font-semibold text-gray-900">${offering.capacity} persona${offering.capacity !== 1 ? 's' : ''}</p>
                 </div>
             </div>
-            
+
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center">
@@ -226,30 +240,25 @@ class OfferingManager {
 
         if (!modal || !modalTitle || !form) return;
 
-        // Update modal title
         modalTitle.textContent = this.isEditMode ? 'Editar Servicio' : 'Nuevo Servicio';
-
-        // Reset form
         form.reset();
 
-        // Fill form if editing
         if (this.isEditMode && offering) {
             document.getElementById('name').value = offering.name || '';
             document.getElementById('description').value = offering.description || '';
-            document.getElementById('price').value = offering.price || '';
             document.getElementById('capacity').value = offering.capacity || 1;
             document.getElementById('advancePaymentPercentage').value = offering.advancePaymentPercentage || 0;
             document.getElementById('showPrice').checked = offering.showPrice !== false;
             document.getElementById('active').checked = offering.active !== false;
+            this.currentOfferingId = offering.id;
         } else {
-            // Set default values for new offering
+            this.currentOfferingId = null;
             document.getElementById('capacity').value = 1;
             document.getElementById('advancePaymentPercentage').value = 0;
             document.getElementById('showPrice').checked = true;
             document.getElementById('active').checked = true;
         }
 
-        // Show modal
         modal.classList.remove('hidden');
     }
 
@@ -259,6 +268,7 @@ class OfferingManager {
             modal.classList.add('hidden');
         }
         this.currentOffering = null;
+        this.currentOfferingId = null;
         this.isEditMode = false;
     }
 
@@ -272,20 +282,14 @@ class OfferingManager {
             userId: this.user.id,
             name: formData.get('name').trim(),
             description: formData.get('description').trim(),
-            price: parseFloat(formData.get('price')),
             capacity: parseInt(formData.get('capacity')),
             advancePaymentPercentage: parseInt(formData.get('advancePaymentPercentage')) || 0,
             showPrice: formData.get('showPrice') === 'on',
             active: formData.get('active') === 'on'
         };
 
-        // Validation
         if (!offeringData.name) {
             this.showToast('El nombre del servicio es requerido', 'error');
-            return;
-        }
-        if (offeringData.price < 0) {
-            this.showToast('El precio debe ser mayor a 0', 'error');
             return;
         }
         if (offeringData.capacity < 1) {
@@ -295,9 +299,8 @@ class OfferingManager {
 
         try {
             let response;
-            
+
             if (this.isEditMode && this.currentOffering) {
-                // Update existing offering
                 response = await fetch(`${this.baseUrl}/users/${this.user.id}/offerings/${this.currentOffering.id}`, {
                     method: 'PUT',
                     headers: {
@@ -307,7 +310,6 @@ class OfferingManager {
                     body: JSON.stringify(offeringData)
                 });
             } else {
-                // Create new offering
                 response = await fetch(`${this.baseUrl}/users/${this.user.id}/offerings`, {
                     method: 'POST',
                     headers: {
@@ -323,7 +325,7 @@ class OfferingManager {
                     this.isEditMode ? 'Servicio actualizado correctamente' : 'Servicio creado correctamente',
                     'success'
                 );
-                this.closeModal();
+                //this.closeModal();
                 await this.loadOfferings();
             } else if (response.status === 401) {
                 this.handleUnauthorized();
@@ -408,10 +410,8 @@ class OfferingManager {
 
         if (!toast || !toastMessage || !toastIcon) return;
 
-        // Set message
         toastMessage.textContent = message;
 
-        // Set icon based on type
         let iconHTML = '';
         switch (type) {
             case 'success':
@@ -421,20 +421,15 @@ class OfferingManager {
                 iconHTML = '<svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
                 break;
             case 'warning':
-                iconHTML = '<svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                iconHTML = '<svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
                 break;
             default:
-                iconHTML = '<svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                iconHTML = '<svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 18h.01M12 6h.01"></path></svg>';
         }
+
         toastIcon.innerHTML = iconHTML;
-
-        // Show toast
         toast.classList.remove('hidden');
-
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            this.hideToast();
-        }, 5000);
+        setTimeout(() => this.hideToast(), 3000);
     }
 
     hideToast() {
@@ -444,22 +439,20 @@ class OfferingManager {
         }
     }
 
-    escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+    escapeHtml(unsafe) {
+        if (typeof unsafe !== 'string') return '';
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 }
 
 // Global reference for onclick handlers
 let offeringManager;
 
-// Initialize offering manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     offeringManager = new OfferingManager();
 });

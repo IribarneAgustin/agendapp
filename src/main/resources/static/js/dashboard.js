@@ -1,6 +1,6 @@
 class DashboardManager {
     constructor() {
-        this.baseUrl = 'http://localhost:8080';
+        this.baseUrl = BASE_URL;
         this.token = localStorage.getItem('authToken');
         this.user = this.getStoredUser();
         

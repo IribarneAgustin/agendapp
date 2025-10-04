@@ -23,8 +23,6 @@ public class OfferingResponse {
 
     private Integer capacity;
 
-    private Double price;
-
     private Boolean showPrice;
 
     private Integer advancePaymentPercentage;

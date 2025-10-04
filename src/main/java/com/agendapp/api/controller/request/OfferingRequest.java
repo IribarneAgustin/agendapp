@@ -30,9 +30,6 @@ public class OfferingRequest {
     @Min(value = 1, message = "Capacity must be at least 1")
     private Integer capacity;
 
-    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be greater than 0")
-    private Double price;
-
     private Boolean showPrice = true;
 
     @Min(value = 0, message = "Advance payment must be at least 0%")

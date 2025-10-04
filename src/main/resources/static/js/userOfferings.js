@@ -1,7 +1,7 @@
 // User Offerings Page functionality for AgendApp
 class UserOfferingsManager {
     constructor() {
-        this.baseUrl = 'http://localhost:8080';
+        this.baseUrl = BASE_URL;
         this.userId = this.getUserIdFromUrl();
 
         if (!this.userId) {

@@ -3,23 +3,30 @@ package com.agendapp.api.service;
 import com.agendapp.api.controller.request.OfferingRequest;
 import com.agendapp.api.controller.response.OfferingResponse;
 import com.agendapp.api.entity.Offering;
+import com.agendapp.api.entity.SlotTime;
 import com.agendapp.api.repository.OfferingRepository;
+import com.agendapp.api.repository.SlotTimeRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class OfferingServiceImpl implements OfferingService {
 
     private final OfferingRepository offeringRepository;
     private final ModelMapper modelMapper;
+    private final SlotTimeRepository slotTimeRepository;
 
-    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper) {
+    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeService slotTimeService, SlotTimeRepository slotTimeRepository) {
         this.offeringRepository = offeringRepository;
         this.modelMapper = modelMapper;
+        this.slotTimeRepository = slotTimeRepository;
     }
 
     @Override
@@ -61,7 +68,19 @@ public class OfferingServiceImpl implements OfferingService {
         }
         Offering existing = offeringRepository.findById(id.toString())
                 .orElseThrow(() -> new IllegalArgumentException("Offering not found with id: " + id));
-        offeringRepository.delete(existing);
+
+        existing.setActive(false);
+
+        List<SlotTime> slotTimeList = slotTimeRepository.findByOfferingIdAndActiveTrue(id.toString());
+        if (!ObjectUtils.isEmpty(slotTimeList)) {
+            log.info("Disabling {} active slots for the service {}", slotTimeList.size(), id);
+            slotTimeList.forEach(slotTime -> {
+                slotTime.setActive(false);
+            });
+            slotTimeRepository.saveAll(slotTimeList);
+        }
+
+        offeringRepository.save(existing);
     }
 
 }

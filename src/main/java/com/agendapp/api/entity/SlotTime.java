@@ -24,10 +24,10 @@ import java.time.LocalDateTime;
 @Builder
 @Data
 @Entity
-@Table(name = "offering")
+@Table(name = "slot_time")
 @Audited
-@AuditTable(value="offering_audit")
-public class Offering {
+@AuditTable(value="slot_time_audit")
+public class SlotTime {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -36,26 +36,20 @@ public class Offering {
     private String id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "offering_id", nullable = false)
+    private Offering offering;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "start_date_time")
+    private LocalDateTime startDateTime;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "end_date_time")
+    private LocalDateTime endDateTime;
 
-    @Column(name = "capacity")
-    private Integer capacity;
+    @Column(name = "price")
+    private Double price;
 
-    @Column(name = "show_price")
-    private Boolean showPrice;
-
-    @Column(name = "advance_payment_percentage")
-    private Integer advancePaymentPercentage;
-
-    @Column(name = "status")
-    private Boolean status;
+    @Column(name = "capacity_available")
+    private Integer capacityAvailable;
 
     @Column(name = "active")
     private Boolean active;
@@ -81,4 +75,5 @@ public class Offering {
     public void preUpdate() {
         modificationTimestamp = LocalDateTime.now();
     }
+
 }

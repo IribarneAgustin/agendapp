@@ -57,6 +57,8 @@ public class OfferingController {
     @DeleteMapping("/{offeringId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable UUID offeringId) {
+        log.info("Request to delete the following offering received: {}", offeringId);
         offeringService.delete(offeringId);
+        log.info("Offering deleted successfully");
     }
 }

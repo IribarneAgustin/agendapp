@@ -1,6 +1,6 @@
 class LoginManager {
     constructor() {
-        this.baseUrl = 'http://localhost:8080';
+        this.baseUrl = BASE_URL;
         this.init();
     }
 

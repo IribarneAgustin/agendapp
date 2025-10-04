@@ -2,7 +2,6 @@ package com.agendapp.api.service;
 
 import com.agendapp.api.controller.request.OfferingRequest;
 import com.agendapp.api.controller.response.OfferingResponse;
-import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.UUID;
