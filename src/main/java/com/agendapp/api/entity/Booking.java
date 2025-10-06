@@ -2,6 +2,8 @@ package com.agendapp.api.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -24,10 +26,10 @@ import java.time.LocalDateTime;
 @Builder
 @Data
 @Entity
-@Table(name = "slot_time")
+@Table(name = "booking")
 @Audited
-@AuditTable(value="slot_time_audit")
-public class SlotTime {
+@AuditTable(value="booking_audit")
+public class Booking {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -36,23 +38,21 @@ public class SlotTime {
     private String id;
 
     @ManyToOne
-    @JoinColumn(name = "offering_id", nullable = false)
-    private Offering offering;
+    @JoinColumn(name = "slot_time_id", nullable = false)
+    private SlotTime slotTime;
 
-    @Column(name = "start_date_time")
-    private LocalDateTime startDateTime;
+    @Column(name = "email")
+    private String email;
 
-    @Column(name = "end_date_time")
-    private LocalDateTime endDateTime;
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
-    @Column(name = "price")
-    private Double price;
+    @Column(name = "name")
+    private String name;
 
-    @Column(name = "capacity_available")
-    private Integer capacityAvailable;
-
-    @Column(name = "max_capacity")
-    private Integer maxCapacity;
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status;
 
     @Column(name = "active")
     private Boolean active;
@@ -78,5 +78,4 @@ public class SlotTime {
     public void preUpdate() {
         modificationTimestamp = LocalDateTime.now();
     }
-
 }

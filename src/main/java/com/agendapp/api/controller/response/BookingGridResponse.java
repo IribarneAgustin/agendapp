@@ -1,6 +1,6 @@
 package com.agendapp.api.controller.response;
 
-import jakarta.validation.constraints.NotNull;
+import com.agendapp.api.entity.BookingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,12 +12,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Data
-public class SlotTimeResponse {
+public class BookingGridResponse {
     private String id;
+    private String clientEmail;
+    private String clientName;
+    private String clientPhone;
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
-    private Double price;
-    private Integer capacityAvailable;
-    private Integer maxCapacity;
-    private Boolean active;
+    private BookingStatus status; //CONFIRMED, CANCELLED
+    private Double paid;
+    private String serviceName;
 }

@@ -30,11 +30,8 @@ public class OfferingRequest {
     @Min(value = 1, message = "Capacity must be at least 1")
     private Integer capacity;
 
-    private Boolean showPrice = true;
-
     @Min(value = 0, message = "Advance payment must be at least 0%")
     @Max(value = 100, message = "Advance payment cannot exceed 100%")
     private Integer advancePaymentPercentage;
 
-    private Boolean active = true;
 }

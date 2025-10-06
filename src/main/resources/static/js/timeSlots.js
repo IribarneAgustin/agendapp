@@ -167,71 +167,74 @@ document.addEventListener("DOMContentLoaded", () => {
                 priceInput.value = '';
             }
 
-           // cancelModificationBtn.addEventListener('click', clearModificationState);
+          function renderExistingSlots(existingSlots) {
+              existingSlotsGrid.innerHTML = '';
 
+              if (existingSlots.length === 0) {
+                  existingSlotsGrid.innerHTML = '<div class="text-gray-400 text-center py-4">No hay slots en esta página.</div>';
+              } else {
+                  existingSlots.forEach(slot => {
+                      const datePart = slot.startDateTime.substring(0, 10);
+                      const startTimePart = toTimeFormat(slot.startDateTime);
+                      const endTimePart = toTimeFormat(slot.endDateTime);
+                      const price = slot.price;
+                      const capacityAvailable = slot.capacityAvailable;
+                      const maxCapacity = slot.maxCapacity;
 
-            // --- UI Update Functions ---
+                      let capacityLabel = '';
+                      if (capacityAvailable != null && maxCapacity != null) {
+                          const isFull = capacityAvailable === 0;
+                          const labelColor = isFull ? 'text-red-600' : 'text-gray-900';
+                          capacityLabel = `
+                              <div class="${labelColor} font-semibold text-sm">
+                                  Lugares Disponibles (${capacityAvailable}/${maxCapacity})
+                              </div>`;
+                      }
 
-            /**
-             * Updates the list of existing slots, now simplified DTO and no isBooked logic.
-             */
-            function renderExistingSlots(existingSlots) {
-                existingSlotsGrid.innerHTML = '';
+                      const slotItem = document.createElement('div');
+                      slotItem.className = 'slot-item border border-gray-200 rounded-xl p-3 shadow-sm hover:shadow transition-shadow bg-white';
+                      slotItem.innerHTML = `
+                          <div class="slot-details flex-1 min-w-0">
+                              <div class="text-gray-900 font-semibold text-base">${toArgentinaDateFormat(datePart)}</div>
+                              <div class="text-sm text-gray-700">${startTimePart} a ${endTimePart}</div>
+                              <div class="text-indigo-600 font-medium">${formatPrice(price)}</div>
+                              ${capacityLabel}
+                          </div>
+                          <div class="slot-actions flex space-x-2 mt-2 sm:mt-0">
+                              <button data-id="${slot.id}"
+                                      data-start-time="${startTimePart}"
+                                      data-end-time="${endTimePart}"
+                                      data-date="${datePart}"
+                                      data-price="${price || ''}"
+                                      data-full-slot='${JSON.stringify(slot)}'
+                                      class="modify-slot-btn text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                                      title="Modificar Slot">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                  </svg>
+                              </button>
+                              <button data-id="${slot.id}"
+                                      class="delete-slot-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                      title="Eliminar Slot">
+                                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                  </svg>
+                              </button>
+                          </div>
+                      `;
+                      existingSlotsGrid.appendChild(slotItem);
+                  });
+              }
 
-                if (existingSlots.length === 0) {
-                    existingSlotsGrid.innerHTML = '<div class="text-gray-400 text-center py-4">No hay slots en esta página.</div>';
-                } else {
-                    existingSlots.forEach(slot => {
-                        const datePart = slot.startDateTime.substring(0, 10);
-                        const startTimePart = toTimeFormat(slot.startDateTime);
-                        const endTimePart = toTimeFormat(slot.endDateTime);
+              currentPageDisplay.textContent = currentPage + 1;
+              totalPagesDisplay.textContent = totalPages;
+              prevPageBtn.disabled = currentPage === 0;
+              nextPageBtn.disabled = currentPage >= totalPages - 1 || totalPages === 0;
 
-                        // Price is assumed to be carried by the backend, if not, use N/A
-                        const price = slot.price;
-
-                        // Use 'active' status for simple distinction (true=Available, false/missing=Inactive/Deleted)
-                        const isActive = slot.active === true;
-                        const statusClass = isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-                        const statusText = isActive ? 'Disponible' : 'Reservado';
-                        //TODO add logic to check capacityAvailable with service capacity to display status. If has at least 1 booking, add explicity alert to confirm if want to proceed or go to see bookings section.
-
-
-                        const slotItem = document.createElement('div');
-                        slotItem.className = 'slot-item border border-gray-200';
-                        slotItem.innerHTML = `
-                            <div class="slot-details flex-1 min-w-0">
-                                <span class="font-semibold text-gray-900 block sm:inline-block">${toArgentinaDateFormat(datePart)}</span>
-                                <span class="text-sm text-gray-700 block sm:inline-block sm:ml-2">${startTimePart} a ${endTimePart}</span>
-                                <span class="text-indigo-600 font-medium block sm:inline-block sm:ml-2">${formatPrice(price)}</span>
-                                <span class="text-xs font-medium px-2 py-0.5 rounded-full ${statusClass} mt-1 sm:mt-0 sm:ml-2 inline-block">${statusText}</span>
-                            </div>
-                            <div class="slot-actions flex space-x-2 mt-2 sm:mt-0">
-                                <button data-id="${slot.id}"
-                                        data-start-time="${startTimePart}"
-                                        data-end-time="${endTimePart}"
-                                        data-date="${datePart}"
-                                        data-price="${price || ''}"
-                                        data-full-slot='${JSON.stringify(slot)}'
-                                        class="modify-slot-btn text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors" title="Modificar Slot">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </button>
-                                <button data-id="${slot.id}" class="delete-slot-btn text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors" title="Eliminar Slot">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                </button>
-                            </div>
-                        `;
-                        existingSlotsGrid.appendChild(slotItem);
-                    });
-                }
-
-                // Update pagination display
-                currentPageDisplay.textContent = currentPage + 1;
-                totalPagesDisplay.textContent = totalPages;
-                prevPageBtn.disabled = currentPage === 0;
-                nextPageBtn.disabled = currentPage >= totalPages - 1 || totalPages === 0;
-
-                existingSlotsCount.textContent = `${existingSlots.length} (Pág ${currentPage + 1}/${totalPages})`;
-            }
+              existingSlotsCount.textContent = `${existingSlots.length} (Pág ${currentPage + 1}/${totalPages})`;
+          }
 
             /**
              * Handles setting the form for modification of an existing slot.
@@ -366,6 +369,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         if (!response.ok) {
                             const errorText = await response.text();
+                            let errorBody = {};
+                            try {
+                                errorBody = JSON.parse(errorText);
+                            } catch {
+                                // Not JSON — ignore, keep as empty object
+                            }
+
+                            const { errorCode, details, message } = errorBody ?? {};
+
+                            if (errorCode === 'OFFERING_HAS_ACTIVE_BOOKINGS') {
+                                const count = details?.count ?? '?';
+                                const message =
+                                    count === 1
+                                        ? `El slot tiene 1 reserva activa. Debe cancelarla antes de eliminarlo.`
+                                        : `El slot tiene ${count} reservas activas. Debe cancelarlas antes de eliminarlo.`;
+
+                                displayMessage(message, 'error');
+
+                                return;
+                            }
+
+                            displayMessage(message || 'Error al eliminar el servicio', 'error');
+
                             throw new Error(`(${response.status}) Error al eliminar: ${errorText.substring(0, 100)}...`);
                         }
 
@@ -642,31 +668,65 @@ document.addEventListener("DOMContentLoaded", () => {
                     applySlotsBtn.disabled = true;
                     applySlotsBtn.textContent = "Actualizando...";
 
-                    try {
-                        const response = await fetch(UPDATE_SLOT_ENDPOINT + slotIdToModify, {
-                            method: "PUT",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": `Bearer ${token}`
-                            },
-                            body: JSON.stringify(payload)
-                        });
+                   try {
+                       const response = await fetch(UPDATE_SLOT_ENDPOINT + slotIdToModify, {
+                           method: "PUT",
+                           headers: {
+                               "Content-Type": "application/json",
+                               "Authorization": `Bearer ${token}`
+                           },
+                           body: JSON.stringify(payload)
+                       });
 
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`(${response.status}) Error al actualizar: ${errorText.substring(0, 100)}...`);
-                        }
+                       if (!response.ok) {
+                           const errorText = await response.text();
+                           let errorBody = {};
+                           try {
+                               errorBody = JSON.parse(errorText);
+                           } catch {
+                               // Not JSON — ignore
+                           }
 
-                        displayMessage(`Slot ID ${slotIdToModify} actualizado correctamente.`, "success");
-                        clearModificationState();
-                        fetchExistingSlots(currentPage); // Refresh current page
+                           const { errorCode, details, message } = errorBody ?? {};
 
-                    } catch (error) {
-                        console.error("Error updating slot:", error);
-                        displayMessage("Error al actualizar slot: " + error.message, "error");
-                        applySlotsBtn.disabled = false;
-                        applySlotsBtn.textContent = `Actualizar Slot ID ${slotIdToModify}`;
-                    }
+                           switch (errorCode) {
+                               case 'OFFERING_HAS_ACTIVE_BOOKINGS': {
+                                   const count = details?.count ?? '?';
+                                   const msg =
+                                       count === 1
+                                           ? `El slot tiene 1 reserva activa. Debe cancelarla para poder actualizarlo.`
+                                           : `El slot tiene ${count} reservas activas. Debe cancelarlas para poder actualizarlo.`;
+                                   displayMessage(msg, 'error');
+                                   clearModificationState();
+                                   return;
+                               }
+
+                               case 'SLOT_TIME_OVERLAPPED': {
+                                   const start = details?.startDateTime ?? '';
+                                   const end = details?.endDateTime ?? '';
+                                   const msg = `El horario ingresado se superpone con otro existente (${start} - ${end}).`;
+                                   displayMessage(msg, 'error');
+                                   clearModificationState();
+                                   return;
+                               }
+
+                               default: {
+                                   clearModificationState();
+                                   throw new Error(`(${response.status}) Error al actualizar: ${errorText.substring(0, 100)}...`);
+                               }
+                           }
+                       }
+
+                       displayMessage(`Slot ID ${slotIdToModify} actualizado correctamente.`, "success");
+                       clearModificationState();
+                       fetchExistingSlots(currentPage); // Refresh current page
+
+                   } catch (error) {
+                       console.error("Error updating slot:", error);
+                       displayMessage("Error al actualizar slot: " + error.message, "error");
+                       applySlotsBtn.disabled = false;
+                       applySlotsBtn.textContent = `Actualizar Slot ID ${slotIdToModify}`;
+                   }
 
                 } else {
                     // --- CREATE (POST to PENDING) MODE ---
@@ -755,14 +815,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     if (!response.ok) {
                         const contentType = response.headers.get("content-type");
-                        let errorDetails = "Error desconocido";
-                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                        let errorMessage = "Error desconocido";
+
+                        if (contentType && contentType.includes("application/json")) {
                             const errorJson = await response.json();
-                            errorDetails = errorJson.message || JSON.stringify(errorJson);
+                            const { errorCode, details } = errorJson;
+
+                            switch (errorCode) {
+                                case "SLOT_TIME_OVERLAPPED":
+                                    const start = new Date(details?.startDateTime).toLocaleString();
+                                    const end = new Date(details?.endDateTime).toLocaleString();
+                                    errorMessage = `El rango de horario se superpone con otro: ${start} - ${end}.`;
+                                    break;
+                                default:
+                                    errorMessage = `Error: ${errorCode || 'Desconocido'}`;
+                                    break;
+                            }
                         } else {
-                            errorDetails = await response.text();
+                            errorMessage = await response.text();
                         }
-                        throw new Error(`(${response.status}) ${errorDetails}`);
+
+                        throw new Error(errorMessage);
                     }
 
                     const savedSlots = await response.json();
@@ -770,11 +843,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     pendingSlots = [];
                     updatePendingSlotsList();
-                    fetchExistingSlots(0); // Refresh and go to the first page after saving new ones
+                    fetchExistingSlots(0);
 
                 } catch (error) {
                     console.error("Error guardando slots:", error);
-                    displayMessage("Error al guardar slots: " + error.message, "error");
+                    displayMessage(error.message || "Error al guardar slots.", "error");
                 } finally {
                     saveSlotsBtn.disabled = false;
                     saveSlotsBtn.textContent = "Guardar Nuevos Slots";

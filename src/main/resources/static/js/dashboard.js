@@ -16,6 +16,7 @@ class DashboardManager {
         this.setupEventListeners();
         this.loadDashboardData();
         this.setupShareableUrl();
+        this.setupBookingDashboardLink();
     }
 
     getStoredUser() {
@@ -153,6 +154,16 @@ class DashboardManager {
             }
         }
     }
+
+    setupBookingDashboardLink() {
+        if (this.user && this.user.id) {
+            const bookingDashboardLink = document.getElementById('bookingDashboardLink');
+            if (bookingDashboardLink) {
+                bookingDashboardLink.href = `booking-dashboard.html?userId=${this.user.id}`;
+            }
+        }
+    }
+
 
     async copyShareableUrl() {
         const shareableUrlElement = document.getElementById('shareableUrl');

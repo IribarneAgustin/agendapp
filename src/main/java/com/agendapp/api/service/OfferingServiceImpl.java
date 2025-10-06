@@ -4,6 +4,9 @@ import com.agendapp.api.controller.request.OfferingRequest;
 import com.agendapp.api.controller.response.OfferingResponse;
 import com.agendapp.api.entity.Offering;
 import com.agendapp.api.entity.SlotTime;
+import com.agendapp.api.exception.BusinessErrorCodes;
+import com.agendapp.api.exception.BusinessRuleException;
+import com.agendapp.api.repository.BookingRepository;
 import com.agendapp.api.repository.OfferingRepository;
 import com.agendapp.api.repository.SlotTimeRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +14,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -22,16 +27,19 @@ public class OfferingServiceImpl implements OfferingService {
     private final OfferingRepository offeringRepository;
     private final ModelMapper modelMapper;
     private final SlotTimeRepository slotTimeRepository;
+    private final BookingRepository bookingRepository;
 
-    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeService slotTimeService, SlotTimeRepository slotTimeRepository) {
+    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeService slotTimeService, SlotTimeRepository slotTimeRepository, BookingRepository bookingRepository) {
         this.offeringRepository = offeringRepository;
         this.modelMapper = modelMapper;
         this.slotTimeRepository = slotTimeRepository;
+        this.bookingRepository = bookingRepository;
     }
 
     @Override
     public OfferingResponse create(OfferingRequest offeringRequest) {
         Offering offering = modelMapper.map(offeringRequest, Offering.class);
+        offering.setActive(true);
         return modelMapper.map(offeringRepository.save(offering), OfferingResponse.class);
     }
 
@@ -55,7 +63,7 @@ public class OfferingServiceImpl implements OfferingService {
         if (userId == null) {
             throw new IllegalArgumentException("Invalid user id");
         }
-        List<Offering> offerings = offeringRepository.findByUserId(userId.toString());
+        List<Offering> offerings = offeringRepository.findByUserIdAndActiveTrue(userId.toString());
         return offerings.stream()
                 .map(off -> modelMapper.map(off, OfferingResponse.class))
                 .collect(Collectors.toList());
@@ -68,6 +76,12 @@ public class OfferingServiceImpl implements OfferingService {
         }
         Offering existing = offeringRepository.findById(id.toString())
                 .orElseThrow(() -> new IllegalArgumentException("Offering not found with id: " + id));
+
+        Integer incomingBookings = bookingRepository.getIncomingBookingsCount(existing.getId(), LocalDateTime.now());
+        if (incomingBookings > 0) {
+            log.error("The offering has {} active bookings. Deletion rejected.", incomingBookings);
+            throw new BusinessRuleException(BusinessErrorCodes.OFFERING_HAS_ACTIVE_BOOKINGS.name(), Map.of("count", incomingBookings));
+        }
 
         existing.setActive(false);
 

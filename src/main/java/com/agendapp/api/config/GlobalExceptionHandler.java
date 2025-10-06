@@ -1,11 +1,14 @@
 package com.agendapp.api.config;
 
+import com.agendapp.api.exception.BusinessRuleException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.Map;
 
 @RestControllerAdvice
 @Slf4j
@@ -20,6 +23,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<String> unauthorizedExceptionHandler(BadCredentialsException e){
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+    }
+
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<Map<String, Object>> handleBusinessRuleException(BusinessRuleException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of(
+                    "errorCode", e.getCode(),
+                    "details", e.getDetails()
+                ));
     }
 
 

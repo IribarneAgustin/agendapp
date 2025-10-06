@@ -81,7 +81,7 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Próximas Citas</p>
+                        <p class="text-sm font-medium text-gray-600">Próximas Reservas</p>
                         <p class="text-2xl font-bold text-gray-900">0</p>
                     </div>
                 </div>
@@ -95,7 +95,7 @@
                         </svg>
                     </div>
                     <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-600">Total Servicios</p>
+                        <p class="text-sm font-medium text-gray-600">Reservas Concretadas</p>
                         <p id="totalOfferings" class="text-2xl font-bold text-gray-900">-</p>
                     </div>
                 </div>
@@ -138,25 +138,6 @@
                 </a>
             </div>
 
-            <!-- Calendar Management -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                <div class="flex items-center mb-4">
-                    <div class="p-3 bg-green-100 rounded-lg">
-                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="ml-3 text-lg font-semibold text-gray-900">Horarios</h3>
-                </div>
-                <p class="text-gray-600 mb-4">Configura tus horarios de atención y disponibilidad</p>
-                <button class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors duration-200">
-                    Configurar Horarios
-                    <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </button>
-            </div>
-
             <!-- Appointments -->
             <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow duration-200">
                 <div class="flex items-center mb-4">
@@ -165,15 +146,17 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                     </div>
-                    <h3 class="ml-3 text-lg font-semibold text-gray-900">Citas</h3>
+                    <h3 class="ml-3 text-lg font-semibold text-gray-900">Reservas</h3>
                 </div>
-                <p class="text-gray-600 mb-4">Ve y gestiona todas tus citas programadas</p>
-                <button class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                    Ver Citas
+                <p class="text-gray-600 mb-4">Ver y gestionar reservas</p>
+                <a id="bookingDashboardLink"
+                   class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                    Ver Reservas
                     <svg class="ml-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
-                </button>
+                </a>
+
             </div>
         </div>
 
