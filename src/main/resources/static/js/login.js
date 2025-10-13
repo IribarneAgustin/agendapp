@@ -61,7 +61,8 @@ class LoginManager {
 
                 const userData = {
                     id: loginData.id,
-                    email: loginData.email
+                    email: loginData.email,
+                    brandName: loginData.brandName
                 };
 
                 localStorage.setItem('userData', JSON.stringify(userData));
@@ -77,7 +78,7 @@ class LoginManager {
             } else {
                 const errorData = await response.text();
                 let errorMessage = 'Error al iniciar sesión';
-                
+
                 if (response.status === 401) {
                     errorMessage = 'Credenciales incorrectas';
                 } else if (response.status === 404) {
@@ -85,7 +86,7 @@ class LoginManager {
                 } else if (errorData) {
                     errorMessage = errorData;
                 }
-                
+
                 this.showMessage(errorMessage, 'error');
             }
         } catch (error) {

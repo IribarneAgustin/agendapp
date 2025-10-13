@@ -323,7 +323,7 @@ class BookingDashboardManager {
             const clientName = booking.clientName ?? 'N/A';
             const clientEmail = booking.clientEmail ?? 'N/A';
             const paid = (typeof booking.paid === 'number' && booking.paid !== null)
-                               ? booking.paid.toFixed(2) : 'N/A';
+                               ? "$" + booking.paid.toFixed(2) : 'N/A';
             const bookingStatus = booking.status;
 
             // --- 2. Date/Time Safety Check and Time Range Calculation ---
@@ -383,7 +383,7 @@ class BookingDashboardManager {
                     ${isDateValid ? `<br><span class="text-xs font-semibold text-indigo-600">${formattedTimeRange}</span>` : ''}
                 </td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 align-middle border-b border-gray-200">
-                    $${paid}
+                    ${paid}
                 </td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 align-middle border-b border-gray-200">
                     ${this.renderStatusBadge(bookingStatus)}

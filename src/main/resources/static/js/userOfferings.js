@@ -17,14 +17,9 @@
             this.bookingForm = document.getElementById('bookingForm');
 
             if (!this.userId) {
-                this.showError('ID de usuario no válido. Verifica el enlace.');
+                this.showError('ID de usuario no válido');
                 return;
             }
-
-            this.init();
-        }
-
-        init() {
             this.setupEventListeners();
             this.loadOfferings();
         }
@@ -107,7 +102,7 @@
             noServicesState.classList.add('hidden');
             this.bookingPanel.classList.add('hidden');
 
-            const activeOfferings = offerings.filter(offering => offering.active);
+            const activeOfferings = offerings.filter(offering => offering.enabled);
 
             if (activeOfferings.length === 0) {
                 noServicesState.classList.remove('hidden');
@@ -133,12 +128,6 @@
                 <div>
                     <div class="flex items-start justify-between mb-3">
                         <h3 class="text-xl font-semibold text-gray-900">${offering.name}</h3>
-                        <div class="flex items-center text-green-600 bg-green-100 px-2 py-1 rounded-full text-xs font-medium">
-                            <svg class="h-4 w-4 fill-current mr-1" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                            <span>Disponible</span>
-                        </div>
                     </div>
                     <p class="text-gray-600 mb-4">${offering.description}</p>
                     <div class="flex items-center text-sm text-gray-500 mb-3">
@@ -375,7 +364,7 @@
             slotPriceDisplayDiv.classList.add('text-gray-500', 'italic', 'text-center');
 
             // Check if the offering allows price display and the selected slot has a price
-            if (this.selectedOffering && this.selectedOffering.showPrice && slot && slot.price !== null) {
+            if (this.selectedOffering && slot && slot.price !== null) {
                 let priceHtml = `<p class="text-lg font-semibold text-indigo-700">
                                     Precio Total: <span class="text-2xl ml-2">$${slot.price?.toFixed(2)}</span>
                                  </p>`;
@@ -537,6 +526,7 @@
                 // Re-evaluate button state based on current selection
                 createBookingButton.disabled = !document.getElementById('slotTimeId').value;
             }
+        }
 
         showLoading() {
             const loadingState = document.getElementById('loadingState');

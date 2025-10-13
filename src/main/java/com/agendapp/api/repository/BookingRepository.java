@@ -25,9 +25,11 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
       AND (:startDate IS NULL OR st.startDateTime >= :startDate)
       AND (:month IS NULL OR FUNCTION('DATE_FORMAT', st.startDateTime, '%m') = :month)
       AND (:offeringId IS NULL OR o.id = :offeringId)
+      AND (o.user.id = :userId)
     ORDER BY st.startDateTime ASC
     """)
     Page<Booking> findBookingGrid(
+            @Param("userId") String userId,
             @Param("clientName") String clientName,
             @Param("startDate") LocalDateTime startDate,
             @Param("month") String month,
@@ -43,9 +45,9 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     WHERE o.id = :offeringId
       AND st.startDateTime >= :now
       AND b.status = 'CONFIRMED'
-      AND b.active = true
-      AND st.active = true
-      AND o.active = true
+      AND b.enabled = true
+      AND st.enabled = true
+      AND o.enabled = true
     """)
     Integer getIncomingBookingsCount(@Param("offeringId") String offeringId, @Param("now") LocalDateTime now);
 
@@ -56,8 +58,8 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     WHERE st.id = :slotTimeId
       AND st.startDateTime >= :now
       AND b.status = 'CONFIRMED'
-      AND b.active = true
-      AND st.active = true
+      AND b.enabled = true
+      AND st.enabled = true
     """)
     Integer getIncomingBookingsCountBySlotId(@Param("slotTimeId") String slotTimeId, @Param("now") LocalDateTime now);
 

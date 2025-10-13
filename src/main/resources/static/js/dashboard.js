@@ -78,7 +78,7 @@ class DashboardManager {
 
     updateStats(offerings) {
         const totalOfferings = offerings.length;
-        const activeOfferings = offerings.filter(o => o.active).length;
+        const activeOfferings = offerings.filter(o => o.enabled).length;
 
         // Update DOM elements
         const totalElement = document.getElementById('totalOfferings');
@@ -143,15 +143,32 @@ class DashboardManager {
         }
     }
 
-    setupShareableUrl() {
-        if (this.user && this.user.id) {
-            const baseUrl = window.location.origin;
-            const shareableUrl = `${baseUrl}/user-offerings.html?userId=${this.user.id}`;
+    async setupShareableUrl() {
 
-            const shareableUrlElement = document.getElementById('shareableUrl');
-            if (shareableUrlElement) {
-                shareableUrlElement.textContent = shareableUrl;
+        try {
+            const response = await fetch(`${this.baseUrl}/users/${this.user.id}/public-url`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const publicURL = await response.text();
+                const shareableUrlElement = document.getElementById('shareableUrl');
+                if (shareableUrlElement) {
+                    shareableUrlElement.textContent = publicURL;
+                }
+
+
+            } else if (response.status === 401) {
+                this.handleUnauthorized();
+            } else {
+                throw new Error('Error al obtener URL pública');
             }
+        } catch (error) {
+            console.error('Error loading public URL:', error);
         }
     }
 

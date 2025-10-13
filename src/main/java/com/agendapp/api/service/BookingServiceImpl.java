@@ -45,7 +45,7 @@ public class BookingServiceImpl implements BookingService {
         slotTimeRepository.save(slotTime);
 
         Booking booking = Booking.builder()
-                .active(true)
+                .enabled(true)
                 .slotTime(slotTime)
                 .name(bookingRequest.getName())
                 .email(bookingRequest.getEmail())
@@ -64,10 +64,11 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Page<BookingGridResponse> findBookingGrid(BookingSearchRequest bookingSearchRequest) {
+    public Page<BookingGridResponse> findBookingGrid(UUID userId, BookingSearchRequest bookingSearchRequest) {
         Pageable pageable = PageRequest.of(bookingSearchRequest.getPageNumber(), bookingSearchRequest.getPageSize());
 
         Page<Booking> bookingPage = bookingRepository.findBookingGrid(
+                userId.toString(),
                 bookingSearchRequest.getClientName(),
                 bookingSearchRequest.getStartDate(),
                 bookingSearchRequest.getMonth(),
@@ -103,13 +104,13 @@ public class BookingServiceImpl implements BookingService {
         );
         SlotTime slotTime = bookingToCancel.getSlotTime();
 
-        if (slotTime == null || !slotTime.getActive() || slotTime.getEndDateTime().isBefore(LocalDateTime.now()) || bookingToCancel.getStatus().equals(BookingStatus.CANCELLED)) {
+        if (slotTime == null || !slotTime.getEnabled() || slotTime.getEndDateTime().isBefore(LocalDateTime.now()) || bookingToCancel.getStatus().equals(BookingStatus.CANCELLED)) {
            throw new IllegalArgumentException("The booking to cancel is already cancelled or is related with invalid slot");
         }
 
         slotTime.setCapacityAvailable(slotTime.getCapacityAvailable() + 1);
 
-        bookingToCancel.setActive(false);
+        bookingToCancel.setEnabled(false);
         bookingToCancel.setStatus(BookingStatus.CANCELLED);
 
         slotTimeRepository.save(slotTime);

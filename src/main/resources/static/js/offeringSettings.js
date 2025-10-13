@@ -205,14 +205,12 @@ class OfferingManager {
         this.currentOffering = offering;
 
         const modal = document.getElementById('offeringModal');
-        const modalTitle = document.getElementById('modalTitle');
         const form = document.getElementById('offeringForm');
         const advanceInput = document.getElementById('advancePaymentPercentage');
         const advanceValue = document.getElementById('advanceValue');
 
-        if (!modal || !modalTitle || !form || !advanceInput || !advanceValue) return;
+        if (!modal || !form || !advanceInput || !advanceValue) return;
 
-        modalTitle.textContent = this.isEditMode ? 'Editar Servicio' : 'Nuevo Servicio';
         form.reset();
 
         if (this.isEditMode && offering) {

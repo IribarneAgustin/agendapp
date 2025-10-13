@@ -19,5 +19,5 @@ public class SlotTimeResponse {
     private Double price;
     private Integer capacityAvailable;
     private Integer maxCapacity;
-    private Boolean active;
+    private Boolean enabled;
 }

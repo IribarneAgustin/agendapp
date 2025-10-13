@@ -4,10 +4,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,8 +18,6 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
-import java.time.LocalDateTime;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
@@ -26,34 +25,18 @@ import java.time.LocalDateTime;
 @Setter
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "slot_time")
+@Table(name = "brand", uniqueConstraints = {
+        @UniqueConstraint(name = "UK_BRAND_NAME", columnNames = "name")
+})
 @Audited
-@AuditTable(value="slot_time_audit")
-public class SlotTime extends PersistentObject {
-
+@AuditTable(value="brand_audit")
+public class Brand extends PersistentObject {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Column(name = "id", updatable = false, nullable = false, length = 36)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "offering_id", nullable = false)
-    private Offering offering;
-
-    @Column(name = "start_date_time")
-    private LocalDateTime startDateTime;
-
-    @Column(name = "end_date_time")
-    private LocalDateTime endDateTime;
-
-    @Column(name = "price")
-    private Double price;
-
-    @Column(name = "capacity_available")
-    private Integer capacityAvailable;
-
-    @Column(name = "max_capacity")
-    private Integer maxCapacity;
-
+    @Column(name = "name")
+    private String name;
 }

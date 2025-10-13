@@ -31,7 +31,6 @@
         </p>
     </div>
 
-    <!-- Form -->
     <form id="registrationForm" class="space-y-6">
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700">
@@ -54,11 +53,33 @@
         </div>
 
         <div>
+            <label for="phone" class="block text-sm font-medium text-gray-700">
+                Teléfono
+            </label>
+            <div class="mt-1">
+                <input id="phone" name="phone" type="tel" autocomplete="tel" required
+                       pattern="^\+?[\d\s\-\(\)]{7,20}$"
+                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+            </div>
+        </div>
+
+        <div>
             <label for="email" class="block text-sm font-medium text-gray-700">
                 Correo Electrónico
             </label>
             <div class="mt-1">
                 <input id="email" name="email" type="email" autocomplete="email" required
+                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+            </div>
+        </div>
+
+        <div>
+            <label for="brandname" class="block text-sm font-medium text-gray-700">
+                Nombre de tu marca/servicio
+            </label>
+            <div class="mt-1">
+                <input id="brandname" name="brandname" type="text" required
+                       placeholder="Ej: festejandoando"
                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
             </div>
         </div>

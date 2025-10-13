@@ -12,18 +12,17 @@ import org.hibernate.validator.constraints.Length;
 @AllArgsConstructor
 @Builder
 @Data
-public class UserRegistrationRequest {
+public class UserRequest {
+
     @NotNull
     @Length(min = 1, max = 30)
     private String name;
     @NotNull
     @Length(min = 1, max = 30)
     private String lastName;
-    @NotNull
     @Email
-    private String email;
     @NotNull
-    private String password;
+    private String email;
     @NotNull
     private String phone;
     @NotNull

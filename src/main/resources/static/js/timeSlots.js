@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
                           const labelColor = isFull ? 'text-red-600' : 'text-gray-900';
                           capacityLabel = `
                               <div class="${labelColor} font-semibold text-sm">
-                                  Lugares Disponibles (${capacityAvailable}/${maxCapacity})
+                                  Disponibilidad (${capacityAvailable}/${maxCapacity})
                               </div>`;
                       }
 
@@ -265,7 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 renderCalendar();
 
                 // Change apply button text
-                applySlotsBtn.textContent = `Actualizar Slot ID ${slotIdToModify}`;
+                applySlotsBtn.textContent = `Actualizar Slot`;
 
                 displayMessage(`Slot agregado para modificación. Cambia la fecha/hora/precio y haz clic en 'Actualizar'.`, 'info');
             }
@@ -438,7 +438,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 applySlotsBtn.disabled = count === 0 && slotIdToModify === null;
 
                 if (slotIdToModify !== null) {
-                    applySlotsBtn.textContent = `Actualizar Slot ID ${slotIdToModify}`;
+                    applySlotsBtn.textContent = `Actualizar Slot`;
                 } else {
                     applySlotsBtn.textContent = `Aplicar a ${count} Fechas`;
                 }
@@ -725,7 +725,7 @@ document.addEventListener("DOMContentLoaded", () => {
                        console.error("Error updating slot:", error);
                        displayMessage("Error al actualizar slot: " + error.message, "error");
                        applySlotsBtn.disabled = false;
-                       applySlotsBtn.textContent = `Actualizar Slot ID ${slotIdToModify}`;
+                       applySlotsBtn.textContent = `Actualizar Slot`;
                    }
 
                 } else {

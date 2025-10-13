@@ -5,9 +5,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,11 +27,11 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @EqualsAndHashCode(callSuper = true)
+@Table(name = "subscription")
 @Entity
-@Table(name = "slot_time")
 @Audited
-@AuditTable(value="slot_time_audit")
-public class SlotTime extends PersistentObject {
+@AuditTable(value="subscription_audit")
+public class Subscription extends PersistentObject {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -37,23 +39,14 @@ public class SlotTime extends PersistentObject {
     @Column(name = "id", updatable = false, nullable = false, length = 36)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "offering_id", nullable = false)
-    private Offering offering;
+    @Column(name = "expired")
+    private Boolean expired;
 
-    @Column(name = "start_date_time")
-    private LocalDateTime startDateTime;
+    @Column(name = "creation_date_time")
+    private LocalDateTime creationDateTime;
 
-    @Column(name = "end_date_time")
-    private LocalDateTime endDateTime;
+    @Column(name = "expiration")
+    private LocalDateTime expiration;
 
-    @Column(name = "price")
-    private Double price;
-
-    @Column(name = "capacity_available")
-    private Integer capacityAvailable;
-
-    @Column(name = "max_capacity")
-    private Integer maxCapacity;
 
 }

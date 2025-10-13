@@ -1,16 +1,15 @@
 package com.agendapp.api.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorColumn;
+import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,18 +18,19 @@ import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
-@NoArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
 @Getter
 @Setter
-@EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
+@SuperBuilder
+@Table(name = "payment")
 @Entity
-@Table(name = "booking")
 @Audited
-@AuditTable(value="booking_audit")
-public class Booking extends PersistentObject {
+@AuditTable(value="payment_audit")
+@DiscriminatorColumn(name = "payment_type", discriminatorType = DiscriminatorType.STRING)
+public abstract class Payment extends PersistentObject {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -38,21 +38,14 @@ public class Booking extends PersistentObject {
     @Column(name = "id", updatable = false, nullable = false, length = 36)
     private String id;
 
-    @ManyToOne
-    @JoinColumn(name = "slot_time_id", nullable = false)
-    private SlotTime slotTime;
+    @Column(name = "amount")
+    private BigDecimal amount;
 
-    @Column(name = "email")
-    private String email;
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(name = "name")
-    private String name;
-
-    @Column(name = "status")
+    @Column(name = "payment_method")
     @Enumerated(EnumType.STRING)
-    private BookingStatus status;
-
+    private PaymentMethod paymentMethod;
 }
+

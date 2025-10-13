@@ -70,7 +70,7 @@ public class SlotTimeServiceImpl implements SlotTimeService {
             }
         }
 
-        List<SlotTime> existingSlots = slotTimeRepository.findByOfferingIdAndActiveTrue(offeringId);
+        List<SlotTime> existingSlots = slotTimeRepository.findByOfferingIdAndEnabledTrue(offeringId);
         for (SlotTimeRequest req : slotTimeRequestList) {
             for (SlotTime existing : existingSlots) {
                 boolean overlaps = req.getStartDateTime().isBefore(existing.getEndDateTime()) &&
@@ -85,14 +85,14 @@ public class SlotTimeServiceImpl implements SlotTimeService {
         }
 
         List<SlotTime> slotTimes = slotTimeRequestList.stream()
-                .map(req -> SlotTime.builder()
+                .map(req -> (SlotTime) SlotTime.builder()
                         .offering(offering)
                         .startDateTime(req.getStartDateTime())
                         .endDateTime(req.getEndDateTime())
                         .price(req.getPrice())
                         .capacityAvailable(offering.getCapacity())
                         .maxCapacity(offering.getCapacity())
-                        .active(true)
+                        .enabled(true)
                         .build())
                 .toList();
 
@@ -107,7 +107,7 @@ public class SlotTimeServiceImpl implements SlotTimeService {
 
     @Override
     public Page<SlotTimeResponse> findNextSlotsPageByOfferingId(UUID offeringId, Pageable pageable) {
-        return slotTimeRepository.findAllByOfferingIdAndActiveTrueAndEndDateTimeGreaterThanEqualOrderByStartDateTimeAsc(offeringId.toString(), LocalDateTime.now(), pageable)
+        return slotTimeRepository.findAllByOfferingIdAndEnabledTrueAndEndDateTimeGreaterThanEqualOrderByStartDateTimeAsc(offeringId.toString(), LocalDateTime.now(), pageable)
                 .map(slot -> modelMapper.map(slot, SlotTimeResponse.class));
     }
 
@@ -151,7 +151,7 @@ public class SlotTimeServiceImpl implements SlotTimeService {
             throw new BusinessRuleException(BusinessErrorCodes.OFFERING_HAS_ACTIVE_BOOKINGS.name(), Map.of("count", incomingBookings));
         }
 
-        slotTime.setActive(false);
+        slotTime.setEnabled(false);
 
         slotTimeRepository.save(slotTime);
     }

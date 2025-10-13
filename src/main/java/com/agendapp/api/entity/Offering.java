@@ -6,28 +6,29 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
-import java.time.LocalDateTime;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Data
+@SuperBuilder
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "offering")
 @Audited
 @AuditTable(value="offering_audit")
-public class Offering {
+public class Offering extends PersistentObject {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -48,37 +49,10 @@ public class Offering {
     @Column(name = "capacity")
     private Integer capacity;
 
-    @Column(name = "show_price")
-    private Boolean showPrice;
-
     @Column(name = "advance_payment_percentage")
     private Integer advancePaymentPercentage;
 
     @Column(name = "status")
     private Boolean status;
 
-    @Column(name = "active")
-    private Boolean active;
-
-    @Column(name = "creation_user")
-    private String creationUser;
-
-    @Column(name = "modification_user")
-    private String modificationUser;
-
-    @Column(name = "creation_timestamp", updatable = false)
-    private LocalDateTime creationTimestamp;
-
-    @Column(name = "modification_timestamp")
-    private LocalDateTime modificationTimestamp;
-
-    @PrePersist
-    public void prePersist() {
-        creationTimestamp = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        modificationTimestamp = LocalDateTime.now();
-    }
 }

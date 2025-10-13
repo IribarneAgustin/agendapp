@@ -1,3 +1,4 @@
+
 class RegistrationManager {
     constructor() {
         this.baseUrl = BASE_URL;
@@ -5,13 +6,6 @@ class RegistrationManager {
     }
 
     init() {
-        // Check if user is already logged in
-        const token = localStorage.getItem('authToken');
-        if (token) {
-            window.location.href = 'dashboard.html';
-            return;
-        }
-
         this.setupEventListeners();
     }
 
@@ -22,44 +16,104 @@ class RegistrationManager {
         }
     }
 
+    isValidSlug(str) {
+        if (!str) return false;
+        const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+        return slugRegex.test(str);
+    }
+
+    clientSideValidation(userData) {
+        if (!userData.name || !userData.lastName || !userData.email || !userData.password || !userData.brandName || !userData.phone) {
+            this.showMessage('Por favor, completa todos los campos requeridos.', 'error');
+            return false;
+        }
+
+        if (userData.password.length < 3) {
+            this.showMessage('La contraseña debe tener al menos 3 caracteres.', 'error');
+            return false;
+        }
+
+        // Basic Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userData.email)) {
+            this.showMessage('Por favor, ingresa un email válido.', 'error');
+            return false;
+        }
+
+        // New BrandName/Slug validation
+        if (!this.isValidSlug(userData.brandName.toLowerCase())) {
+            this.showMessage('El Nombre de Marca debe ser corto, en minúsculas, y solo puede contener letras, números y guiones (ej: mi-tienda-online).', 'error');
+            return false;
+        }
+
+        return true;
+    }
+
+    handleApiError(response, errorBody) {
+        const { errorCode, details } = errorBody || {};
+        let errorMessage = 'Error desconocido al registrar usuario. Inténtalo de nuevo.';
+
+        if (errorCode === 'UNIQUE_FIELD_ALREADY_EXISTS') {
+
+            // 💡 Use the generic 'field' and 'value' keys from the 'details' map
+            const field = details?.field;
+            const value = details?.value;
+
+            if (field && value) {
+
+                // Customize the message based on the specific 'field' name
+                if (field === 'brandName') {
+                    errorMessage = `¡Ese nombre de marca (${value}) ya está en uso! Por favor, elige uno diferente.`;
+
+                } else if (field === 'email') {
+                    errorMessage = `El correo electrónico (${value}) ya está registrado.`;
+
+                } else {
+                    errorMessage = `Error inesperado, por favor vuelva a intentar más tarde.`;
+                }
+
+            } else {
+                errorMessage = 'Error inesperado de unicidad, por favor vuelva a intentar más tarde.';
+            }
+
+        } else if (response.status === 409) {
+             errorMessage = 'Conflicto de datos: Este email o alguna otra información ya está registrada.';
+        } else if (response.status === 400) {
+            errorMessage = 'Datos inválidos. Verifica la información ingresada.';
+        } else if (errorBody?.message) {
+            errorMessage = errorBody.message;
+        }
+
+        this.showMessage(errorMessage, 'error');
+    }
+
     async handleRegistration(e) {
         e.preventDefault();
-        
+
         const form = e.target;
         const formData = new FormData(form);
-        
+
         const userData = {
             name: formData.get('name').trim(),
             lastName: formData.get('lastName').trim(),
             email: formData.get('email').trim(),
-            password: formData.get('password')
+            password: formData.get('password'),
+            brandName: formData.get('brandname').trim().toLowerCase(),
+            phone: formData.get('phone').trim()
         };
 
-        // Basic validation
-        if (!userData.name || !userData.lastName || !userData.email || !userData.password) {
-            this.showMessage('Por favor, completa todos los campos', 'error');
+        if (!this.clientSideValidation(userData)) {
             return;
         }
 
-        if (userData.password.length < 3) {
-            this.showMessage('La contraseña debe tener al menos 3 caracteres', 'error');
-            return;
-        }
 
-        // Email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userData.email)) {
-            this.showMessage('Por favor, ingresa un email válido', 'error');
-            return;
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registrando...';
         }
 
         try {
-            // Disable submit button
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Registrando...';
-            }
 
             const response = await fetch(`${this.baseUrl}/auth/register`, {
                 method: 'POST',
@@ -69,36 +123,29 @@ class RegistrationManager {
                 body: JSON.stringify(userData)
             });
 
+            // 4. Handle Response
             if (response.ok) {
-                const registrationData = await response.json();
-                
-                this.showMessage('Registro exitoso. Redirigiendo al inicio de sesión...', 'success');
-                
-                // Redirect to login after a short delay
+                this.showMessage('Registro exitoso. Iniciando sesión...', 'success');
+
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
 
             } else {
-                const errorData = await response.text();
-                let errorMessage = 'Error al registrar usuario';
-                
-                if (response.status === 409) {
-                    errorMessage = 'Este email ya está registrado';
-                } else if (response.status === 400) {
-                    errorMessage = 'Datos inválidos. Verifica la información ingresada';
-                } else if (errorData) {
-                    errorMessage = errorData;
+                let errorBody = null;
+                try {
+                    errorBody = await response.json();
+                } catch (e) {
+                    console.warn("Could not parse error body as JSON. Status:", response.status);
                 }
-                
-                this.showMessage(errorMessage, 'error');
+
+                this.handleApiError(response, errorBody);
             }
         } catch (error) {
-            console.error('Registration error:', error);
-            this.showMessage('Error de conexión. Inténtalo de nuevo.', 'error');
+            console.error('Registration fetch error:', error);
+            this.showMessage('Error de conexión con el servidor. Inténtalo de nuevo.', 'error');
         } finally {
-            // Re-enable submit button
-            const submitBtn = form.querySelector('button[type="submit"]');
+
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Registrarse';
@@ -110,10 +157,8 @@ class RegistrationManager {
         const messageBox = document.getElementById('messageBox');
         if (!messageBox) return;
 
-        // Clear existing classes
         messageBox.className = 'mt-6 p-4 rounded-lg text-sm text-center font-medium';
-        
-        // Add type-specific classes
+
         switch (type) {
             case 'success':
                 messageBox.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
@@ -142,5 +187,6 @@ class RegistrationManager {
 
 // Initialize registration manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Make sure your form has an element with id="messageBox" for showing messages
     new RegistrationManager();
 });

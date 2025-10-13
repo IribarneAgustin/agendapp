@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface BookingService {
     BookingResponse create(BookingRequest bookingRequest) throws Exception;
 
-    Page<BookingGridResponse> findBookingGrid(BookingSearchRequest bookingSearchRequest);
+    Page<BookingGridResponse> findBookingGrid(UUID userId, BookingSearchRequest bookingSearchRequest);
 
     void cancelBooking(UUID bookingId);
 }

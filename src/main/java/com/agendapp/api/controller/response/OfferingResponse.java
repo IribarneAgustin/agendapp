@@ -25,5 +25,5 @@ public class OfferingResponse {
 
     private Integer advancePaymentPercentage;
 
-    private Boolean active;
+    private Boolean enabled;
 }

@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface OfferingRepository extends JpaRepository<Offering, String> {
-    List<Offering> findByUserIdAndActiveTrue(String userId);
+    List<Offering> findByUserIdAndEnabledTrue(String userId);
 }

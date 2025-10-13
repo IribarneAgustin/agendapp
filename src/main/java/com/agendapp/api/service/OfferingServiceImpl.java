@@ -39,7 +39,7 @@ public class OfferingServiceImpl implements OfferingService {
     @Override
     public OfferingResponse create(OfferingRequest offeringRequest) {
         Offering offering = modelMapper.map(offeringRequest, Offering.class);
-        offering.setActive(true);
+        offering.setEnabled(true);
         return modelMapper.map(offeringRepository.save(offering), OfferingResponse.class);
     }
 
@@ -63,7 +63,7 @@ public class OfferingServiceImpl implements OfferingService {
         if (userId == null) {
             throw new IllegalArgumentException("Invalid user id");
         }
-        List<Offering> offerings = offeringRepository.findByUserIdAndActiveTrue(userId.toString());
+        List<Offering> offerings = offeringRepository.findByUserIdAndEnabledTrue(userId.toString());
         return offerings.stream()
                 .map(off -> modelMapper.map(off, OfferingResponse.class))
                 .collect(Collectors.toList());
@@ -83,13 +83,13 @@ public class OfferingServiceImpl implements OfferingService {
             throw new BusinessRuleException(BusinessErrorCodes.OFFERING_HAS_ACTIVE_BOOKINGS.name(), Map.of("count", incomingBookings));
         }
 
-        existing.setActive(false);
+        existing.setEnabled(false);
 
-        List<SlotTime> slotTimeList = slotTimeRepository.findByOfferingIdAndActiveTrue(id.toString());
+        List<SlotTime> slotTimeList = slotTimeRepository.findByOfferingIdAndEnabledTrue(id.toString());
         if (!ObjectUtils.isEmpty(slotTimeList)) {
             log.info("Disabling {} active slots for the service {}", slotTimeList.size(), id);
             slotTimeList.forEach(slotTime -> {
-                slotTime.setActive(false);
+                slotTime.setEnabled(false);
             });
             slotTimeRepository.saveAll(slotTimeList);
         }

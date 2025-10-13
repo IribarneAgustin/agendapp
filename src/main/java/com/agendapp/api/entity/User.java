@@ -1,39 +1,48 @@
 package com.agendapp.api.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
-import org.springframework.data.annotation.ReadOnlyProperty;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@Data
+@SuperBuilder
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
 @Entity
-@Table(name = "user")
+@Table(name = "user", uniqueConstraints = {
+        @UniqueConstraint(name = "UK_USER_EMAIL", columnNames = "email")
+})
 @Audited
 @AuditTable(value="user_audit")
-public class User implements UserDetails {
+public class User extends PersistentObject implements UserDetails {
 
     @Id
     @GeneratedValue(generator = "uuid2")
@@ -47,36 +56,23 @@ public class User implements UserDetails {
     @Column(name = "last_name")
     private String lastName;
 
-    @Column(name = "email", unique = true)
+    @Column(name = "email")
     private String email;
 
     @Column(name = "password")
     private String password;
 
-    @Column(name = "active")
-    private Boolean active;
+    @Column(name = "phone")
+    private String phone;
 
-    @Column(name = "creation_user")
-    private String creationUser;
+    @ManyToOne
+    @JoinColumn(name = "brand_id")
+    private Brand brand;
 
-    @Column(name = "modification_user")
-    private String modificationUser;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "subscription_id")
+    private Subscription subscription;
 
-    @Column(name = "creation_timestamp", updatable = false)
-    private LocalDateTime creationTimestamp;
-
-    @Column(name = "modification_timestamp")
-    private LocalDateTime modificationTimestamp;
-
-    @PrePersist
-    public void prePersist() {
-        creationTimestamp = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    public void preUpdate() {
-        modificationTimestamp = LocalDateTime.now();
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
