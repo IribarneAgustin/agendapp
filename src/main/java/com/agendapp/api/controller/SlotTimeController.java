@@ -2,7 +2,7 @@ package com.agendapp.api.controller;
 
 import com.agendapp.api.controller.request.SlotTimeRequest;
 import com.agendapp.api.controller.response.SlotTimeResponse;
-import com.agendapp.api.service.SlotTimeService;
+import com.agendapp.api.service.booking.SlotTimeService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;

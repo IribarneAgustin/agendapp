@@ -3,8 +3,8 @@ package com.agendapp.api.controller;
 import com.agendapp.api.controller.request.UserLoginRequest;
 import com.agendapp.api.controller.request.UserRegistrationRequest;
 import com.agendapp.api.controller.response.UserAuthResponse;
-import com.agendapp.api.dto.UserDTO;
-import com.agendapp.api.service.UserService;
+import com.agendapp.api.domain.User;
+import com.agendapp.api.service.user.UserService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -35,7 +35,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public UserAuthResponse register(@RequestBody @Valid UserRegistrationRequest userRegistrationRequest) {
         log.info("User registration request received");
-        UserDTO newUser = userService.register(userRegistrationRequest);
+        User newUser = userService.register(userRegistrationRequest);
         return modelMapper.map(newUser, UserAuthResponse.class);
     }
 

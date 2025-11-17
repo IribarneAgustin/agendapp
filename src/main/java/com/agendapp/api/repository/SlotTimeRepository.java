@@ -1,6 +1,6 @@
 package com.agendapp.api.repository;
 
-import com.agendapp.api.entity.SlotTime;
+import com.agendapp.api.repository.entity.SlotTimeEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,18 +11,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 
-public interface SlotTimeRepository extends JpaRepository<SlotTime, String> {
-    Page<SlotTime> findAllByOfferingIdAndEnabledTrueAndEndDateTimeGreaterThanEqualOrderByStartDateTimeAsc(
+public interface SlotTimeRepository extends JpaRepository<SlotTimeEntity, String> {
+    Page<SlotTimeEntity> findAllByOfferingEntityIdAndEnabledTrueAndEndDateTimeGreaterThanEqualOrderByStartDateTimeAsc(
             String offeringId,
             LocalDateTime now,
             Pageable pageable
     );
 
-    List<SlotTime> findByOfferingIdAndEnabledTrue(String string);
+    List<SlotTimeEntity> findByOfferingEntityIdAndEnabledTrue(String string);
 
     @Query("""
-    SELECT COUNT(s) > 0 FROM SlotTime s
-    WHERE s.offering.id = :offeringId
+    SELECT COUNT(s) > 0 FROM SlotTimeEntity s
+    WHERE s.offeringEntity.id = :offeringId
       AND s.enabled = true
       AND s.startDateTime < :endDateTime
       AND s.endDateTime > :startDateTime

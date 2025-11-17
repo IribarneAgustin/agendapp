@@ -1,6 +1,6 @@
 package com.agendapp.api.repository;
 
-import com.agendapp.api.entity.User;
+import com.agendapp.api.repository.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, String> {
-    Optional<User> findByEmail(String email);
+public interface UserRepository extends JpaRepository<UserEntity, String> {
+    Optional<UserEntity> findByEmail(String email);
 
-    @Query("SELECT u.id FROM User u JOIN brand b WHERE b.name = :brandName")
+    @Query("SELECT u.id FROM UserEntity u JOIN brandEntity b WHERE b.name = :brandName")
     String findUserIdByBrandName(@Param("brandName") String brandName);
 
-    List<User> findAllBySubscriptionIdIn(List<String> subscriptionIds);
+    List<UserEntity> findAllBySubscriptionEntityIdIn(List<String> subscriptionIds);
 }

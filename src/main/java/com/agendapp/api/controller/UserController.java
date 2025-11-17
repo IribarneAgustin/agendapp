@@ -1,9 +1,12 @@
 package com.agendapp.api.controller;
 
 import com.agendapp.api.controller.request.UserRequest;
-import com.agendapp.api.dto.UserDTO;
-import com.agendapp.api.service.UserService;
+import com.agendapp.api.controller.response.SubscriptionResponse;
+import com.agendapp.api.repository.entity.SubscriptionEntity;
+import com.agendapp.api.domain.User;
+import com.agendapp.api.service.user.UserService;
 import jakarta.validation.Valid;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,21 +22,22 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final ModelMapper modelMapper;
 
-
-    public UserController(UserService userService) {
+    public UserController(UserService userService, ModelMapper modelMapper) {
         this.userService = userService;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<UserDTO> findUserById(@PathVariable UUID userId) {
-        UserDTO user = userService.findById(userId);
+    public ResponseEntity<User> findUserById(@PathVariable UUID userId) {
+        User user = userService.findById(userId);
         return ResponseEntity.ok().body(user);
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<UserDTO> update(@PathVariable UUID userId, @Valid @RequestBody UserRequest request) {
-        UserDTO user = userService.update(userId, request);
+    public ResponseEntity<User> update(@PathVariable UUID userId, @Valid @RequestBody UserRequest request) {
+        User user = userService.update(userId, request);
         return ResponseEntity.ok().body(user);
     }
 
@@ -41,6 +45,12 @@ public class UserController {
     public ResponseEntity<String> getPublicURL(@PathVariable UUID userId) {
         String url = userService.getPublicURL(userId);
         return ResponseEntity.ok().body(url);
+    }
+
+    @GetMapping("/{userId}/subscription")
+    public ResponseEntity<SubscriptionResponse> findUserSubscription(@PathVariable UUID userId) {
+        SubscriptionEntity subscriptionEntity = userService.findUserSubscription(userId);
+        return ResponseEntity.ok().body(modelMapper.map(subscriptionEntity, SubscriptionResponse.class));
     }
 
 }

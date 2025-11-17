@@ -2,7 +2,7 @@ package com.agendapp.api.controller;
 
 import com.agendapp.api.controller.request.OfferingRequest;
 import com.agendapp.api.controller.response.OfferingResponse;
-import com.agendapp.api.service.OfferingService;
+import com.agendapp.api.service.offering.OfferingService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

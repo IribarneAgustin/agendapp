@@ -1,12 +1,12 @@
 package com.agendapp.api.repository;
 
-import com.agendapp.api.entity.Offering;
+import com.agendapp.api.repository.entity.OfferingEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 @Repository
-public interface OfferingRepository extends JpaRepository<Offering, String> {
-    List<Offering> findByUserIdAndEnabledTrue(String userId);
+public interface OfferingRepository extends JpaRepository<OfferingEntity, String> {
+    List<OfferingEntity> findByUserEntityIdAndEnabledTrue(String userId);
 }

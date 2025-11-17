@@ -4,7 +4,7 @@ import com.agendapp.api.controller.request.BookingRequest;
 import com.agendapp.api.controller.request.BookingSearchRequest;
 import com.agendapp.api.controller.response.BookingGridResponse;
 import com.agendapp.api.controller.response.BookingResponse;
-import com.agendapp.api.service.BookingService;
+import com.agendapp.api.service.booking.BookingService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -33,11 +33,6 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    /*
-    *
-    * This Endpoint Assumes that if payment is required, it was made successfully
-    *
-    * */
     @PostMapping
     public ResponseEntity<BookingResponse> create(@Valid @RequestBody BookingRequest bookingRequest) throws Exception {
         BookingResponse response = bookingService.create(bookingRequest);

@@ -1,6 +1,6 @@
 package com.agendapp.api.controller;
 
-import com.agendapp.api.service.UserService;
+import com.agendapp.api.service.user.UserService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +23,6 @@ public class PublicURLController {
         } catch (UsernameNotFoundException e) {
             return "forward:/404.html";
         }
-        return "redirect:/user-offerings.html?userId=" + userId;
+        return "redirect:/public/user-offerings.html?userId=" + userId;
     }
 }

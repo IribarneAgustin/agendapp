@@ -1,6 +1,6 @@
 package com.agendapp.api.controller.response;
 
-import com.agendapp.api.entity.BookingStatus;
+import com.agendapp.api.repository.entity.BookingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
