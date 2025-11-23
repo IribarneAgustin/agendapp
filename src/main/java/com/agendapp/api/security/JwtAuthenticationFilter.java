@@ -2,6 +2,7 @@ package com.agendapp.api.security;
 
 
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.ServletException;
 import java.io.IOException;
+import java.util.Arrays;
 
 @Component
 @Slf4j
@@ -34,7 +36,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = getTokenFromRequest(request);
+        String token = getTokenFromCookies(request);
         if (token != null) {
             try {
                 String email = jwtUtils.getEmailFromToken(token);
@@ -68,5 +70,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         return token;
     }
+
+    private String getTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return null;
+        }
+
+        return Arrays.stream(cookies)
+                .filter(c -> "jwt".equals(c.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+
 
 }

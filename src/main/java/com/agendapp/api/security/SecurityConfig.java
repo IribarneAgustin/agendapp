@@ -8,11 +8,29 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    private static final List<String> publicEndpointList = List.of(
+            "/auth/**",
+            "/booking",
+            "/booking/*/cancel",
+            "/reservas/**",
+            "/users/*/offerings",
+            "/slot-time/offering/*",
+
+            "/",
+            "/favicon.ico",
+            "/index.html",
+            "/commons/config.js",
+            "/public/**"
+
+    );
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -21,11 +39,12 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(
-                        authRequest -> authRequest
-                                .requestMatchers("/**").permitAll()
-                                .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> {
+                    publicEndpointList.forEach(endpoint ->
+                            auth.requestMatchers(endpoint).permitAll()
+                    );
+                    auth.anyRequest().authenticated();
+                })
                 .sessionManagement(sessionManager -> sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

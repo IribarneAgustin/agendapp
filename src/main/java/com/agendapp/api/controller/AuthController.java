@@ -5,10 +5,13 @@ import com.agendapp.api.controller.request.UserRegistrationRequest;
 import com.agendapp.api.controller.response.UserAuthResponse;
 import com.agendapp.api.domain.User;
 import com.agendapp.api.service.user.UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,9 +43,37 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @ResponseStatus(HttpStatus.OK)
-    public UserAuthResponse login(@RequestBody @Validated UserLoginRequest userLoginRequest){
+    public ResponseEntity<UserAuthResponse> login(@RequestBody UserLoginRequest request,
+                                                  HttpServletResponse response) {
         log.info("User login request received");
-        return userService.login(userLoginRequest);
+        UserAuthResponse authResponse = userService.login(request);
+
+        ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
+                .httpOnly(true)
+                .secure(false) // change to true in production with HTTPS
+                .path("/")
+                .maxAge(24 * 60 * 60)
+                .sameSite("Strict")  // to avoid CSRF
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
+        return ResponseEntity.ok(authResponse);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+        log.info("User logged out successfully");
+        return ResponseEntity.noContent().build();
+    }
+
 }
