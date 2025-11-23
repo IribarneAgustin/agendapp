@@ -10,4 +10,6 @@ public interface NotificationService {
     void sendBookingConfirmed(BookingEntity bookingEntity);
 
     void sendSubscriptionExpired(List<UserEntity> userEntityList);
+
+    void sendBookingCancelled(BookingEntity bookingEntity);
 }

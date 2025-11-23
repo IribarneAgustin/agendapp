@@ -12,10 +12,11 @@ import java.util.UUID;
 
 public interface BookingService {
     @Transactional(rollbackFor = Exception.class)
-    BookingResponse create(BookingRequest bookingRequest) throws Exception;
+    BookingResponse create(BookingRequest bookingRequest, Boolean isAdmin) throws Exception;
 
     Page<BookingGridResponse> findBookingGrid(UUID userId, BookingSearchRequest bookingSearchRequest);
 
+    @Transactional(rollbackFor = Exception.class)
     void cancelBooking(UUID bookingId);
 
     @Transactional(rollbackFor = Exception.class)

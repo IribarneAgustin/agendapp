@@ -39,7 +39,6 @@ class OfferingManager {
         const closeModalBtn = document.getElementById('closeModalBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const offeringForm = document.getElementById('offeringForm');
-        const configureBtn = document.getElementById("configureSlotsBtn");
         const offeringModal = document.getElementById('offeringModal');
 
         if (addOfferingBtn) {
@@ -64,9 +63,11 @@ class OfferingManager {
             });
         }
 
-        // Configure button logic
-        if (configureBtn) {
-            configureBtn.addEventListener("click", () => {
+        // Configure button logic inside the MODAL (using the ID 'configureSlotsBtn').
+        // This button handles redirection AFTER a service is saved or while editing inside the modal.
+        const configureModalBtn = document.getElementById("configureSlotsBtn");
+        if (configureModalBtn) {
+            configureModalBtn.addEventListener("click", () => {
                 const serviceId = this.currentOfferingId;
 
                 if (!serviceId) {
@@ -74,11 +75,10 @@ class OfferingManager {
                     return;
                 }
 
+                // Action: Redirect to the time slots page from the modal
                 window.location.href = `./time-slots.html?offeringId=${serviceId}`;
             });
         }
-
-        // Price removal: no need to track capacity/advance inputs here, but they exist
     }
 
 
@@ -151,11 +151,11 @@ class OfferingManager {
         card.className = 'offering-card bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-600 transition-all duration-200 cursor-pointer';
 
         card.addEventListener('click', (e) => {
-            // Prevent opening the edit modal if the delete button was clicked
-            if (e.target.closest('.delete-btn')) {
+            // Prevent opening the edit modal if the delete button or the new configure button was clicked
+            if (e.target.closest('.delete-btn') || e.target.closest('.configure-btn')) {
                 return;
             }
-            offeringManager.editOffering(offering.id);
+            offeringManager.editOffering(offering.id); // Default: open the modal/edit form
         });
 
 
@@ -163,7 +163,6 @@ class OfferingManager {
             <div class="flex justify-between items-start mb-4">
                 <div class="flex items-center flex-1">
                     <div class="p-2 bg-indigo-100 rounded-lg">
-                        <!-- Icon representing a service/offering -->
                         <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2-3 .895-3 2 1.343 2 3 2m0-8h.01M12 21a9 9 0 100-18 9 9 0 000 18z"></path>
                         </svg>
@@ -173,7 +172,6 @@ class OfferingManager {
                     </div>
                 </div>
                 <div class="flex space-x-2">
-                    <!-- DELETE BUTTON (uses SweetAlert for confirmation) -->
                     <button onclick="offeringManager.deleteOffering('${offering.id}')" class="delete-btn p-2 text-gray-400 hover:text-red-600 transition-colors duration-200" title="Eliminar Servicio">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -196,7 +194,25 @@ class OfferingManager {
                     </p>
                 </div>
             </div>
+            <div class="flex pt-2">
+                <button type="button" class="configure-btn flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-md">
+                    Configurar Horarios
+                </button>
+            </div>
         `;
+
+        // Attach the specific click listener to the new button element
+        const configureBtn = card.querySelector('.configure-btn');
+        if (configureBtn) {
+            configureBtn.addEventListener('click', (e) => {
+                // Stop propagation so the card's general click event (editOffering) isn't triggered
+                e.stopPropagation();
+
+                // Action: Redirect to the time slots page
+                window.location.href = `./time-slots.html?offeringId=${offering.id}`;
+            });
+        }
+
         return card;
     }
 

@@ -2,93 +2,166 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Panel de Reservas de Servicios</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Define Inter font and apply to body */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f9fafb;
+            background-color: #f3f4f6; /* Gray-100 for better contrast with white cards */
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Custom scrollbar for better look in table container */
+        /* --- UTILITIES --- */
         .scroll-container::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
-        .scroll-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .scroll-container::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-        .scroll-container::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+        .scroll-container::-webkit-scrollbar-track { background: transparent; }
+        .scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
-        /* Hide default date input icon */
         input[type="date"]::-webkit-calendar-picker-indicator {
-            opacity: 0;
-            position: absolute;
-            width: 100%;
-            height: 100%;
+            background: transparent;
+            bottom: 0;
+            color: transparent;
             cursor: pointer;
+            height: auto;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: auto;
         }
 
-        /* Style for selected row */
-        .row-item.selected {
-            background-color: #e0f2fe; /* blue-100 */
-            border-left: 4px solid #3b82f6; /* blue-500 */
-        }
-
-        /* Ensure vertical middle alignment for table cells */
-        .align-middle {
-            vertical-align: middle;
-        }
-
-        /* CSS para la transición de colapso */
+        /* --- ANIMATIONS --- */
         .filter-content-wrapper {
-            max-height: 1000px; /* Suficientemente grande para el contenido */
+            max-height: 1000px;
             overflow: hidden;
-            transition: max-height 0.4s ease-in-out, padding 0.4s ease-in-out;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
         }
-
         .filter-content-wrapper.collapsed {
             max-height: 0;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
+            margin-top: 0;
+            opacity: 0;
+        }
+        .rotate-180 { transform: rotate(180deg); }
+
+        /* --- MOBILE TABLE CARD TRANSFORM --- */
+        /* Only apply these styles on screens smaller than 640px */
+        @media (max-width: 640px) {
+            /* Hide the table header */
+            thead { display: none; }
+
+            /* Remove default table layout properties */
+            table, tbody, th, td, tr {
+                display: block;
+                width: 100%;
+            }
+
+            /* Style each row as a card */
+            tbody tr {
+                background-color: white;
+                margin-bottom: 1rem;
+                border-radius: 0.75rem;
+                box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+                border: 1px solid #e5e7eb; /* Gray-200 */
+                padding: 1rem;
+                position: relative;
+            }
+
+            /* Selected state for mobile card */
+            tbody tr.row-item.selected {
+                background-color: #eff6ff;
+                border: 1px solid #3b82f6;
+                border-left: 1px solid #3b82f6; /* Override desktop style */
+                ring: 1px solid #3b82f6;
+            }
+
+            /* Style cells to look like key-value pairs */
+            tbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                text-align: right;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f3f4f6;
+            }
+
+            tbody td:last-child { border-bottom: none; }
+
+            /* Add labels using CSS content for common columns */
+            /* Note: Adjust the content strings if your column order changes */
+            td:nth-of-type(2)::before { content: "Cliente"; font-weight: 600; color: #6b7280; font-size: 0.875rem; text-align: left; }
+            td:nth-of-type(3)::before { content: "Fecha"; font-weight: 600; color: #6b7280; font-size: 0.875rem; text-align: left; }
+            td:nth-of-type(4)::before { content: "Cantidad"; font-weight: 600; color: #6b7280; font-size: 0.875rem; text-align: left; }
+            td:nth-of-type(5)::before { content: "Importe"; font-weight: 600; color: #6b7280; font-size: 0.875rem; text-align: left; }
+            td:nth-of-type(6)::before { content: "Estado"; font-weight: 600; color: #6b7280; font-size: 0.875rem; text-align: left; }
+
+            /* Special styling for the first cell (Service Info) to act as Card Header */
+            td:nth-of-type(1) {
+                flex-direction: row;
+                justify-content: flex-start;
+                border-bottom: 2px solid #f3f4f6;
+                padding-bottom: 0.75rem;
+                margin-bottom: 0.5rem;
+            }
+
+            /* Remove padding from the table container on mobile to let cards breathe */
+            .mobile-table-container {
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
         }
 
-        .rotate-180 {
-            transform: rotate(180deg);
+        /* Desktop Table Styles */
+        @media (min-width: 641px) {
+            .row-item.selected {
+                background-color: #eff6ff;
+                border-left: 4px solid #3b82f6;
+            }
+            .row-item {
+                border-left: 4px solid transparent;
+                cursor: pointer;
+                transition: background-color 0.15s;
+            }
+            .row-item:hover:not(.selected) {
+                background-color: #f9fafb;
+            }
         }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen flex flex-col text-gray-800">
 
 <!-- Navigation Header -->
-<nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-20">
+<nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 safe-area-top">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
+            <!-- Left: Back Button -->
             <div class="flex items-center">
-                <a href="dashboard.html" class="flex items-center text-indigo-600 hover:text-indigo-800 transition duration-150">
-                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="dashboard.html" class="flex items-center text-indigo-600 hover:text-indigo-800 p-2 -ml-2 rounded-md active:bg-indigo-50 transition-colors">
+                    <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
                     <span class="font-medium text-sm">Volver</span>
                 </a>
             </div>
+
+            <!-- Center: Logo (Hidden on very small screens if needed, or simplified) -->
             <div class="flex items-center">
                 <svg class="h-8 w-8 text-indigo-600 mr-3" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M19 4h-3a2 2 0 00-2-2H8a2 2 0 00-2 2H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1 2v12H6V6h12zM9 10h6v2H9v-2zm0 4h6v2H9v-2z"/>
                 </svg>
                 <h1 class="text-xl font-bold text-gray-900">AgendApp</h1>
             </div>
-            <div class="flex items-center space-x-4">
-                <button id="logoutBtn" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition duration-150" disabled>
+
+            <!-- Right: Logout -->
+            <div class="flex items-center">
+                <button id="logoutBtn" class="text-sm text-indigo-600 font-medium p-2 -mr-2 rounded-md active:bg-indigo-50" disabled>
                     Cerrar Sesión
                 </button>
             </div>
@@ -96,183 +169,178 @@
     </div>
 </nav>
 
-<div class="max-w-7xl mx-auto p-4 sm:p-6">
-    <!-- Encabezado -->
-    <header class="mb-8 mt-4">
-        <h1 class="text-3xl font-bold text-gray-900 border-b pb-2">Panel de Reservas</h1>
-        <p class="text-gray-500 mt-1">Vea y administre todas sus reservas.</p>
+<main class="max-w-7xl mx-auto p-3 sm:p-6 flex-grow w-full">
+
+    <!-- Title Section -->
+    <header class="mb-6 mt-2 sm:mt-4 px-1">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Reservas</h1>
+        <p class="text-sm text-gray-500 mt-1">Gestiona tus reservas.</p>
     </header>
 
-    <!-- Filtros y Acciones (Contenedor Principal) -->
-    <div class="bg-white p-4 rounded-xl shadow-lg mb-6 border border-gray-100">
+    <!-- Action Bar & Filters -->
+    <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-gray-200 mb-6">
 
-        <!-- Botón de Título (Controlador del desplegable) -->
-        <button id="filterToggleBtn" class="w-full flex justify-between items-center text-xl font-semibold text-gray-800 focus:outline-none p-1 -m-1 transition duration-150 hover:text-indigo-600">
-                <span class="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 text-indigo-500"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                    Aplicar Filtros/Cancelar Reserva
-                </span>
-            <!-- Icono de flecha (inicia hacia abajo) -->
-            <svg id="toggleIcon" class="h-5 w-5 text-gray-500 transform transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+        <!-- Mobile-First Action Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 mb-6 border-b border-gray-100 pb-6">
+            <a href="admin-booking.html"
+               class="flex justify-center items-center w-full sm:w-auto px-5 py-3 sm:py-2.5
+                      bg-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm
+                      active:bg-indigo-700 hover:bg-indigo-700 transition-all">
+                <svg class="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Nueva Reserva
+            </a>
+
+            <button
+                    id="cancelBookingBtn"
+                    class="flex justify-center items-center w-full sm:w-auto px-5 py-3 sm:py-2.5
+                           bg-white text-red-600 border border-red-200 text-sm font-medium rounded-lg shadow-sm
+                           active:bg-red-50 hover:bg-red-50 hover:border-red-300
+                           disabled:bg-gray-50 disabled:text-gray-300 disabled:border-gray-200 disabled:shadow-none transition-all"
+                    disabled
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="w-4 h-4 mr-2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="m15 9-6 6"/>
+                    <path d="m9 9 6 6"/>
+                </svg>
+                Cancelar Selección
+            </button>
+        </div>
+
+        <!-- Filter Toggle -->
+        <button id="filterToggleBtn" class="w-full flex justify-between items-center group focus:outline-none py-1">
+            <span class="flex items-center text-base sm:text-lg font-semibold text-gray-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Filtros
+            </span>
+            <div class="bg-gray-50 p-1.5 rounded-full">
+                <svg id="toggleIcon" class="h-5 w-5 text-gray-400 transform transition-transform duration-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
         </button>
 
-        <!-- Contenido Colapsable de los Filtros (Inicia cerrado con 'collapsed') -->
-        <div id="filterContent" class="filter-content-wrapper mt-4 collapsed">
+        <!-- Collapsible Filters -->
+        <div id="filterContent" class="filter-content-wrapper collapsed">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
 
-            <!-- Grid flexible para adaptarse a 4 o 2 columnas -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-                <!-- Filtro 1: Nombre de Cliente -->
+                <!-- Client Filter -->
                 <div>
-                    <label for="clientNameInput" class="text-sm font-medium text-gray-700 block mb-1">Nombre del Cliente</label>
-                    <div class="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 transition duration-150">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-400 ml-3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input
-                                id="clientNameInput"
-                                type="text"
-                                placeholder="Ej: Alicia Pérez"
-                                class="w-full p-2.5 rounded-r-lg focus:outline-none placeholder-gray-400 text-sm"
-                        />
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Cliente</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3" stroke-linecap="round" stroke-width="2"/></svg>
+                        </div>
+                        <input id="clientNameInput" type="text" placeholder="Buscar..." class="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm" />
                     </div>
                 </div>
 
-                <!-- Filtro 2: Filtro por Mes -->
-                <div class="relative">
-                    <label for="monthFilter" class="text-sm font-medium text-gray-700 block mb-1">Filtrar por Mes</label>
+                <!-- Month Filter -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Mes</label>
                     <div class="relative">
-                        <select
-                                id="monthFilter"
-                                class="appearance-none w-full p-2.5 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-gray-700 pr-10"
-                        >
-                            <!-- Opciones generadas por JS -->
+                        <select id="monthFilter" class="appearance-none w-full pl-3 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                            <!-- JS Generated -->
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></div>
                     </div>
                 </div>
 
-                <!-- Filtro 3: Filtro por Servicio (Oferta) -->
-                <div class="relative">
-                    <label for="offeringFilter" class="text-sm font-medium text-gray-700 block mb-1">Filtrar por Servicio</label>
+                <!-- Service Filter -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Servicio</label>
                     <div class="relative">
-                        <select
-                                id="offeringFilter"
-                                class="appearance-none w-full p-2.5 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-gray-700 pr-10"
-                        >
-                            <!-- Opciones de Servicio generadas por JS -->
+                        <select id="offeringFilter" class="appearance-none w-full pl-3 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                            <!-- JS Generated -->
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></div>
                     </div>
                 </div>
 
-                <!-- Filtro 4: Tipo de Reserva (Todas vs Próximas) - Filtro Cliente -->
-                <div class="relative">
-                    <label for="bookingTypeFilter" class="text-sm font-medium text-gray-700 block mb-1">Visualizar</label>
+                <!-- Status Filter -->
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Visualizar</label>
                     <div class="relative">
-                        <select
-                                id="bookingTypeFilter"
-                                class="appearance-none w-full p-2.5 border border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-gray-700 pr-10"
-                        >
-                            <option value="ALL">Todas (Historial)</option>
-                            <option value="INCOMING" selected>Solo Futuras</option>
+                        <select id="bookingTypeFilter" class="appearance-none w-full pl-3 pr-8 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm">
+                            <option value="ALL">Todas</option>
+                            <option value="INCOMING" selected>Próximas</option>
                         </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></div>
+                    </div>
+                </div>
+
+                <!-- Date Filter -->
+                <div class="relative">
+                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">Fecha Exacta</label>
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
                         </div>
+                        <input id="startDateInput" type="date" class="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm text-gray-700 min-h-[42px]" />
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Segunda Fila de Filtros (Fecha se mantiene como independiente) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-                <!-- Filtro: Fecha de inicio (Día específico) -->
-                <div class="relative lg:col-span-1">
-                    <label for="startDateInput" class="text-sm font-medium text-gray-700 block mb-1">Fecha de inicio</label>
-                    <div class="flex items-center border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 transition duration-150">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 text-gray-400 ml-3"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-                        <input
-                                id="startDateInput"
-                                type="date"
-                                class="w-full p-2.5 rounded-r-lg focus:outline-none text-sm text-gray-700"
-                        />
-                    </div>
-                </div>
+    <!-- Status Message -->
+    <div id="statusMessage" class="hidden p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg border border-red-200" role="alert"></div>
+
+    <!-- Data Display (Table on Desktop, Cards on Mobile) -->
+    <!-- The class mobile-table-container is used to strip styles on mobile via CSS -->
+    <div class="mobile-table-container bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Servicio</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Cliente</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Fecha y hora</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Cantidad</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Importe Pagado</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                </tr>
+                </thead>
+                <tbody id="bookingsTableBody" class="bg-white divide-y divide-gray-100">
+                <!-- Javascript populates this.
+                     On Mobile: The CSS will transform these TRs into Cards and TDs into flex rows.
+                -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="px-4 sm:px-6 py-4 bg-white sm:bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 mt-auto rounded-b-xl">
+            <div class="text-sm text-gray-500 text-center sm:text-left w-full sm:w-auto">
+                Página <span id="currentPageDisplay" class="font-semibold text-gray-900">0</span> de <span id="totalPagesDisplay" class="font-semibold text-gray-900">0</span>
+                <!-- Added totalItemsDisplay back to fix JS error -->
+                <span class="hidden sm:inline mx-1">•</span>
+                <span class="block sm:inline mt-1 sm:mt-0 text-xs sm:text-sm text-gray-400 sm:text-gray-500">
+                    (<span id="totalItemsDisplay" class="font-medium text-gray-700">0</span> reservas)
+                </span>
             </div>
-
-            <!-- Botón de Acción (Full width en todos los tamaños) -->
-            <div class="mt-4">
+            <div class="flex space-x-3 w-full sm:w-auto">
                 <button
-                        id="cancelBookingBtn"
-                        class="w-full bg-red-500 text-white font-medium py-2.5 px-4 rounded-lg shadow-md transition duration-150
-                            hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed flex items-center justify-center"
+                        id="prevPageBtn"
+                        class="flex-1 sm:flex-none justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         disabled
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
-                    Cancelar Reserva Seleccionada
+                    Anterior
+                </button>
+                <button
+                        id="nextPageBtn"
+                        class="flex-1 sm:flex-none justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        disabled
+                >
+                    Siguiente
                 </button>
             </div>
         </div>
     </div>
-
-    <!-- Mensaje de error/info (para feedback) -->
-    <div id="statusMessage" class="hidden p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert"></div>
-
-    <!-- Tabla de Reservas -->
-    <div class="bg-white rounded-xl shadow-lg border border-gray-100 scroll-container overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50 sticky top-0 z-10">
-            <tr>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Servicio</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cliente</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Fecha y hora</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Importe Pagado</th>
-                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
-            </tr>
-            </thead>
-            <tbody id="bookingsTableBody" class="bg-white divide-y divide-gray-100">
-            <!-- Filas de la tabla insertadas por JavaScript -->
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Controles de Paginación -->
-    <div class="mt-6 flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-lg border border-gray-100">
-        <div class="mb-2 sm:mb-0 text-sm text-gray-700">
-            Mostrando página <span id="currentPageDisplay" class="font-semibold text-indigo-600">0</span> de <span id="totalPagesDisplay" class="font-semibold text-indigo-600">0</span> (<span id="totalItemsDisplay" class="font-semibold text-indigo-600">0</span> reservas totales)
-        </div>
-        <div class="flex space-x-2">
-            <button
-                    id="prevPageBtn"
-                    class="px-3 py-1.5 border border-indigo-300 bg-white text-indigo-600 rounded-lg text-sm font-medium transition duration-150 shadow-sm
-                           hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                    disabled
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-1"><path d="m15 18-6-6 6-6"/></svg>
-                Anterior
-            </button>
-            <button
-                    id="nextPageBtn"
-                    class="px-3 py-1.5 border border-indigo-300 bg-white text-indigo-600 rounded-lg text-sm font-medium transition duration-150 shadow-sm
-                           hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                    disabled
-            >
-                Siguiente
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 ml-1"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
-        </div>
-    </div>
-</div>
+</main>
 
 <script src="./js/bookingDashboard.js"></script>
 <script src="../commons/config.js"></script>

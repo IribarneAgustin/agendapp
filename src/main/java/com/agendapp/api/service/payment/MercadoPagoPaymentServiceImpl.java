@@ -63,7 +63,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
 
     @Override
     public void processPaymentWebhook(Payment paymentDetails) {
-        String userId = paymentDetails.getExternalReference();
+       /* String userId = paymentDetails.getExternalReference();
         if (userId == null || userId.isEmpty()) {
             log.warn("Webhook received without external_reference");
             return;
@@ -93,7 +93,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         userEntity.setSubscriptionEntity(subscriptionEntity);
 
         userRepository.save(userEntity);
-        log.info("Estado de suscripción actualizado para el usuario: {}", userId);
+        log.info("Estado de suscripción actualizado para el usuario: {}", userId);*/
     }
 
     @Override

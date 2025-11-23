@@ -50,8 +50,9 @@ public class NotificationServiceImpl implements NotificationService {
         clientArgs.put("serviceName", serviceName);
         clientArgs.put("date", dateFormatted);
         clientArgs.put("time", timeFormatted);
+        clientArgs.put("quantity", bookingEntity.getQuantity().toString());
         clientArgs.put("phoneNumber", userEntity.getPhone() != null ? userEntity.getPhone() : "");
-        clientArgs.put("cancelLink", baseURL + "/booking/" + bookingEntity.getId() + "/cancel/");
+        clientArgs.put("cancelLink", baseURL + "/booking/" + bookingEntity.getId() + "/cancel");
 
         notificationStrategy.send(bookingEntity.getEmail(), NotificationMotive.BOOKING_CONFIRMED, clientArgs);
 
@@ -62,6 +63,7 @@ public class NotificationServiceImpl implements NotificationService {
         adminArgs.put("serviceName", serviceName);
         adminArgs.put("date", dateFormatted);
         adminArgs.put("time", timeFormatted);
+        adminArgs.put("quantity", bookingEntity.getQuantity().toString());
 
         notificationStrategy.send(userEntity.getEmail(), NotificationMotive.ADMIN_BOOKING_CONFIRMED, adminArgs);
         log.info("Notifications sent successfully");
@@ -85,5 +87,42 @@ public class NotificationServiceImpl implements NotificationService {
                 log.warn("Subscription Expired Notification failed for the user {}", user.getEmail());
             }
         });
+    }
+
+    @Override
+    public void sendBookingCancelled(BookingEntity bookingEntity) {
+        log.info("Sending email notifications for booking cancelled");
+        NotificationStrategy strategy = notificationStrategyResolver.resolve(NotificationType.EMAIL);
+        UserEntity user = bookingEntity.getSlotTimeEntity().getOfferingEntity().getUserEntity();
+        SlotTimeEntity slotTimeEntity = bookingEntity.getSlotTimeEntity();
+
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+        String serviceName = slotTimeEntity.getOfferingEntity().getName();
+        String dateFormatted = slotTimeEntity.getStartDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        String timeFormatted = slotTimeEntity.getStartDateTime().toLocalTime().format(timeFormatter)
+                + " - " +
+                slotTimeEntity.getEndDateTime().toLocalTime().format(timeFormatter);
+
+
+        Map<String, String> clientArgs = new HashMap<>();
+        clientArgs.put("clientName", bookingEntity.getName());
+        clientArgs.put("professionalName", user.getName());
+        clientArgs.put("serviceName", serviceName);
+        clientArgs.put("date", dateFormatted);
+        clientArgs.put("time", timeFormatted);
+        clientArgs.put("phoneNumber", user.getPhone() != null ? user.getPhone() : "");
+
+        strategy.send(bookingEntity.getEmail(), NotificationMotive.BOOKING_CANCELLED, clientArgs);
+
+        Map<String, String> adminArgs = new HashMap<>();
+        adminArgs.put("clientName", bookingEntity.getName());
+        adminArgs.put("clientEmail", bookingEntity.getEmail());
+        adminArgs.put("clientPhoneNumber", bookingEntity.getPhoneNumber());
+        adminArgs.put("serviceName", serviceName);
+        adminArgs.put("date", dateFormatted);
+        adminArgs.put("time", timeFormatted);
+
+        strategy.send(user.getEmail(), NotificationMotive.ADMIN_BOOKING_CANCELLED, adminArgs);
+        log.info("Notifications sent successfully");
     }
 }

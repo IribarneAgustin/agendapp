@@ -35,7 +35,16 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> create(@Valid @RequestBody BookingRequest bookingRequest) throws Exception {
-        BookingResponse response = bookingService.create(bookingRequest);
+        BookingResponse response = bookingService.create(bookingRequest, false);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+
+    }
+
+    @PostMapping("/admin")
+    public ResponseEntity<BookingResponse> createAsAdmin(@Valid @RequestBody BookingRequest bookingRequest) throws Exception {
+        BookingResponse response = bookingService.create(bookingRequest, true);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
@@ -56,6 +65,14 @@ public class BookingController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancelBooking(@PathVariable UUID bookingId) {
         log.info("Request to cancel the following booking received: {}", bookingId);
+        bookingService.cancelBooking(bookingId);
+        log.info("Booking {} cancelled successfully", bookingId);
+    }
+
+    @GetMapping("/{bookingId}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelBookingFromLink(@PathVariable UUID bookingId) {
+        log.info("Request to cancel the booking from the link received. BookingId: {}", bookingId);
         bookingService.cancelBooking(bookingId);
         log.info("Booking {} cancelled successfully", bookingId);
     }

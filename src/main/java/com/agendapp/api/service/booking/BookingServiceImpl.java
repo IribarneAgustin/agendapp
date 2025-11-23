@@ -48,7 +48,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingResponse create(BookingRequest bookingRequest) throws Exception {
+    public BookingResponse create(BookingRequest bookingRequest, Boolean isAdmin) throws Exception {
         SlotTimeEntity slotTimeEntity = slotTimeRepository.findById(bookingRequest.getSlotTimeId().toString())
                 .orElseThrow(() -> new IllegalArgumentException("The SlotTimeId: " + bookingRequest.getSlotTimeId() + " does not exists"));
 
@@ -66,7 +66,7 @@ public class BookingServiceImpl implements BookingService {
                 .quantity(bookingRequest.getQuantity())
                 .build();
 
-        if (paymentRequired(slotTimeEntity)) {
+        if (paymentRequired(slotTimeEntity) && !isAdmin) {
             bookingEntity.setStatus(BookingStatus.PENDING);
             BookingEntity bookingEntitySaved = bookingRepository.saveAndFlush(bookingEntity);
             String checkoutURL = paymentService.createBookingCheckoutURL(bookingEntitySaved, bookingRequest.getQuantity());
@@ -128,6 +128,7 @@ public class BookingServiceImpl implements BookingService {
                             .serviceName(b.getSlotTimeEntity().getOfferingEntity().getName())
                             .paid(amountPaid)
                             .status(b.getStatus())
+                            .quantity(b.getQuantity())
                             .build();
                 }
         );
@@ -140,19 +141,27 @@ public class BookingServiceImpl implements BookingService {
         );
         SlotTimeEntity slotTimeEntity = bookingEntityToCancel.getSlotTimeEntity();
 
-        if (slotTimeEntity == null || !slotTimeEntity.getEnabled() || slotTimeEntity.getEndDateTime().isBefore(LocalDateTime.now()) || bookingEntityToCancel.getStatus().equals(BookingStatus.CANCELLED)) {
+        if (!isValidStateToCancel(slotTimeEntity, bookingEntityToCancel)) {
            throw new IllegalArgumentException("The booking to cancel is already cancelled or is related with invalid slot");
         }
 
         slotTimeEntity.setCapacityAvailable(slotTimeEntity.getCapacityAvailable() + bookingEntityToCancel.getQuantity());
 
-        bookingEntityToCancel.setEnabled(false);
         bookingEntityToCancel.setStatus(BookingStatus.CANCELLED);
 
-        slotTimeRepository.save(slotTimeEntity);
-        bookingRepository.save(bookingEntityToCancel);
+        slotTimeRepository.saveAndFlush(slotTimeEntity);
+        bookingRepository.saveAndFlush(bookingEntityToCancel);
 
-        //TODO send notifications
+        try {
+            notificationService.sendBookingCancelled(bookingEntityToCancel);
+        } catch (Exception e) {
+            log.warn("Unexpected error sending booking cancelled notifications.");
+        }
+    }
+
+    private static boolean isValidStateToCancel(SlotTimeEntity slotTimeEntity, BookingEntity bookingEntityToCancel) {
+        return slotTimeEntity != null && slotTimeEntity.getEnabled() && slotTimeEntity.getEndDateTime().isAfter(LocalDateTime.now())
+                && !bookingEntityToCancel.getStatus().equals(BookingStatus.CANCELLED);
     }
 
     @Override

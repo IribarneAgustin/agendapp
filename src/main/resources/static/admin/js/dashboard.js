@@ -138,10 +138,17 @@ class DashboardManager {
         window.location.href = BASE_URL;
     }
 
-    logout() {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
+    async logout() {
+        await fetch(BASE_URL + "/auth/logout", {
+            method: "POST",
+            credentials: "include"
+        });
+
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userData");
+
         window.location.href = BASE_URL;
+
     }
 
     showToast(message, type = 'info') {
@@ -215,7 +222,7 @@ class DashboardManager {
         if (this.user && this.user.id) {
             const bookingDashboardLink = document.getElementById('bookingDashboardLink');
             if (bookingDashboardLink) {
-                bookingDashboardLink.href = `booking-dashboard.html?userId=${this.user.id}`;
+                bookingDashboardLink.href = `booking-dashboard.html`;
             }
         }
     }

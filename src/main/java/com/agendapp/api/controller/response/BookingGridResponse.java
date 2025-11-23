@@ -22,4 +22,5 @@ public class BookingGridResponse {
     private BookingStatus status; //CONFIRMED, CANCELLED
     private Double paid;
     private String serviceName;
+    private Integer quantity;
 }

@@ -1,4 +1,4 @@
 (function() {
-    const BASE_URL = "https://b0534187a209.ngrok-free.app";
+    const BASE_URL = "http://localhost:8080";
     window.BASE_URL = BASE_URL;
 })();

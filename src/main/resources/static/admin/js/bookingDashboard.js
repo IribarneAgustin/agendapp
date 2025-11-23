@@ -20,7 +20,6 @@ class BookingDashboardManager {
     PAGE_SIZE = 10;
     API_BOOKING_URL;
     API_OFFERING_URL;
-    API_CANCEL_URL;
     STATUS_COLORS_ES = {
         CONFIRMED: 'bg-green-100 text-green-700',
         CANCELLED: 'bg-red-100 text-red-700',
@@ -49,7 +48,6 @@ class BookingDashboardManager {
         // Initialize constants dependent on window context
         this.API_BOOKING_URL = `${BASE_URL}/booking/user/`;
         this.API_OFFERING_URL = `${BASE_URL}/users/`;
-        this.API_CANCEL_URL = `${BASE_URL}/booking/`;
     }
 
     /**
@@ -70,7 +68,8 @@ class BookingDashboardManager {
      */
     loadAuthTokenAndCheck() {
         this.authToken = localStorage.getItem('authToken');
-        this.userId = this.getUrlParameter('userId');
+        const userDataStorage = JSON.parse(localStorage.getItem('userData'));
+        this.userId = userDataStorage.id;
 
         if (!this.authToken || !this.userId) {
             const message = !this.userId ? "ERROR: Falta el ID de usuario en la URL." : "ERROR: Falta el token de autorización en localStorage.";
@@ -214,10 +213,9 @@ class BookingDashboardManager {
         if (!this.authToken) return false;
 
         try {
-            const response = await fetch(`${this.API_CANCEL_URL}${bookingId}/cancel`, {
+            const response = await fetch(`${BASE_URL}/booking/${bookingId}/cancel`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${this.authToken}`,
                     'Content-Type': 'application/json'
                 },
             });
@@ -307,7 +305,12 @@ class BookingDashboardManager {
     /** Renders the booking status badge (CONFIRMED/CANCELLED). */
     renderStatusBadge(status) {
         const colorClass = this.STATUS_COLORS_ES[status] || 'bg-gray-100 text-gray-700';
-        const text = status || 'PENDIENTE';
+        const statusMap = {
+          CONFIRMED: 'Confirmada',
+          CANCELLED: 'Cancelada'
+        };
+        const text = statusMap[status] ?? '';
+
         return `<span class="px-3 py-1 text-xs font-semibold rounded-full ${colorClass}">${text.toUpperCase()}</span>`;
     }
 
@@ -325,6 +328,7 @@ class BookingDashboardManager {
             const paid = (typeof booking.paid === 'number' && booking.paid !== null)
                                ? "$" + booking.paid.toFixed(2) : 'N/A';
             const bookingStatus = booking.status;
+            const quantity = booking.quantity;
 
             // --- 2. Date/Time Safety Check and Time Range Calculation ---
             let formattedDate = 'N/A';
@@ -370,7 +374,6 @@ class BookingDashboardManager {
             row.innerHTML = `
                 <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900 border-b border-gray-200">
                     <div class="flex items-center space-x-2">
-                        <!-- REMOVED: Time status badge (Próxima, Terminada) -->
                         <span>${serviceName}</span>
                     </div>
                 </td>
@@ -381,6 +384,11 @@ class BookingDashboardManager {
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 border-b border-gray-200">
                     ${formattedDate}
                     ${isDateValid ? `<br><span class="text-xs font-semibold text-indigo-600">${formattedTimeRange}</span>` : ''}
+                </td>
+                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 border-b border-gray-200">
+                    <div class="flex items-center space-x-2">
+                        <span>${quantity}</span>
+                    </div>
                 </td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 align-middle border-b border-gray-200">
                     ${paid}
