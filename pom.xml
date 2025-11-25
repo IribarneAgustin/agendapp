@@ -8,11 +8,11 @@
 		<version>3.4.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.agendapp</groupId>
+	<groupId>com.reservateya</groupId>
 	<artifactId>api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>api</name>
-	<description>Agendapp</description>
+	<description>ReservateYa</description>
 	<url/>
 	<licenses>
 		<license/>

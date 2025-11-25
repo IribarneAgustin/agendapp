@@ -93,9 +93,10 @@
 <body class="antialiased">
 
 <!-- Navigation Header -->
-<nav class="bg-white shadow-sm border-b border-gray-200">
+<nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30 safe-area-top">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
+            <!-- Left: Back Button -->
             <div class="flex items-center">
                 <a href="booking-dashboard.html" class="flex items-center text-indigo-600 hover:text-indigo-800 p-2 -ml-2 rounded-md active:bg-indigo-50 transition-colors">
                     <svg class="h-5 w-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,14 +105,18 @@
                     <span class="font-medium text-sm">Volver</span>
                 </a>
             </div>
+
+            <!-- Center: Logo (Hidden on very small screens if needed, or simplified) -->
             <div class="flex items-center">
                 <svg class="h-8 w-8 text-indigo-600 mr-3" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M19 4h-3a2 2 0 00-2-2H8a2 2 0 00-2 2H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1 2v12H6V6h12zM9 10h6v2H9v-2zm0 4h6v2H9v-2z"/>
                 </svg>
-                <h1 class="text-xl font-bold text-gray-900">AgendApp</h1>
+                <h1 class="text-xl font-bold text-gray-900">ReservateYa</h1>
             </div>
-            <div class="flex items-center space-x-4">
-                <button id="logoutBtn" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+
+            <!-- Right: Logout -->
+            <div class="flex items-center">
+                <button id="logoutBtn" class="text-sm text-indigo-600 font-medium p-2 -mr-2 rounded-md active:bg-indigo-50" disabled>
                     Cerrar Sesión
                 </button>
             </div>
