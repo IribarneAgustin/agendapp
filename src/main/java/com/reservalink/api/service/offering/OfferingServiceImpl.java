@@ -2,6 +2,7 @@ package com.reservalink.api.service.offering;
 
 import com.reservalink.api.controller.request.OfferingRequest;
 import com.reservalink.api.controller.response.OfferingResponse;
+import com.reservalink.api.repository.UserRepository;
 import com.reservalink.api.repository.entity.OfferingEntity;
 import com.reservalink.api.repository.entity.SlotTimeEntity;
 import com.reservalink.api.exception.BusinessErrorCodes;
@@ -9,6 +10,7 @@ import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.repository.BookingRepository;
 import com.reservalink.api.repository.OfferingRepository;
 import com.reservalink.api.repository.SlotTimeRepository;
+import com.reservalink.api.repository.entity.UserEntity;
 import com.reservalink.api.service.booking.SlotTimeService;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -29,18 +31,23 @@ public class OfferingServiceImpl implements OfferingService {
     private final ModelMapper modelMapper;
     private final SlotTimeRepository slotTimeRepository;
     private final BookingRepository bookingRepository;
+    private final UserRepository userRepository;
 
-    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeService slotTimeService, SlotTimeRepository slotTimeRepository, BookingRepository bookingRepository) {
+    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeService slotTimeService, SlotTimeRepository slotTimeRepository, BookingRepository bookingRepository, UserRepository userRepository) {
         this.offeringRepository = offeringRepository;
         this.modelMapper = modelMapper;
         this.slotTimeRepository = slotTimeRepository;
         this.bookingRepository = bookingRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     public OfferingResponse create(OfferingRequest offeringRequest) {
         OfferingEntity offeringEntity = modelMapper.map(offeringRequest, OfferingEntity.class);
+        UserEntity user = userRepository.findById(offeringRequest.getUserId().toString())
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + offeringRequest.getUserId()));
         offeringEntity.setEnabled(true);
+        offeringEntity.setUserEntity(user);
         return modelMapper.map(offeringRepository.save(offeringEntity), OfferingResponse.class);
     }
 

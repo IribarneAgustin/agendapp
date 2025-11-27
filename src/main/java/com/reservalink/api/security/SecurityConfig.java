@@ -1,6 +1,7 @@
 package com.reservalink.api.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -21,7 +22,6 @@ public class SecurityConfig {
             "/booking",
             "/booking/*/cancel",
             "/reservas/**",
-            "/users/*/offerings",
             "/slot-time/offering/*",
 
             "/",
@@ -38,15 +38,22 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(HttpMethod.GET, "/users/*/offerings").permitAll();
+
                     publicEndpointList.forEach(endpoint ->
                             auth.requestMatchers(endpoint).permitAll()
                     );
+
                     auth.anyRequest().authenticated();
                 })
-                .sessionManagement(sessionManager -> sessionManager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
+
 }

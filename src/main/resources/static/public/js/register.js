@@ -128,8 +128,8 @@ class RegistrationManager {
                 this.showMessage('Registro exitoso. Iniciando sesión...', 'success');
 
                 setTimeout(() => {
-                    window.location.href = '../admin/dashboard.html';
-                }, 1000);
+                    window.location.href = this.baseUrl;
+                }, 500);
 
             } else {
                 let errorBody = null;

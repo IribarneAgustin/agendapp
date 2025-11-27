@@ -23,7 +23,7 @@ public class OfferingRequest {
     @Size(max = 100, message = "Name must be at most 100 characters")
     private String name;
 
-    @Size(max = 500, message = "Description must be at most 500 characters")
+    @Size(max = 1000, message = "Description must be at most 1000 characters")
     private String description;
 
     @NotNull(message = "Capacity is required")

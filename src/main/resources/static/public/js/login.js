@@ -66,7 +66,7 @@ class LoginManager {
                 // Redirect to dashboard after a short delay
                 setTimeout(() => {
                     window.location.href = './admin/dashboard.html';
-                }, 1000);
+                }, 500);
 
             } else {
                 const errorData = await response.text();
