@@ -7,7 +7,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.util.TimeZone;
 
 @SpringBootApplication
-@EnableScheduling
+//@EnableScheduling
 public class ApiApplication {
 
 	public static void main(String[] args) {

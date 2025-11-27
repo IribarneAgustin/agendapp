@@ -47,7 +47,7 @@ public class EmailNotificationStrategy implements NotificationStrategy {
 
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(emailFrom);
+            helper.setFrom(emailFrom, "ReservaLink");
             helper.setTo(userEmail);
             helper.setSubject(motive.getSubject());
             helper.setText(writer.toString(), true);

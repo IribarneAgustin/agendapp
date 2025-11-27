@@ -20,7 +20,7 @@ import java.util.Map;
 @Service
 public class MercadoPagoClient {
 
-    @Value("${mercadopago.access.token}")
+    /*@Value("${mercadopago.access.token}")
     private String accessToken;
 
     @Value("${mercadopago.plan.id}")
@@ -68,7 +68,7 @@ public class MercadoPagoClient {
             headers.setBearerAuth(accessToken);
 
             Map<String, Object> body = Map.of(
-                    "reason", "Monthly Subscription - ReservateYa",
+                    "reason", "Monthly Subscription - ReservaLink",
                     "external_reference", userId,
                     "payer_email", userEmail,
                     "auto_recurring", Map.of(
@@ -119,5 +119,5 @@ public class MercadoPagoClient {
             throw new RuntimeException("Internal error processing subscription.");
         }
     }
-
+*/
 }
