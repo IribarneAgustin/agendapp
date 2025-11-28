@@ -6,9 +6,9 @@ primary_region = 'gru'
 [http_service]
 internal_port = 8080
 force_https = true
-auto_stop_machines = "on"
 auto_start_machines = true
-min_machines_running = 0
+auto_stop_machines = false
+min_machines_running = 1
 processes = ['app']
 
 [[http_service.domains]]
@@ -16,6 +16,9 @@ name = "reservalink.site"
 
 [[http_service.domains]]
 name = "www.reservalink.site"
+
+[scale]
+count = 1
 
 [[vm]]
 size = 'shared-cpu-1x'
