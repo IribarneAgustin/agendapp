@@ -1,19 +1,18 @@
 package com.reservalink.api.controller;
 
 import com.reservalink.api.service.payment.oauth.OAuthService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
-@RestController
+@Controller
 @RequestMapping("/mercadopago/oauth")
 @RequiredArgsConstructor
 public class MercadoPagoOAuthController {
@@ -58,18 +57,16 @@ public class MercadoPagoOAuthController {
      * Callback endpoint that Mercado Pago redirects to after authorization.
      */
     @GetMapping("/callback")
-    public void handleCallback(@RequestParam String code, @RequestParam UUID state, HttpServletResponse response) throws IOException {
+    public String handleCallback(@RequestParam String code, @RequestParam UUID state) {
         try {
             oAuthService.exchangeCodeForToken(code, state);
-            String redirectUrl = baseURL + "/admin/dashboard.html?linked=true";
-            response.sendRedirect(redirectUrl);
-
+            return "redirect:/admin/dashboard.html?linked=true";
         } catch (Exception e) {
             log.error("Error linking Mercado Pago account for user {}", state, e);
-            String redirectUrl = baseURL + "/admin/dashboard.html?linked=false";
-            response.sendRedirect(redirectUrl);
+            return "redirect:/admin/dashboard.html?linked=false";
         }
     }
+
 
 
 }
