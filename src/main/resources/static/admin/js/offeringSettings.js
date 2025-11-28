@@ -310,9 +310,10 @@ class OfferingManager {
                     this.currentOfferingId = newOffering.id;
                     this.isEditMode = true;
 
-                } else {
-                    this.closeModal();
                 }
+
+                this.closeModal();
+
             } else if (response.status === 401) {
                 this.handleUnauthorized();
             } else {

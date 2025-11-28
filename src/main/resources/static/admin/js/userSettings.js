@@ -26,15 +26,6 @@ function toggleLoading(isLoading) {
     inputs.forEach(input => input.disabled = isLoading);
 }
 
-// Function to handle logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem('authToken');
-    // Using 'userData' as per the user's provided snippet.
-    localStorage.removeItem('userData');
-    // Redirect to login page, assuming 'index.html' is the login/home page as per user's snippet
-    window.location.href = BASE_URL;
-});
-
 
 // --- Main Logic ---
 document.addEventListener('DOMContentLoaded', () => {

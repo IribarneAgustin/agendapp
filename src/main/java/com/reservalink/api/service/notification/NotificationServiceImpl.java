@@ -66,7 +66,6 @@ public class NotificationServiceImpl implements NotificationService {
         adminArgs.put("quantity", bookingEntity.getQuantity().toString());
 
         notificationStrategy.send(userEntity.getEmail(), NotificationMotive.ADMIN_BOOKING_CONFIRMED, adminArgs);
-        log.info("Notifications sent successfully");
     }
 
     public void sendSubscriptionExpired(List<UserEntity> userEntityList) {
@@ -123,6 +122,5 @@ public class NotificationServiceImpl implements NotificationService {
         adminArgs.put("time", timeFormatted);
 
         strategy.send(user.getEmail(), NotificationMotive.ADMIN_BOOKING_CANCELLED, adminArgs);
-        log.info("Notifications sent successfully");
     }
 }

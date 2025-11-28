@@ -7,7 +7,7 @@ primary_region = 'gru'
 internal_port = 8080
 force_https = true
 auto_stop_machines = 'off'
-auto_start_machines = true
+auto_start_machines = false
 min_machines_running = 1
 processes = ['app']
 
@@ -18,7 +18,7 @@ name = "reservalink.site"
 name = "www.reservalink.site"
 
 [[vm]]
-size = 'shared-cpu-2x'
+size = 'shared-cpu-1x'
 memory = '1gb'
 cpu_kind = 'shared'
 cpus = 2

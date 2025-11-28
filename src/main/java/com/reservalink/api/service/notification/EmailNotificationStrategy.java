@@ -2,6 +2,7 @@ package com.reservalink.api.service.notification;
 
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,6 +15,7 @@ import java.io.StringWriter;
 import java.util.Map;
 
 
+@Slf4j
 @Service
 public class EmailNotificationStrategy implements NotificationStrategy {
 
@@ -53,7 +55,7 @@ public class EmailNotificationStrategy implements NotificationStrategy {
             helper.setText(writer.toString(), true);
 
             mailSender.send(message);
-
+            log.info("Notification sent successfully");
         } catch (Exception e) {
             throw new RuntimeException("Error sending email notification for motive " + motive.name(), e);
         }

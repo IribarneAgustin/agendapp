@@ -230,7 +230,7 @@ class UserOfferingsManager {
         const todayFormatted = this.getFormattedDate(new Date());
 
         this.calendarGrid.innerHTML = '';
-        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
         const year = this.currentDate.getFullYear();
         const month = this.currentDate.getMonth();
