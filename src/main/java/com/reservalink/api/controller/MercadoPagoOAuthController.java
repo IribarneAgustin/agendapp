@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ClassPathResource;
 
 import java.util.Map;
 import java.util.UUID;
@@ -57,13 +59,19 @@ public class MercadoPagoOAuthController {
      * Callback endpoint that Mercado Pago redirects to after authorization.
      */
     @GetMapping("/callback")
-    public String handleCallback(@RequestParam String code, @RequestParam UUID state) {
+    public ResponseEntity<Resource> handleCallback(@RequestParam String code, @RequestParam UUID state) {
+        Resource html = new ClassPathResource("static/admin/dashboard.html");
         try {
-            oAuthService.exchangeCodeForToken(code, state);
-            return "redirect:" + baseURL + "/admin/dashboard.html?linked=true";
+            oAuthService.exchangeCodeForToken(code, state);;
+            return ResponseEntity.ok()
+                    .header("Content-Type", "text/html; charset=UTF-8")
+                    .header("Content-Disposition", "inline")
+                    .body(html);
         } catch (Exception e) {
-            log.error("Error linking Mercado Pago account for user {}", state, e);
-            return "redirect:" + baseURL + "/admin/dashboard.html?linked=false";
+            return ResponseEntity.status(302)
+                    .header("Content-Type", "text/html; charset=UTF-8")
+                    .header("Content-Disposition", "inline")
+                    .body(html);
         }
     }
 
