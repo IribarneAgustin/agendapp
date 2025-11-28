@@ -23,6 +23,7 @@ public class SecurityConfig {
             "/booking/*/cancel",
             "/reservas/**",
             "/slot-time/offering/*",
+            "/mercadopago/oauth/callback",
 
             "/",
             "/favicon.ico",

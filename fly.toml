@@ -6,9 +6,9 @@ primary_region = 'gru'
 [http_service]
 internal_port = 8080
 force_https = true
-auto_stop_machines = 'off'
-auto_start_machines = false
-min_machines_running = 1
+auto_stop_machines = "on"
+auto_start_machines = true
+min_machines_running = 0
 processes = ['app']
 
 [[http_service.domains]]
@@ -21,4 +21,4 @@ name = "www.reservalink.site"
 size = 'shared-cpu-1x'
 memory = '1gb'
 cpu_kind = 'shared'
-cpus = 2
+cpus = 1
