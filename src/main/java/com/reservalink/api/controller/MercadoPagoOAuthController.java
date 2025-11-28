@@ -69,7 +69,21 @@ public class MercadoPagoOAuthController {
         }
     }
 
-
+    @DeleteMapping("/unlink/{userId}")
+    public ResponseEntity<Map<String, Object>> unlinkAccount(@PathVariable UUID userId) {
+        try {
+            oAuthService.unlink(userId);
+            return ResponseEntity.ok(Map.of(
+                    "unlinked", true
+            ));
+        } catch (Exception e) {
+            log.error("Error unlinking Mercado Pago account for user {}", userId, e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "unlinked", false,
+                    "error", "Error unlinking Mercado Pago account"
+            ));
+        }
+    }
 
 
 }

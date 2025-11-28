@@ -14,4 +14,6 @@ public interface OAuthService {
     String refreshAccessToken(String refreshToken);
 
     boolean isUserConnected(UUID userId);
+
+    void unlink(UUID userId);
 }

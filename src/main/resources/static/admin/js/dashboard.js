@@ -20,6 +20,7 @@ class DashboardManager {
         this.setupBookingDashboardLink();
         this.loadMpConnectionStatus();
         this.setupMpConnectButton();
+        this.setupMpUnlinkButton();
     }
 
     getStoredUser() {
@@ -266,7 +267,8 @@ class DashboardManager {
    async loadMpConnectionStatus() {
        const statusElement = document.getElementById('mpConnectionStatus');
        const connectBtn = document.getElementById('connectMpBtn');
-       if (!statusElement || !connectBtn) return;
+       const unlinkBtn = document.getElementById('unlinkMpBtn');
+       if (!statusElement || !connectBtn || !unlinkBtn) return;
 
        // --- show loading state for button ---
        const originalText = connectBtn.textContent;
@@ -304,6 +306,9 @@ class DashboardManager {
                    statusElement.className =
                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 mb-3";
                    connectBtn.style.display = "none";
+
+                   unlinkBtn.classList.remove("hidden");
+
                } else {
                    statusElement.innerHTML = `
                        <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -318,6 +323,8 @@ class DashboardManager {
                    connectBtn.textContent = "Vincular cuenta";
                    connectBtn.disabled = false;
                    connectBtn.classList.remove('bg-gray-400', 'cursor-not-allowed', 'cursor-wait', 'bg-sky-400');
+
+                   unlinkBtn.classList.add("hidden");
                }
            } else {
                statusElement.innerHTML = `
@@ -330,6 +337,8 @@ class DashboardManager {
                statusElement.className =
                    "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-300 mb-3";
                connectBtn.style.display = "inline-block";
+
+               unlinkBtn.classList.add("hidden");
            }
        } catch (err) {
            console.error(err);
@@ -343,6 +352,8 @@ class DashboardManager {
            statusElement.className =
                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
            connectBtn.style.display = "inline-block";
+
+           unlinkBtn.classList.add("hidden");
        } finally {
            if (connectBtn.style.display !== "none") {
                connectBtn.innerHTML = originalText;
@@ -351,6 +362,51 @@ class DashboardManager {
            }
        }
    }
+
+
+   setupMpUnlinkButton() {
+       const unlinkBtn = document.getElementById('unlinkMpBtn');
+       if (!unlinkBtn) return;
+
+       unlinkBtn.addEventListener('click', async () => {
+
+           const result = await Swal.fire({
+               title: "¿Desvincular cuenta?",
+               text: "Tu negocio dejará de recibir pagos hasta que vuelvas a vincular.",
+               icon: "warning",
+               showCancelButton: true,
+               confirmButtonText: "Sí, desvincular",
+               cancelButtonText: "Cancelar"
+           });
+
+           if (!result.isConfirmed) return;
+
+           try {
+               const response = await fetch(`${this.baseUrl}/mercadopago/oauth/unlink/${this.user.id}`, {
+                   method: 'DELETE',
+                   headers: {
+                       'Authorization': `Bearer ${this.token}`
+                   }
+               });
+
+               if (response.ok) {
+                   Swal.fire({
+                       icon: "success",
+                       title: "Cuenta desvinculada",
+                       text: "Tu cuenta fue desconectada correctamente."
+                   });
+
+                   this.loadMpConnectionStatus();
+               } else {
+                   this.showToast('No se pudo desvincular la cuenta', 'error');
+               }
+           } catch (err) {
+               console.error(err);
+               this.showToast('Error al intentar desvincular la cuenta', 'error');
+           }
+       });
+   }
+
 
 
     setupMpConnectButton() {

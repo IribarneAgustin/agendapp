@@ -27,6 +27,7 @@ public class SecurityConfig {
             "/mercadopago/webhook/booking",
 
             "/",
+            "/landing.html",
             "/favicon.ico",
             "/index.html",
             "/commons/config.js",

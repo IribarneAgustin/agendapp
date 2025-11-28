@@ -42,7 +42,6 @@ class BookingDashboardManager {
     filterContent;
     toggleIcon;
     statusMessage;
-    logoutBtn;
 
     constructor() {
         // Initialize constants dependent on window context
@@ -502,7 +501,6 @@ class BookingDashboardManager {
         this.filterContent = document.getElementById('filterContent');
         this.toggleIcon = document.getElementById('toggleIcon');
         this.statusMessage = document.getElementById('statusMessage');
-        this.logoutBtn = document.getElementById('logoutBtn');
     }
 
     setupEventListeners() {
@@ -510,7 +508,6 @@ class BookingDashboardManager {
         this.prevPageBtn.addEventListener('click', () => this.handlePageChange(-1));
         this.nextPageBtn.addEventListener('click', () => this.handlePageChange(1));
         this.cancelBookingBtn.addEventListener('click', this.handleCancelBooking);
-        this.logoutBtn.addEventListener('click', this.handleLogout);
         this.monthSelect.addEventListener('change', this.applyFilters);
         this.offeringSelect.addEventListener('change', this.applyFilters);
         this.bookingTypeSelect.addEventListener('change', this.applyFilters);

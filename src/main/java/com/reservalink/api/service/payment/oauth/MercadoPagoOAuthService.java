@@ -152,4 +152,9 @@ public class MercadoPagoOAuthService implements OAuthService {
         return token != null && token.getExpiresAt() != null && System.currentTimeMillis() < token.getExpiresAt();
     }
 
+    @Override
+    public void unlink(UUID userId) {
+        tokenRepository.findByUserEntityId(userId.toString()).ifPresent(tokenRepository::delete);
+    }
+
 }

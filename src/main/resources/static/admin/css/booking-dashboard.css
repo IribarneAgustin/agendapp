@@ -1,0 +1,185 @@
+/* Define Inter font and apply to body */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f3f4f6;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --- UTILITIES --- */
+.scroll-container::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Remove default icon background for date input on mobile Safari */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  bottom: 0;
+  color: transparent;
+  cursor: pointer;
+  height: auto;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+}
+
+/* --- ANIMATIONS --- */
+.filter-content-wrapper {
+  max-height: 1000px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+}
+.filter-content-wrapper.collapsed {
+  max-height: 0;
+  margin-top: 0;
+  opacity: 0;
+}
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* --- MOBILE TABLE CARD TRANSFORM --- */
+@media (max-width: 640px) {
+
+  thead {
+    display: none;
+  }
+
+  table, tbody, th, td, tr {
+    display: block;
+    width: 100%;
+  }
+
+  tbody tr {
+    background-color: white;
+    margin-bottom: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e5e7eb;
+    padding: 1rem;
+    position: relative;
+  }
+
+  tbody tr.row-item.selected {
+    background-color: #eff6ff;
+    border: 1px solid #3b82f6;
+  }
+
+  /* Base TD layout */
+  tbody td {
+    display: flex;
+    flex-direction: column;   /* IMPORTANT: stacked key/value */
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  tbody td:last-child {
+    border-bottom: none;
+  }
+
+  /* --- LABELS --- */
+  /* Servicio */
+  td:nth-of-type(1)::before {
+    content: "Servicio";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+
+  /* Cliente — FIXED — now two rows: Nombre + Email */
+  td:nth-of-type(2)::before {
+    content: "Cliente";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+  td:nth-of-type(2) span {
+    display: block;
+    line-height: 1.3;
+  }
+  /* if your field contains name + email separated by <br> or two spans, this makes them stack */
+
+  /* Fecha y hora — FIXED — split into two rows */
+  td:nth-of-type(3)::before {
+    content: "Fecha y hora";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+  td:nth-of-type(3) span {
+    display: block;
+    line-height: 1.3;
+  }
+
+  /* Cantidad */
+  td:nth-of-type(4)::before {
+    content: "Cantidad";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+
+  /* Importe */
+  td:nth-of-type(5)::before {
+    content: "Importe";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+
+  /* Estado */
+  td:nth-of-type(6)::before {
+    content: "Estado";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+
+  /* Service Info on top of card */
+  td:nth-of-type(1) {
+    border-bottom: 2px solid #f3f4f6;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Mobile remove container border */
+  .mobile-table-container {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
+/* --- DESKTOP --- */
+@media (min-width: 641px) {
+  .row-item.selected {
+    background-color: #eff6ff;
+    border-left: 4px solid #3b82f6;
+  }
+  .row-item {
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .row-item:hover:not(.selected) {
+    background-color: #f9fafb;
+  }
+}
