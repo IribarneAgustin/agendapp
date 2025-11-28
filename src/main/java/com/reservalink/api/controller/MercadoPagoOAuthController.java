@@ -59,19 +59,13 @@ public class MercadoPagoOAuthController {
      * Callback endpoint that Mercado Pago redirects to after authorization.
      */
     @GetMapping("/callback")
-    public ResponseEntity<Resource> handleCallback(@RequestParam String code, @RequestParam UUID state) {
-        Resource html = new ClassPathResource("static/admin/dashboard.html");
+    public String handleCallback(@RequestParam String code, @RequestParam UUID state) {
         try {
-            oAuthService.exchangeCodeForToken(code, state);;
-            return ResponseEntity.ok()
-                    .header("Content-Type", "text/html; charset=UTF-8")
-                    .header("Content-Disposition", "inline")
-                    .body(html);
+            oAuthService.exchangeCodeForToken(code, state);
+            return "redirect:" + baseURL + "?linked=true";
         } catch (Exception e) {
-            return ResponseEntity.status(302)
-                    .header("Content-Type", "text/html; charset=UTF-8")
-                    .header("Content-Disposition", "inline")
-                    .body(html);
+            log.error("Error linking Mercado Pago account for user {}", state, e);
+            return "redirect:" + baseURL + "?linked=false";
         }
     }
 

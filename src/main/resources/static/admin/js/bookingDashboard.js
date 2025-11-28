@@ -82,8 +82,6 @@ class BookingDashboardManager {
 
             return false;
         }
-
-        this.logoutBtn.disabled = false;
         return true;
     }
 
@@ -96,18 +94,6 @@ class BookingDashboardManager {
             this.statusMessage.classList.add('hidden');
         }, 5000);
     }
-
-    /** Simula el cierre de sesión borrando el token local y redirigiendo. */
-    handleLogout = () => {
-        localStorage.removeItem('authToken');
-        this.authToken = null;
-        this.showStatusMessage("Sesión cerrada. Redirigiendo...", false);
-        setTimeout(() => {
-             window.location.href = BASE_URL;
-        }, 1000);
-    }
-
-    // --- API Methods ---
 
     /**
      * Calls the API to get the list of offerings.

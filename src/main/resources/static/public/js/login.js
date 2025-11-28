@@ -131,5 +131,13 @@ class LoginManager {
 
 // Initialize login manager when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const linked = params.get("linked");
+
+    if (linked) {
+        window.location.href = './admin/dashboard.html?linked=' + linked;
+    }
+
     new LoginManager();
 });
+
