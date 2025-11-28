@@ -24,6 +24,7 @@ public class SecurityConfig {
             "/reservas/**",
             "/slot-time/offering/*",
             "/mercadopago/oauth/callback",
+            "/mercadopago/webhook/booking",
 
             "/",
             "/favicon.ico",
