@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @Slf4j
-@RestController
+@Controller
 @RequestMapping("/booking")
 public class BookingController {
 
@@ -70,11 +71,10 @@ public class BookingController {
     }
 
     @GetMapping("/{bookingId}/cancel")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelBookingFromLink(@PathVariable UUID bookingId) {
-        log.info("Request to cancel the booking from the link received. BookingId: {}", bookingId);
+    public String cancelBookingFromLink(@PathVariable UUID bookingId) {
+        log.info("Request to cancel the booking from the link. BookingId: {}", bookingId);
         bookingService.cancelBooking(bookingId);
-        log.info("Booking {} cancelled successfully", bookingId);
+        return "redirect:/public/cancelled-success.html";
     }
 
 
