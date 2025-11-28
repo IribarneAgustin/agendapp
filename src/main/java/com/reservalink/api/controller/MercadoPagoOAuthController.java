@@ -60,12 +60,13 @@ public class MercadoPagoOAuthController {
     public String handleCallback(@RequestParam String code, @RequestParam UUID state) {
         try {
             oAuthService.exchangeCodeForToken(code, state);
-            return "redirect:/admin/dashboard.html?linked=true";
+            return "redirect:" + baseURL + "/admin/dashboard.html?linked=true";
         } catch (Exception e) {
             log.error("Error linking Mercado Pago account for user {}", state, e);
-            return "redirect:/admin/dashboard.html?linked=false";
+            return "redirect:" + baseURL + "/admin/dashboard.html?linked=false";
         }
     }
+
 
 
 
