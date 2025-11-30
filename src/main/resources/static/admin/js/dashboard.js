@@ -264,104 +264,89 @@ class DashboardManager {
         }
     }
 
-   async loadMpConnectionStatus() {
-       const statusElement = document.getElementById('mpConnectionStatus');
-       const connectBtn = document.getElementById('connectMpBtn');
-       const unlinkBtn = document.getElementById('unlinkMpBtn');
-       if (!statusElement || !connectBtn || !unlinkBtn) return;
+    async loadMpConnectionStatus() {
+        const statusElement = document.getElementById('mpConnectionStatus');
+        const connectBtn = document.getElementById('connectMpBtn');
+        const unlinkBtn = document.getElementById('unlinkMpBtn');
+        if (!statusElement || !connectBtn || !unlinkBtn) return;
 
-       // --- show loading state for button ---
-       const originalText = connectBtn.textContent;
-       connectBtn.disabled = true;
-       connectBtn.innerHTML = `
-           <svg class="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                viewBox="0 0 24 24">
-               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-               <path class="opacity-75" fill="currentColor"
-                     d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"></path>
-           </svg>
-           Cargando...
-       `;
-       connectBtn.classList.add('bg-sky-400', 'cursor-wait');
+        try {
+            const response = await fetch(`${this.baseUrl}/mercadopago/oauth/status/${this.user.id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
-       try {
-           const response = await fetch(`${this.baseUrl}/mercadopago/oauth/status/${this.user.id}`, {
-               method: 'GET',
-               headers: {
-                   'Authorization': `Bearer ${this.token}`,
-                   'Content-Type': 'application/json'
-               }
-           });
+            if (response.ok) {
+                const data = await response.json();
 
-           if (response.ok) {
-               const data = await response.json();
-               if (data.connected) {
-                   statusElement.innerHTML = `
-                       <svg class="h-4 w-4 mr-1 text-green-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M5 13l4 4L19 7" />
-                       </svg>
-                       Cuenta vinculada
-                   `;
-                   statusElement.className =
-                       "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 mb-3";
-                   connectBtn.style.display = "none";
+                if (data.connected) {
+                    // --- Estado: VINCULADO ---
+                    statusElement.innerHTML = `
+                        <svg class="h-4 w-4 mr-1 text-green-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M5 13l4 4L19 7" />
+                        </svg>
+                        Cuenta vinculada
+                    `;
+                    statusElement.className =
+                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 mb-3";
 
-                   unlinkBtn.classList.remove("hidden");
+                    connectBtn.style.display = "none";
+                    unlinkBtn.classList.remove("hidden");
 
-               } else {
-                   statusElement.innerHTML = `
-                       <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                 d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                       </svg>
-                       No vinculada
-                   `;
-                   statusElement.className =
-                       "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
-                   connectBtn.style.display = "inline-block";
-                   connectBtn.textContent = "Vincular cuenta";
-                   connectBtn.disabled = false;
-                   connectBtn.classList.remove('bg-gray-400', 'cursor-not-allowed', 'cursor-wait', 'bg-sky-400');
+                } else {
+                    // --- Estado: NO VINCULADO ---
+                    statusElement.innerHTML = `
+                        <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        No vinculada
+                    `;
+                    statusElement.className =
+                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
 
-                   unlinkBtn.classList.add("hidden");
-               }
-           } else {
-               statusElement.innerHTML = `
-                   <svg class="h-4 w-4 mr-1 text-yellow-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                             d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14" />
-                   </svg>
-                   Error al obtener el estado de conexión
-               `;
-               statusElement.className =
-                   "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-300 mb-3";
-               connectBtn.style.display = "inline-block";
+                    connectBtn.style.display = "inline-block";
+                    connectBtn.textContent = "Vincular cuenta";
+                    unlinkBtn.classList.add("hidden");
+                }
 
-               unlinkBtn.classList.add("hidden");
-           }
-       } catch (err) {
-           console.error(err);
-           statusElement.innerHTML = `
-               <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                         d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14" />
-               </svg>
-               Error de conexión
-           `;
-           statusElement.className =
-               "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
-           connectBtn.style.display = "inline-block";
+            } else {
+                // --- Error en el fetch ---
+                statusElement.innerHTML = `
+                    <svg class="h-4 w-4 mr-1 text-yellow-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14" />
+                    </svg>
+                    Error al obtener el estado de conexión
+                `;
+                statusElement.className =
+                    "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-300 mb-3";
 
-           unlinkBtn.classList.add("hidden");
-       } finally {
-           if (connectBtn.style.display !== "none") {
-               connectBtn.innerHTML = originalText;
-               connectBtn.disabled = false;
-               connectBtn.classList.remove('cursor-wait', 'bg-sky-400');
-           }
-       }
-   }
+                connectBtn.style.display = "inline-block";
+                unlinkBtn.classList.add("hidden");
+            }
+
+        } catch (err) {
+            console.error(err);
+            statusElement.innerHTML = `
+                <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14" />
+                </svg>
+                Error de conexión
+            `;
+            statusElement.className =
+                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
+
+            connectBtn.style.display = "inline-block";
+            unlinkBtn.classList.add("hidden");
+        }
+    }
+
 
 
    setupMpUnlinkButton() {
