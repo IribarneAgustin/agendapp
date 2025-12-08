@@ -8,4 +8,11 @@ import java.util.List;
 
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, String> {
     List<SubscriptionEntity> findByEnabledTrueAndExpiredFalseAndExpirationLessThan(LocalDateTime now);
+
+    List<SubscriptionEntity> findByEnabledTrueAndExpiredFalseAndExpirationBetween(
+            LocalDateTime start, LocalDateTime end);
+
+    List<SubscriptionEntity> findByEnabledTrueAndExpiredTrueAndExpirationBetween(
+            LocalDateTime start, LocalDateTime end);
+
 }

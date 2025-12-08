@@ -1,5 +1,6 @@
 package com.reservalink.api.controller;
 
+import com.reservalink.api.controller.request.RecoverPasswordRequest;
 import com.reservalink.api.controller.request.UserLoginRequest;
 import com.reservalink.api.controller.request.UserRegistrationRequest;
 import com.reservalink.api.controller.response.UserAuthResponse;
@@ -49,10 +50,10 @@ public class AuthController {
 
         ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
                 .httpOnly(true)
-                .secure(false) // change to true in production with HTTPS
+                .secure(true)
                 .path("/")
-                .maxAge(24 * 60 * 60)
-                .sameSite("Strict")  // to avoid CSRF
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite("Strict")
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
@@ -73,6 +74,13 @@ public class AuthController {
         response.addHeader("Set-Cookie", cookie.toString());
         log.info("User logged out successfully");
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.OK)
+    public void recoverPassword(@Valid @RequestBody RecoverPasswordRequest request) {
+        log.info("Recover password request received for the email {}", request.email());
+        userService.requestPasswordChange(request.email());
     }
 
 }

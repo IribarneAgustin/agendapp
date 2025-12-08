@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Bienvenido a ReservaLink</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, Helvetica, sans-serif;">
+
+<table align="center" border="0" cellpadding="0" cellspacing="0" width="100%"
+       style="max-width: 600px; background-color: #ffffff; margin: 40px auto; border-radius: 8px;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.1); overflow: hidden;">
+
+    <!-- Header -->
+    <tr>
+        <td style="background-color: #4f46e5; padding: 20px 40px; text-align: center;">
+            <div style="display: inline-block;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="#ffffff" viewBox="0 0 24 24" width="40" height="40"
+                     style="vertical-align: middle; margin-right: 10px;">
+                    <path d="M19 4h-3a2 2 0 00-2-2H8a2 2 0 00-2 2H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1 2v12H6V6h12zM9 10h6v2H9v-2zm0 4h6v2H9v-2z"/>
+                </svg>
+                <span style="font-size: 20px; font-weight: bold; color: #ffffff; vertical-align: middle;">
+                    ReservaLink
+                </span>
+            </div>
+        </td>
+    </tr>
+
+    <!-- Main content -->
+    <tr>
+        <td style="padding: 30px 40px;">
+
+            <h2 style="color: #333333; text-align: center; margin-bottom: 30px;">
+                ¡Bienvenido a ReservaLink!
+            </h2>
+
+            <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                Hola <strong>{{userName}}</strong>,
+            </p>
+
+            <p style="font-size: 16px; color: #333333; line-height: 1.6;">
+                Tu prueba gratuita de <strong>30 días</strong> ya comenzó.
+                Durante este período vas a poder usar todas las funcionalidades sin límites.
+            </p>
+
+            <p style="font-size: 16px; color: #333333; line-height: 1.6; margin-bottom: 25px;">
+                Te avisaremos antes de que tu prueba expire para que puedas decidir si querés continuar.
+            </p>
+
+            <!-- Login Button -->
+            <div style="text-align: center; margin: 35px 0;">
+                <a href="{{loginLink}}"
+                   style="background-color: #4f46e5; color: #ffffff; padding: 12px 24px; text-decoration: none;
+                          border-radius: 6px; font-size: 16px; display: inline-block;">
+                    Ir al Login
+                </a>
+            </div>
+
+            <!-- Helper link -->
+            <p style="font-size: 15px; color: #333333; text-align: center; margin-bottom: 40px;">
+                Si necesitás ayuda para configurar tu cuenta, no dudes en ponerte en contacto con nosotros
+                <!--¿Necesitás ayuda para configurar tu cuenta?
+                Podés seguir nuestra guía paso a paso:-->
+                <br>
+            </p>
+
+            <hr style="border: none; border-top: 1px solid #eeeeee; margin: 30px 0;" />
+
+            <!-- Footer -->
+            <p style="font-size: 13px; color: #999999; text-align: center;">
+                Síguenos en Instagram:
+                <br>
+                <a href="https://instagram.com/reservalink.app"
+                   style="color: #4f46e5; text-decoration: none;">
+                    @reservalink
+                </a>
+            </p>
+
+            <p style="font-size: 13px; color: #999999; text-align: center; margin-top: 15px;">
+                © {{currentYear}} ReservaLink. Todos los derechos reservados.
+            </p>
+
+        </td>
+    </tr>
+
+</table>
+
+</body>
+</html>

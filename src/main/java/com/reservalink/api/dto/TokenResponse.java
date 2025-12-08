@@ -1,4 +1,4 @@
-package com.reservalink.api.service.payment.dto;
+package com.reservalink.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;

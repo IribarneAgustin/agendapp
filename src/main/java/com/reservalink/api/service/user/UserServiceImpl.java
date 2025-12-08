@@ -13,6 +13,7 @@ import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.repository.BrandRepository;
 import com.reservalink.api.repository.UserRepository;
 import com.reservalink.api.security.JWTUtils;
+import com.reservalink.api.service.notification.NotificationService;
 import com.reservalink.api.service.payment.PaymentService;
 import com.reservalink.api.utils.GenericAppConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -41,18 +42,20 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final JWTUtils jwtUtils;
     private final BrandRepository brandRepository;
     private final PaymentService paymentService;
+    private final NotificationService notificationService;
 
     @Value("${api.base.url}")
     private String baseURL;
 
     public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder, JWTUtils jwtUtils,
-                           BrandRepository brandRepository, PaymentService paymentService) {
+                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.brandRepository = brandRepository;
         this.paymentService = paymentService;
+        this.notificationService = notificationService;
     }
 
     public User register(UserRegistrationRequest userRegistrationRequest) {
@@ -73,7 +76,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             userEntity.setBrandEntity(brandEntity);
 
             UserEntity savedUserEntity = userRepository.saveAndFlush(userEntity);
-            String checkoutLink = paymentService.createCheckoutLink(savedUserEntity.getEmail(), savedUserEntity.getId());
+            String checkoutLink = paymentService.createSubscriptionCheckoutURL(savedUserEntity.getId());
 
             SubscriptionEntity subscriptionEntity = SubscriptionEntity.builder()
                     .expired(Boolean.FALSE)
@@ -85,6 +88,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             userEntity.setSubscriptionEntity(subscriptionEntity);
 
             savedUserEntity = userRepository.saveAndFlush(userEntity);
+            notificationService.sendNewUserRegistered(userEntity);
 
             return modelMapper.map(savedUserEntity, User.class);
         } catch (DataIntegrityViolationException ex) {
@@ -183,5 +187,20 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         UserEntity userEntity = userRepository.findById(userId.toString())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
         return userEntity.getSubscriptionEntity();
+    }
+
+    @Override
+    public void requestPasswordChange(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User email " + email + " not found"));
+        notificationService.sendResetPasswordRequest(userEntity.getEmail(), userEntity.getId());
+    }
+
+    @Override
+    public void recoverPassword(UUID userId, String password) {
+        UserEntity userEntity = userRepository.findById(userId.toString())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        userEntity.setPassword(passwordEncoder.encode(password));
+        userRepository.save(userEntity);
     }
 }

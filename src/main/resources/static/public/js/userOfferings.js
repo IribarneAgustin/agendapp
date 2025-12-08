@@ -149,7 +149,9 @@ class UserOfferingsManager {
                         </span>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">${offering.name}</h3>
-                    <p class="text-gray-600 text-sm leading-relaxed line-clamp-3">${offering.description || 'Sin descripción disponible.'}</p>
+                    <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+                      ${offering.description || 'Sin descripción disponible.'}
+                    </p>
                 </div>
                 
                 <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between group-hover:border-indigo-100 transition-colors">
@@ -219,11 +221,7 @@ class UserOfferingsManager {
 
         // 3. Render time slots for this date
         this.renderTimeSlots(dateString);
-        
-        // Styling fix: Scroll to slots on mobile
-        if(window.innerWidth < 1024) {
-            document.getElementById('slotsSection').scrollIntoView({ behavior: 'smooth' });
-        }
+
     }
 
     renderCalendar() {
@@ -335,6 +333,8 @@ class UserOfferingsManager {
         // Sort slots by time
         slots.sort((a,b) => a.startDateTime.localeCompare(b.startDateTime));
 
+        let availableSlotButtons = [];
+
         slots.forEach(slot => {
             const button = document.createElement('button');
             const available = slot.capacityAvailable > 0;
@@ -363,6 +363,8 @@ class UserOfferingsManager {
             button.setAttribute('data-slot-id', slot.id);
 
             if (available) {
+                availableSlotButtons.push({ button, slot });
+
                 button.addEventListener('click', () => {
                     // Handle selection of this specific slot
                     this.slotTimeContainer.querySelectorAll('.slot-time-btn').forEach(btn => btn.classList.remove('selected'));
@@ -373,7 +375,17 @@ class UserOfferingsManager {
 
             this.slotTimeContainer.appendChild(button);
         });
+
+        if (availableSlotButtons.length === 1) {
+            const { button, slot } = availableSlotButtons[0];
+
+            // Add visual selected state
+            button.classList.add('selected');
+
+            this.handleSlotSelection(slot.id);
+        }
     }
+
 
     handleSlotSelection(slotId) {
         const slotTimeIdInput = document.getElementById('slotTimeId');
@@ -486,7 +498,9 @@ class UserOfferingsManager {
                 </div>
                 <h4 class="text-xl font-bold text-gray-900">${offering.name}</h4>
             </div>
-            <p class="text-gray-600 text-sm pl-1">${offering.description || ''}</p>
+            <p class="text-gray-600 text-sm pl-1 whitespace-pre-line">
+                ${offering.description || ''}
+            </p>
         `;
         if(window.lucide) window.lucide.createIcons();
 

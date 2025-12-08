@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Recordatorio de reserva</title>
+</head>
+<body style="font-family: Arial, sans-serif; color: #333;">
+<div style="max-width: 600px; margin: 0 auto;">
+
+    <h2 style="color: #2C89F5;">Recordatorio de tu reserva 📅</h2>
+
+    <p>Hola {{name}},</p>
+
+    <p>Este es un recordatorio de tu próxima reserva.</p>
+
+    <p>
+        <strong>Servicio:</strong> {{serviceName}}<br>
+        <strong>Fecha:</strong> {{date}}<br>
+        <strong>Horario:</strong> {{time}}
+    </p>
+
+    <p>
+        Si necesitás cancelar tu reserva, podés hacerlo desde el siguiente enlace:
+    </p>
+
+    <p style="text-align: center; margin: 24px 0;">
+        <a href="{{cancelLink}}"
+           style="
+                    background-color: #d9534f;
+                    color: white;
+                    text-decoration: none;
+                    padding: 10px 18px;
+                    border-radius: 6px;
+                    display: inline-block;
+               ">
+            Cancelar reserva
+        </a>
+    </p>
+
+    <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;">
+
+    <p style="font-size: 12px; color: #777;">
+        Este mensaje fue enviado automáticamente por ReservaLink.
+    </p>
+</div>
+</body>
+</html>

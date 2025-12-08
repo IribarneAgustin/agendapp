@@ -1,22 +1,27 @@
 package com.reservalink.api.controller;
 
+import com.reservalink.api.controller.request.RecoverPasswordRequest;
 import com.reservalink.api.controller.request.UserRequest;
 import com.reservalink.api.controller.response.SubscriptionResponse;
 import com.reservalink.api.repository.entity.SubscriptionEntity;
 import com.reservalink.api.domain.User;
 import com.reservalink.api.service.user.UserService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -51,6 +56,14 @@ public class UserController {
     public ResponseEntity<SubscriptionResponse> findUserSubscription(@PathVariable UUID userId) {
         SubscriptionEntity subscriptionEntity = userService.findUserSubscription(userId);
         return ResponseEntity.ok().body(modelMapper.map(subscriptionEntity, SubscriptionResponse.class));
+    }
+
+    @GetMapping("/{userId}/recover-password")
+    @ResponseStatus(HttpStatus.OK)
+    public void recoverPassword(@PathVariable UUID userId, RecoverPasswordRequest request) {
+        log.info("Recovering password for the user {}", userId);
+        userService.recoverPassword(userId, request.password());
+        log.info("Password recovered successfully for the user {}", userId);
     }
 
 }

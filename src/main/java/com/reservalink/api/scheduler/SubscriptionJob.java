@@ -1,6 +1,8 @@
 package com.reservalink.api.scheduler;
 
+import com.reservalink.api.repository.PaymentRepository;
 import com.reservalink.api.repository.entity.SubscriptionEntity;
+import com.reservalink.api.repository.entity.SubscriptionNotificationEntity;
 import com.reservalink.api.repository.entity.UserEntity;
 import com.reservalink.api.repository.BookingRepository;
 import com.reservalink.api.repository.SubscriptionRepository;
@@ -11,8 +13,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Component
@@ -20,40 +30,92 @@ public class SubscriptionJob {
 
     private final SubscriptionRepository subscriptionRepository;
     private final UserRepository userRepository;
-    private final BookingRepository bookingRepository;
     private final NotificationService notificationService;
 
     public SubscriptionJob(SubscriptionRepository subscriptionRepository, UserRepository userRepository, BookingRepository bookingRepository, NotificationService notificationService) {
         this.subscriptionRepository = subscriptionRepository;
         this.userRepository = userRepository;
-        this.bookingRepository = bookingRepository;
         this.notificationService = notificationService;
     }
 
-    @Scheduled(cron = "0 0 22 * * *") // daily at 10 pm
+    @Scheduled(cron = "0 0 20 * * *")
     @Transactional(rollbackFor = Exception.class)
     public void checkForDueSubscriptions() {
         log.info("STARTING EXPIRED SUBSCRIPTIONS BATCH PROCESS");
-        List<SubscriptionEntity> expiredSubscriptionEntities =
-                subscriptionRepository.findByEnabledTrueAndExpiredFalseAndExpirationLessThan(LocalDateTime.now());
+        List<UserEntity> dueUserEntities = userRepository
+                .findBySubscriptionEntity_EnabledTrueAndSubscriptionEntity_ExpiredFalseAndSubscriptionEntity_ExpirationBefore(
+                        LocalDateTime.now());
 
-        if(expiredSubscriptionEntities.isEmpty()) {
+        if (dueUserEntities.isEmpty()) {
             log.info("No subscriptions expired found. Cron job skipped");
             return;
         }
-        log.info("{} subscriptions expired found", expiredSubscriptionEntities.size());
-        expiredSubscriptionEntities.forEach(subscription -> subscription.setExpired(Boolean.TRUE));
-        subscriptionRepository.saveAllAndFlush(expiredSubscriptionEntities);
+
+        log.info("{} subscriptions expired found and will be marked as EXPIRED.", dueUserEntities.size());
+        List<SubscriptionEntity> subscriptionsToUpdate = dueUserEntities.stream()
+                .map(UserEntity::getSubscriptionEntity)
+                .peek(subscription -> subscription.setExpired(Boolean.TRUE))
+                .toList();
+
+        subscriptionRepository.saveAllAndFlush(subscriptionsToUpdate);
 
         try {
-            List<String> subscriptionIds = expiredSubscriptionEntities.stream().map(SubscriptionEntity::getId).toList();
-            List<UserEntity> userEntityList = userRepository.findAllBySubscriptionEntityIdIn(subscriptionIds);
-            notificationService.sendSubscriptionExpired(userEntityList);
+            notificationService.sendSubscriptionExpired(dueUserEntities);
         } catch (Exception e) {
-            log.warn("Unexpected error sending subscription expired notifications");
+            log.error("Unexpected error sending subscription expired notifications", e);
         }
 
         log.info("FINISHED EXPIRED SUBSCRIPTIONS BATCH PROCESS SUCCESSFULLY");
+    }
+
+    @Scheduled(cron = "0 30 9 * * *")
+    @Transactional(rollbackFor = Exception.class)
+    public void sendExpirationNotifications() {
+        final LocalDate today = LocalDate.now();
+        Map<Integer, List<UserEntity>> subscriptionAboutToExpireMap = new HashMap<>();
+        Map<Integer, List<UserEntity>> subscriptionExpiredMap = new HashMap<>();
+
+        LocalDateTime startOf3DaysFuture = today.plusDays(3).atStartOfDay();
+        LocalDateTime endOf3DaysFuture   = LocalDateTime.of(today.plusDays(3), LocalTime.MAX);
+
+        LocalDateTime startOfTomorrow    = today.plusDays(1).atStartOfDay();
+        LocalDateTime endOfTomorrow      = LocalDateTime.of(today.plusDays(1), LocalTime.MAX);
+
+        LocalDateTime startOf3DaysAgo    = today.minusDays(3).atStartOfDay();
+        LocalDateTime endOf3DaysAgo      = LocalDateTime.of(today.minusDays(3), LocalTime.MAX);
+
+        LocalDateTime startOf5DaysAgo    = today.minusDays(5).atStartOfDay();
+        LocalDateTime endOf5DaysAgo      = LocalDateTime.of(today.minusDays(5), LocalTime.MAX);
+
+        List<UserEntity> expiringIn3Days = userRepository
+                .findBySubscriptionEntity_EnabledTrueAndSubscriptionEntity_ExpiredFalseAndSubscriptionEntity_ExpirationBetween(
+                        startOf3DaysFuture, endOf3DaysFuture);
+
+        List<UserEntity> expiringTomorrow = userRepository
+                .findBySubscriptionEntity_EnabledTrueAndSubscriptionEntity_ExpiredFalseAndSubscriptionEntity_ExpirationBetween(
+                        startOfTomorrow, endOfTomorrow);
+
+        List<UserEntity> expired3DaysAgo = userRepository
+                .findBySubscriptionEntity_EnabledTrueAndSubscriptionEntity_ExpiredTrueAndSubscriptionEntity_ExpirationBetween(
+                        startOf3DaysAgo, endOf3DaysAgo);
+
+        List<UserEntity> expired5DaysAgo = userRepository
+                .findBySubscriptionEntity_EnabledTrueAndSubscriptionEntity_ExpiredTrueAndSubscriptionEntity_ExpirationBetween(
+                        startOf5DaysAgo, endOf5DaysAgo);
+
+
+        subscriptionAboutToExpireMap.put(3, expiringIn3Days);
+        subscriptionAboutToExpireMap.put(1, expiringTomorrow);
+        subscriptionExpiredMap.put(3, expired3DaysAgo);
+        subscriptionExpiredMap.put(5, expired5DaysAgo);
+
+        try {
+            notificationService.sendAboutToExpire(subscriptionAboutToExpireMap);
+            notificationService.sendRecoverExpired(subscriptionExpiredMap);
+        } catch (Exception e) {
+            log.error("Unexpected error sending notifications to subscriptions about to expire and to recover expired ones", e);
+        }
+
     }
 
 

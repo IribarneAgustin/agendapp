@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface BookingRepository extends JpaRepository<BookingEntity, String> {
@@ -64,6 +65,7 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
     """)
     Integer getIncomingBookingsCountBySlotId(@Param("slotTimeId") String slotTimeId, @Param("now") LocalDateTime now);
 
+    List<BookingEntity> findBySlotTimeEntityStartDateTimeBetweenAndStatusAndEnabledTrue(LocalDateTime start, LocalDateTime end, String status);
 
 
 }

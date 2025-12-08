@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado de la Suscripción</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+          font-family: Arial, Helvetica, sans-serif;
+          background: #f6f7f9;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+          color: #333;
+        }
+
+        .card {
+          background: #fff;
+          padding: 24px 28px;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          max-width: 380px;
+          text-align: center;
+        }
+
+        h2 {
+          margin-top: 10px;
+          color: #2b7cff;
+          font-weight: 600;
+        }
+
+        /* Specific color for error state */
+        .error-text {
+            color: #d32f2f !important;
+        }
+
+        p {
+          margin: 12px 0 20px;
+          line-height: 1.4;
+          color: #555;
+        }
+
+        a.button {
+          display: inline-block;
+          background: #2b7cff;
+          color: #fff;
+          padding: 10px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: 500;
+          transition: background 0.2s ease;
+          margin-top: 10px;
+          cursor: pointer;
+        }
+
+        a.button:hover {
+          background: #1f62cc;
+        }
+
+        a.button.secondary {
+            background-color: #fff;
+            color: #555;
+            border: 1px solid #ddd;
+        }
+
+        a.button.secondary:hover {
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        /* Utility to hide elements */
+        .hidden {
+            display: none;
+        }
+
+        .icon-container {
+            margin-bottom: 15px;
+        }
+
+        svg {
+            width: 48px;
+            height: 48px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+    <!-- View for Success -->
+    <div id="success-view" class="hidden">
+        <div class="icon-container">
+            <!-- Checkmark Icon -->
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" fill="#2b7cff"/>
+            </svg>
+        </div>
+        <h2>¡Suscripción activa!</h2>
+        <p>El pago se procesó correctamente. Ya tienes acceso a todos los beneficios de ReservaLink.</p>
+        <a href="/" class="button">Ir al inicio</a>
+    </div>
+
+    <!-- View for Failure -->
+    <div id="failure-view" class="hidden">
+        <div class="icon-container">
+            <!-- Error Icon -->
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="#d32f2f"/>
+            </svg>
+        </div>
+        <h2 class="error-text">Hubo un problema</h2>
+        <p>No pudimos procesar el pago de tu suscripción. Por favor intenta nuevamente.</p>
+        <a href="/" class="button">Intentar de nuevo</a>
+    </div>
+    <div id="loading-view">
+        <p>Procesando...</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Get query params
+        const params = new URLSearchParams(window.location.search);
+        const isSuccess = params.get('success');
+
+        // 2. Get DOM elements
+        const successView = document.getElementById('success-view');
+        const failureView = document.getElementById('failure-view');
+        const loadingView = document.getElementById('loading-view');
+
+        // 3. Toggle logic
+        loadingView.classList.add('hidden'); // Hide loading
+
+        if (isSuccess === 'true') {
+            successView.classList.remove('hidden');
+        } else {
+            // Treats 'false', null, or any other value as failure
+            failureView.classList.remove('hidden');
+        }
+    });
+</script>
+
+</body>
+</html>

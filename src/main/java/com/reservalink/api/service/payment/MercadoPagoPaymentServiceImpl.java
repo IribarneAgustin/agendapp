@@ -9,7 +9,10 @@ import com.reservalink.api.repository.entity.PaymentMethod;
 import com.reservalink.api.repository.entity.PaymentStatus;
 import com.reservalink.api.repository.entity.SlotTimeEntity;
 import com.reservalink.api.repository.UserRepository;
-import com.mercadopago.resources.payment.Payment;
+import com.reservalink.api.repository.entity.SubscriptionEntity;
+import com.reservalink.api.repository.entity.SubscriptionPaymentEntity;
+import com.reservalink.api.repository.entity.UserEntity;
+import com.reservalink.api.service.notification.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -21,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +40,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
 
     private final PaymentRepository paymentRepository;
 
+    private final NotificationService notificationService;
 
     @Value("${api.base.url}")
     private String baseURL;
@@ -43,61 +48,58 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
     @Value("${mercadopago.app.access-token}")
     private String mercadoPagoAppToken;
 
+    @Value("${app.subscription.price}")
+    private Double subscriptionPrice;
 
-    public MercadoPagoPaymentServiceImpl(UserRepository userRepository, PaymentAccountTokenRepository tokenRepository, RestTemplate restTemplate, PaymentRepository paymentRepository) {
+
+    public MercadoPagoPaymentServiceImpl(UserRepository userRepository, PaymentAccountTokenRepository tokenRepository, RestTemplate restTemplate, PaymentRepository paymentRepository, NotificationService notificationService) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.restTemplate = restTemplate;
         this.paymentRepository = paymentRepository;
+        this.notificationService = notificationService;
     }
 
     @Override
-    public void processPaymentWebhook(Payment paymentDetails) {
-       /* String userId = paymentDetails.getExternalReference();
-        if (userId == null || userId.isEmpty()) {
-            log.warn("Webhook received without external_reference");
-            return;
-        }
+    public String createSubscriptionCheckoutURL(String userId) {
+        String url = "https://api.mercadopago.com/checkout/preferences";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(mercadoPagoAppToken);
 
-        UserEntity userEntity = userRepository.findById(userId).orElseThrow(RuntimeException::new);
-        SubscriptionEntity subscriptionEntity = userEntity.getSubscriptionEntity();
+        String externalId = "SUBSCRIPTION-" + userId;
 
-        String status = paymentDetails.getStatus();
-        LocalDateTime now = LocalDateTime.now();
+        Map<String, Object> body = Map.of(
+                "items", new Object[]{
+                        Map.of(
+                                "title", "Suscripción Mensual ReservaLink",
+                                "quantity", 1,
+                                "currency_id", "ARS",
+                                "unit_price", subscriptionPrice
+                        )
+                },
+                "external_reference", externalId,
+                "back_urls", Map.of(
+                        "success", baseURL + "/public/subscription-payment.html?success=true",
+                        "failure", baseURL + "/public/subscription-payment.html?success=false"
+                ),
+                "auto_return", "approved"
+        );
 
-        if ("approved".equalsIgnoreCase(status)) {
-            log.info("Pago APROBADO recibido para el usuario: {}. ID de Pago MP: {}", userId, paymentDetails.getId());
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
-            LocalDateTime nextExpiration = now.plusMonths(1);
-            subscriptionEntity.setExpired(false);
-            subscriptionEntity.setExpiration(nextExpiration);
-
-        } else if ("cancelled".equalsIgnoreCase(status) || "rejected".equalsIgnoreCase(status)) {
-            log.warn("Pago CANCELADO/RECHAZADO para el usuario: {}. ID de Pago MP: {}", userId, paymentDetails.getId());
-
-            subscriptionEntity.setExpired(true);
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return response.getBody().get("init_point").toString();
         } else {
-            log.info("Pago en estado {} para el usuario: {}. No se requiere acción de DB inmediata.", status, userId);
-            return;
-        }
-        userEntity.setSubscriptionEntity(subscriptionEntity);
-
-        userRepository.save(userEntity);
-        log.info("Estado de suscripción actualizado para el usuario: {}", userId);*/
-    }
-
-    @Override
-    public String createCheckoutLink(String email, String userId) {
-        try {
-            return null;//mercadoPagoClient.createPreapproval(email, userId);
-        } catch (Exception e) {
-            log.error("Error generating Mercado Pago checkout link", e);
-            return null;
+            throw new RuntimeException("Error creating subscription preference");
         }
     }
+
 
     @Override
     public String createBookingCheckoutURL(BookingEntity bookingEntity, Integer quantity) {
+        log.info("Creating booking checkout URL");
         SlotTimeEntity slotTimeEntity = bookingEntity.getSlotTimeEntity();
         String userId = slotTimeEntity.getOfferingEntity().getUserEntity().getId();
         PaymentAccountTokenEntity token = tokenRepository.findByUserEntityId(userId)
@@ -149,6 +151,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                 paymentRepository.save(pending);
 
                 if (checkoutUrl != null) {
+                    log.info("Booking checkout URL generated successfully");
                     return checkoutUrl.toString();
                 } else {
                     throw new RuntimeException("No checkout URL returned from MercadoPago");
@@ -164,12 +167,11 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public String processBookingWebhook(String paymentId) {
+    public String processPaymentWebhook(String paymentId) {
         String externalId = null;
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(mercadoPagoAppToken);
-
             ResponseEntity<Map> response = restTemplate.exchange(
                     "https://api.mercadopago.com/v1/payments/" + paymentId,
                     HttpMethod.GET,
@@ -180,23 +182,55 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
             Map<String, Object> payment = response.getBody();
             externalId = (String) payment.get("external_reference");
             String status = (String) payment.get("status");
+            boolean approved = "approved".equalsIgnoreCase(status);
 
-            String finalExternalId = externalId;
-            BookingPaymentEntity bookingPaymentEntity = paymentRepository.findByExternalId(externalId)
-                    .orElseThrow(() -> new RuntimeException("Payment not found by externalId: " + finalExternalId));
-
-            if ("approved".equalsIgnoreCase(status)) {
-                bookingPaymentEntity.setPaymentStatus(PaymentStatus.COMPLETED);
-                bookingPaymentEntity.setPaymentMethod(PaymentMethod.MERCADO_PAGO);
+            if (externalId.startsWith("SUBSCRIPTION-")) {
+                processSubscriptionPayment(externalId, approved, payment);
             } else {
-                bookingPaymentEntity.setPaymentStatus(PaymentStatus.FAILED);
+                processBookingPayment(externalId, approved);
             }
-            paymentRepository.saveAndFlush(bookingPaymentEntity);
 
         } catch (Exception e) {
             log.error("Unexpected error processing booking webhook: {}", e.getMessage());
         }
         return externalId;
+    }
+
+    private void processBookingPayment(String externalId, boolean approved) {
+        BookingPaymentEntity bookingPaymentEntity = paymentRepository.findByExternalId(externalId)
+                .orElseThrow(() -> new RuntimeException("Payment not found by externalId: " + externalId));
+        if (approved) {
+            bookingPaymentEntity.setPaymentStatus(PaymentStatus.COMPLETED);
+            bookingPaymentEntity.setPaymentMethod(PaymentMethod.MERCADO_PAGO);
+        } else {
+            bookingPaymentEntity.setPaymentStatus(PaymentStatus.FAILED);
+        }
+        paymentRepository.saveAndFlush(bookingPaymentEntity);
+    }
+
+    private void processSubscriptionPayment(String externalId, boolean approved, Map<String, Object> payment) {
+        String userId = externalId.replace("SUBSCRIPTION-", "");
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with userId: " + userId));
+
+        SubscriptionEntity subscriptionEntity = user.getSubscriptionEntity();
+        if (approved) {
+            if(subscriptionEntity.getExpiration().isBefore(LocalDateTime.now())) {//TODO Consider use paymentDate from payment map
+                subscriptionEntity.setExpiration(LocalDateTime.now().plusMonths(1));
+            } else {
+                subscriptionEntity.setExpiration(subscriptionEntity.getExpiration().plusMonths(1));
+            }
+        }
+        SubscriptionPaymentEntity subscriptionPayment = SubscriptionPaymentEntity.builder()
+                .subscriptionEntity(user.getSubscriptionEntity())
+                .externalId(externalId)
+                .paymentStatus(approved ? PaymentStatus.COMPLETED : PaymentStatus.FAILED)
+                .paymentMethod(PaymentMethod.MERCADO_PAGO)
+                .amount(new BigDecimal(payment.get("transaction_amount").toString()))
+                .paymentDate(LocalDateTime.now())
+                .build();
+        paymentRepository.saveAndFlush(subscriptionPayment);
+        notificationService.sendSubscriptionPayment(subscriptionPayment, user);
     }
 
 

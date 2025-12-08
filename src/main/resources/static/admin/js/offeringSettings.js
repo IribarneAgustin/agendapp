@@ -180,7 +180,9 @@ class OfferingManager {
                 </div>
             </div>
 
-            <p class="text-gray-600 mb-4 line-clamp-2">${this.escapeHtml(offering.description || 'Sin descripción.')}</p>
+            <p class="text-gray-600 mb-4 whitespace-pre-line">
+                ${this.escapeHtml(offering.description || 'Sin descripción.')}
+            </p>
 
             <div class="space-y-4 border-t pt-4 border-gray-100">
                 <div>

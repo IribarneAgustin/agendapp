@@ -26,4 +26,8 @@ public interface UserService {
     String getPublicURL(UUID userId);
 
     SubscriptionEntity findUserSubscription(UUID userId);
+
+    void requestPasswordChange(String email);
+
+    void recoverPassword(UUID userId, String password);
 }

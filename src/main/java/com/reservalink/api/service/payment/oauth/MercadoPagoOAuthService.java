@@ -5,7 +5,7 @@ import com.reservalink.api.repository.entity.PaymentMethod;
 import com.reservalink.api.repository.entity.UserEntity;
 import com.reservalink.api.repository.PaymentAccountTokenRepository;
 import com.reservalink.api.repository.UserRepository;
-import com.reservalink.api.service.payment.dto.TokenResponse;
+import com.reservalink.api.dto.TokenResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;

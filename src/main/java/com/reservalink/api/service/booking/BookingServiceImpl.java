@@ -54,6 +54,7 @@ public class BookingServiceImpl implements BookingService {
 
         Integer newCapacity = slotTimeEntity.getCapacityAvailable() - bookingRequest.getQuantity();
         if(newCapacity < 0){
+            log.warn("No capacity available for slotTimeId: {}. Booking creation ignored for {}", bookingRequest.getSlotTimeId(), bookingRequest.getEmail());
             throw new BusinessRuleException(BusinessErrorCodes.NO_CAPACITY_AVAILABLE.name());
         }
 
@@ -67,6 +68,7 @@ public class BookingServiceImpl implements BookingService {
                 .build();
 
         if (paymentRequired(slotTimeEntity) && !isAdmin) {
+            log.info("Creating new Booking with required payment");
             bookingEntity.setStatus(BookingStatus.PENDING);
             BookingEntity bookingEntitySaved = bookingRepository.saveAndFlush(bookingEntity);
             String checkoutURL = paymentService.createBookingCheckoutURL(bookingEntitySaved, bookingRequest.getQuantity());
@@ -75,6 +77,7 @@ public class BookingServiceImpl implements BookingService {
                     .checkoutURL(checkoutURL)
                     .build();
         } else {
+            log.info("Creating new Booking without required payment");
             slotTimeEntity.setCapacityAvailable(newCapacity);
             slotTimeRepository.saveAndFlush(slotTimeEntity);
 

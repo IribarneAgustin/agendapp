@@ -36,7 +36,9 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponse> create(@Valid @RequestBody BookingRequest bookingRequest) throws Exception {
+        log.info("Request received to create a new Booking. Email: {}, SlotTimeId: {}", bookingRequest.getEmail(), bookingRequest.getSlotTimeId());
         BookingResponse response = bookingService.create(bookingRequest, false);
+        log.info("Booking created successfully");
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);

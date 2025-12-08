@@ -23,11 +23,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<String> unauthorizedExceptionHandler(BadCredentialsException e){
+        log.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
     }
 
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<Map<String, Object>> handleBusinessRuleException(BusinessRuleException e) {
+        log.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of(
                     "errorCode", e.getCode(),
@@ -36,7 +38,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<String> userNotFound() {
+    public ResponseEntity<String> userNotFound(Exception e) {
+        log.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
