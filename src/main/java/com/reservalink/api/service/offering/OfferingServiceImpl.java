@@ -6,7 +6,6 @@ import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.repository.BookingRepository;
 import com.reservalink.api.repository.OfferingRepository;
-import com.reservalink.api.repository.PaymentAccountTokenRepository;
 import com.reservalink.api.repository.SlotTimeRepository;
 import com.reservalink.api.repository.UserRepository;
 import com.reservalink.api.repository.entity.OfferingEntity;
@@ -33,7 +32,7 @@ public class OfferingServiceImpl implements OfferingService {
     private final BookingRepository bookingRepository;
     private final UserRepository userRepository;
 
-    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeService slotTimeService, SlotTimeRepository slotTimeRepository, BookingRepository bookingRepository, UserRepository userRepository) {
+    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeRepository slotTimeRepository, BookingRepository bookingRepository, UserRepository userRepository) {
         this.offeringRepository = offeringRepository;
         this.modelMapper = modelMapper;
         this.slotTimeRepository = slotTimeRepository;
