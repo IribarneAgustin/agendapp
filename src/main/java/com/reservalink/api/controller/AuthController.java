@@ -1,6 +1,6 @@
 package com.reservalink.api.controller;
 
-import com.reservalink.api.controller.request.RecoverPasswordRequest;
+import com.reservalink.api.controller.request.ForgotPasswordRequest;
 import com.reservalink.api.controller.request.UserLoginRequest;
 import com.reservalink.api.controller.request.UserRegistrationRequest;
 import com.reservalink.api.controller.response.UserAuthResponse;
@@ -8,6 +8,8 @@ import com.reservalink.api.domain.User;
 import com.reservalink.api.service.user.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -78,7 +80,7 @@ public class AuthController {
 
     @PostMapping("/forgot-password")
     @ResponseStatus(HttpStatus.OK)
-    public void recoverPassword(@Valid @RequestBody RecoverPasswordRequest request) {
+    public void sendRecoverPasswordRequest(@RequestBody @Valid ForgotPasswordRequest request) {
         log.info("Recover password request received for the email {}", request.email());
         userService.requestPasswordChange(request.email());
     }

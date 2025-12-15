@@ -4,6 +4,8 @@ import com.reservalink.api.controller.request.UserLoginRequest;
 import com.reservalink.api.controller.request.UserRegistrationRequest;
 import com.reservalink.api.controller.request.UserRequest;
 import com.reservalink.api.controller.response.UserAuthResponse;
+import com.reservalink.api.repository.RecoverPasswordTokenRepository;
+import com.reservalink.api.repository.entity.RecoverPasswordTokenEntity;
 import com.reservalink.api.repository.entity.SubscriptionEntity;
 import com.reservalink.api.repository.entity.UserEntity;
 import com.reservalink.api.domain.User;
@@ -16,6 +18,7 @@ import com.reservalink.api.security.JWTUtils;
 import com.reservalink.api.service.notification.NotificationService;
 import com.reservalink.api.service.payment.PaymentService;
 import com.reservalink.api.utils.GenericAppConstants;
+import com.reservalink.api.utils.TokenHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,12 +46,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final BrandRepository brandRepository;
     private final PaymentService paymentService;
     private final NotificationService notificationService;
+    private final RecoverPasswordTokenRepository recoverPasswordTokenRepository;
 
     @Value("${api.base.url}")
     private String baseURL;
 
     public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder, JWTUtils jwtUtils,
-                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService) {
+                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService, RecoverPasswordTokenRepository recoverPasswordTokenRepository) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
@@ -56,6 +60,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         this.brandRepository = brandRepository;
         this.paymentService = paymentService;
         this.notificationService = notificationService;
+        this.recoverPasswordTokenRepository = recoverPasswordTokenRepository;
     }
 
     public User register(UserRegistrationRequest userRegistrationRequest) {
@@ -193,14 +198,33 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public void requestPasswordChange(String email) {
         UserEntity userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User email " + email + " not found"));
-        notificationService.sendResetPasswordRequest(userEntity.getEmail(), userEntity.getId());
+
+        TokenHelper.TokenPair tokenPair = TokenHelper.generate();
+
+        RecoverPasswordTokenEntity recoverPasswordTokenEntity = RecoverPasswordTokenEntity.builder()
+                .used(false)
+                .expiration(LocalDateTime.now().plusMinutes(30))
+                .tokenHash(tokenPair.hashedToken())
+                .user(userEntity)
+                .build();
+
+        recoverPasswordTokenRepository.save(recoverPasswordTokenEntity);
+
+        notificationService.sendResetPasswordRequest(userEntity.getEmail(), tokenPair.rawToken());
     }
 
     @Override
-    public void recoverPassword(UUID userId, String password) {
-        UserEntity userEntity = userRepository.findById(userId.toString())
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        userEntity.setPassword(passwordEncoder.encode(password));
-        userRepository.save(userEntity);
+    public void resetPassword(String token, String newPassword) {
+        String tokenHash = TokenHelper.hashToken(token);
+
+        RecoverPasswordTokenEntity tokenEntity = recoverPasswordTokenRepository.findValidToken(tokenHash, LocalDateTime.now())
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+
+        UserEntity user = tokenEntity.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.saveAndFlush(user);
+
+        tokenEntity.setUsed(true);
+        recoverPasswordTokenRepository.saveAndFlush(tokenEntity);
     }
 }

@@ -1,6 +1,6 @@
 package com.reservalink.api.controller;
 
-import com.reservalink.api.controller.request.RecoverPasswordRequest;
+import com.reservalink.api.controller.request.ResetPasswordRequest;
 import com.reservalink.api.controller.request.UserRequest;
 import com.reservalink.api.controller.response.SubscriptionResponse;
 import com.reservalink.api.repository.entity.SubscriptionEntity;
@@ -12,6 +12,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -58,12 +59,13 @@ public class UserController {
         return ResponseEntity.ok().body(modelMapper.map(subscriptionEntity, SubscriptionResponse.class));
     }
 
-    @GetMapping("/{userId}/recover-password")
-    @ResponseStatus(HttpStatus.OK)
-    public void recoverPassword(@PathVariable UUID userId, RecoverPasswordRequest request) {
-        log.info("Recovering password for the user {}", userId);
-        userService.recoverPassword(userId, request.password());
-        log.info("Password recovered successfully for the user {}", userId);
+    @PatchMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        log.info("Reset password request received");
+        userService.resetPassword(request.token(), request.newPassword());
+        log.info("Reset password finished successfully");
     }
+
 
 }

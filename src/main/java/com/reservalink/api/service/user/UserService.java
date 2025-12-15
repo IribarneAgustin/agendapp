@@ -29,5 +29,6 @@ public interface UserService {
 
     void requestPasswordChange(String email);
 
-    void recoverPassword(UUID userId, String password);
+    @Transactional(rollbackFor = Exception.class)
+    void resetPassword(String password, String token);
 }

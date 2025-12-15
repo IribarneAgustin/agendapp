@@ -3,9 +3,9 @@ package com.reservalink.api.service.notification;
 import com.reservalink.api.repository.entity.BookingEntity;
 import com.reservalink.api.repository.entity.PaymentStatus;
 import com.reservalink.api.repository.entity.SlotTimeEntity;
-import com.reservalink.api.repository.entity.SubscriptionEntity;
 import com.reservalink.api.repository.entity.SubscriptionPaymentEntity;
 import com.reservalink.api.repository.entity.UserEntity;
+import com.reservalink.api.utils.GenericAppConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,12 +13,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -227,17 +225,17 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationStrategy strategy = notificationStrategyResolver.resolve(NotificationType.EMAIL);
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
         incomingBookingList.forEach(booking -> {
-                Map<String, String> args = new HashMap<>();
-                String serviceName = booking.getSlotTimeEntity().getOfferingEntity().getName();
-                String dateFormatted = booking.getSlotTimeEntity().getStartDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                String timeFormatted = booking.getSlotTimeEntity().getStartDateTime().toLocalTime().format(timeFormatter)
-                        + " - " +
-                        booking.getSlotTimeEntity().getEndDateTime().toLocalTime().format(timeFormatter);
-                args.put("name", booking.getName());
-                args.put("serviceName", serviceName);
-                args.put("date", dateFormatted);
-                args.put("time", timeFormatted);
-                args.put("cancelLink", baseURL + "/booking/" + booking.getId() + "/cancel");
+            Map<String, String> args = new HashMap<>();
+            String serviceName = booking.getSlotTimeEntity().getOfferingEntity().getName();
+            String dateFormatted = booking.getSlotTimeEntity().getStartDateTime().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            String timeFormatted = booking.getSlotTimeEntity().getStartDateTime().toLocalTime().format(timeFormatter)
+                    + " - " +
+                    booking.getSlotTimeEntity().getEndDateTime().toLocalTime().format(timeFormatter);
+            args.put("name", booking.getName());
+            args.put("serviceName", serviceName);
+            args.put("date", dateFormatted);
+            args.put("time", timeFormatted);
+            args.put("cancelLink", baseURL + "/booking/" + booking.getId() + "/cancel");
             try {
                 strategy.send(booking.getEmail(), NotificationMotive.BOOKING_REMINDER, args);
             } catch (Exception e) {
@@ -248,15 +246,15 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendResetPasswordRequest(String userEmail, String userId) {
+    public void sendResetPasswordRequest(String userEmail, String rawToken) {
         log.info("Sending recover password email to {}", userEmail);
         NotificationStrategy strategy = notificationStrategyResolver.resolve(NotificationType.EMAIL);
         try {
             Map<String, String> args = new HashMap<>();
-            args.put("recoverPasswordLink", baseURL + "/users/" + userId + "/recover-password");
+            args.put("recoverPasswordLink", baseURL + "/public/change-password.html?token=" + rawToken);
             strategy.send(userEmail, NotificationMotive.RESET_PASSWORD, args);
         } catch (Exception e) {
-            log.error("Unexpected error sending recover password email to {}", userEmail);
+            log.error("Unexpected error sending recover password email to {}", userEmail, e);
         }
     }
 
@@ -267,16 +265,9 @@ public class NotificationServiceImpl implements NotificationService {
         NotificationStrategy strategy = notificationStrategyResolver.resolve(NotificationType.EMAIL);
 
         try {
-            SubscriptionEntity sub = userEntity.getSubscriptionEntity();
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
-            String trialStart = sub.getCreationDateTime().toLocalDate().format(fmt);
-            String trialEnds = sub.getExpiration().toLocalDate().format(fmt);
-
             Map<String, String> args = new HashMap<>();
-            args.put("name", userEntity.getName());
-            args.put("trialStart", trialStart);
-            args.put("trialEnds", trialEnds);
+            args.put("userName", userEntity.getName());
+            args.put("trialDaysCount", GenericAppConstants.FREE_TIER_DAYS.toString());
             args.put("loginLink", baseURL);
 
             strategy.send(userEntity.getEmail(), NotificationMotive.NEW_USER_REGISTERED, args);

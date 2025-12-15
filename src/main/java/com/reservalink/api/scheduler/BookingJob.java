@@ -28,6 +28,7 @@ public class BookingJob {
     @Scheduled(cron = "0 0 12 * * *")
     @Transactional(rollbackFor = Exception.class)
     public void sendBookingReminders() {
+        log.info("Cron job to send booking reminders started");
         LocalDateTime tomorrowStart = LocalDate.now().plusDays(1).atStartOfDay();
         LocalDateTime tomorrowEnd   = tomorrowStart.plusDays(1).minusNanos(1);
 
@@ -36,9 +37,13 @@ public class BookingJob {
                     bookingRepository.findBySlotTimeEntityStartDateTimeBetweenAndStatusAndEnabledTrue(
                             tomorrowStart,
                             tomorrowEnd,
-                            BookingStatus.CONFIRMED.name()
+                            BookingStatus.CONFIRMED
                     );
-            notificationService.sendBookingReminder(bookings);
+            if (!bookings.isEmpty()) {
+                log.info("{} bookings found for tomorrow. Sending reminder", bookings.size());
+                notificationService.sendBookingReminder(bookings);
+            }
+            log.info("Cron job finished successfully. {} reminders sent.", bookings.size());
         } catch (Exception e) {
             log.error("Unexpected error sending booking reminders", e);
         }

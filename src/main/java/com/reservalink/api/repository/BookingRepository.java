@@ -1,6 +1,7 @@
 package com.reservalink.api.repository;
 
 import com.reservalink.api.repository.entity.BookingEntity;
+import com.reservalink.api.repository.entity.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -65,7 +66,7 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
     """)
     Integer getIncomingBookingsCountBySlotId(@Param("slotTimeId") String slotTimeId, @Param("now") LocalDateTime now);
 
-    List<BookingEntity> findBySlotTimeEntityStartDateTimeBetweenAndStatusAndEnabledTrue(LocalDateTime start, LocalDateTime end, String status);
+    List<BookingEntity> findBySlotTimeEntityStartDateTimeBetweenAndStatusAndEnabledTrue(LocalDateTime start, LocalDateTime end, BookingStatus status);
 
 
 }

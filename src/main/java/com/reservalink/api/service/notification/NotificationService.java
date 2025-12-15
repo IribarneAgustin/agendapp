@@ -23,7 +23,7 @@ public interface NotificationService {
 
     void sendBookingReminder(List<BookingEntity> incomingBookingList);
 
-    void sendResetPasswordRequest(String userEmail, String userId);
+    void sendResetPasswordRequest(String userEmail, String rawToken);
 
     void sendNewUserRegistered(UserEntity userEntity);
 }

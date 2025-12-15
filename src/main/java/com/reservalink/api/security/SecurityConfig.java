@@ -25,6 +25,8 @@ public class SecurityConfig {
             "/slot-time/offering/*",
             "/mercadopago/oauth/callback",
             "/payment/mercadopago/webhook",
+            "/users/reset-password",
+            "/auth/forgot-password",
 
             "/",
             "/landing.html",
@@ -56,6 +58,10 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .formLogin(form -> form
+                        .loginPage("/")
+                        .defaultSuccessUrl("/", true)
+                )
                 .build();
     }
 
