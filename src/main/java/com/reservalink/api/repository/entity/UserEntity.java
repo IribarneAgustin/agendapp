@@ -16,26 +16,20 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
-
-@NoArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
-@Getter
-@Setter
-@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "user", uniqueConstraints = {
         @UniqueConstraint(name = "UK_USER_EMAIL", columnNames = "email")
 })
 @Audited
-@AuditTable(value="user_audit")
-public class UserEntity extends PersistentObject implements UserDetails {
+@AuditTable(value = "user_audit")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true)
+public class UserEntity extends PersistentObject {
 
     @Column(name = "name")
     private String name;
@@ -59,15 +53,4 @@ public class UserEntity extends PersistentObject implements UserDetails {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "subscription_id")
     private SubscriptionEntity subscriptionEntity;
-
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
-    }
-
-    @Override
-    public String getUsername() {
-        return this.email;
-    }
 }

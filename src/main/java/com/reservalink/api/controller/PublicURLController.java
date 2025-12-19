@@ -15,13 +15,17 @@ public class PublicURLController {
         this.userService = userService;
     }
 
-    @GetMapping("/reservas/{brandname}")
+    @GetMapping("/servicios/{brandname}")
     public String renderUserOfferingsPage(@PathVariable String brandname) {
         String userId = null;
         try {
             userId = userService.findUserIdByBrandName(brandname);
+            if (userService.isSubscriptionExpired(userId)) {
+                return "redirect:/public/404.html";
+            }
+
         } catch (UsernameNotFoundException e) {
-            return "forward:/404.html";
+            return "redirect:/public/404.html";
         }
         return "redirect:/public/user-offerings.html?userId=" + userId;
     }

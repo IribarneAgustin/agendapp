@@ -1,25 +1,21 @@
 package com.reservalink.api.security;
 
 
+import com.reservalink.api.utils.AuthUtils;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.Cookie;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import jakarta.servlet.ServletException;
 import java.io.IOException;
-import java.util.Arrays;
 
 @Component
 @Slf4j
@@ -32,11 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtUtils = jwtUtils;
         this.userDetailsService = userDetailsService;
     }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = getTokenFromCookies(request);
+        String token = AuthUtils.getTokenFromCookies(request);
         if (token != null) {
             try {
                 String email = jwtUtils.getEmailFromToken(token);
@@ -53,35 +50,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
             } catch (Exception e) {
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 log.error("User Unauthorized", e);
             }
         }
-        if (response.getStatus() != HttpStatus.UNAUTHORIZED.value()) {
-            filterChain.doFilter(request, response);
-        }
+        filterChain.doFilter(request, response);
     }
 
-    private String getTokenFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        String token = null;
-        if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        }
-        return token;
-    }
-
-    private String getTokenFromCookies(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) {
-            return null;
-        }
-
-        return Arrays.stream(cookies)
-                .filter(c -> "jwt".equals(c.getName()))
-                .map(Cookie::getValue)
-                .findFirst()
-                .orElse(null);
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().startsWith("/subscription/expired");
     }
 
 

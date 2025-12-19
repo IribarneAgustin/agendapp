@@ -143,7 +143,7 @@ class BookingDashboardManager {
 
         // 2. Filters
         if (this.clientNameFilter) params.append('clientName', this.clientNameFilter);
-        if (this.startDateFilter) params.append('startDate', `${this.startDateFilter}T00:00:00.000`);
+        if (this.startDateFilter) params.append('startDate', this.startDateFilter);
         if (this.monthFilter && this.monthFilter !== 'ALL') params.append('month', this.monthFilter);
         if (this.offeringIdFilter && this.offeringIdFilter !== 'ALL') params.append('offeringId', this.offeringIdFilter);
 

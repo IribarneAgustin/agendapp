@@ -27,7 +27,7 @@ import java.time.LocalDateTime;
 public class SubscriptionEntity extends PersistentObject {
 
     @Column(name = "expired")
-    private Boolean expired;
+    private boolean expired;
 
     @Column(name = "creation_date_time")
     private LocalDateTime creationDateTime;

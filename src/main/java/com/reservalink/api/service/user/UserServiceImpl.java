@@ -4,16 +4,17 @@ import com.reservalink.api.controller.request.UserLoginRequest;
 import com.reservalink.api.controller.request.UserRegistrationRequest;
 import com.reservalink.api.controller.request.UserRequest;
 import com.reservalink.api.controller.response.UserAuthResponse;
-import com.reservalink.api.repository.RecoverPasswordTokenRepository;
-import com.reservalink.api.repository.entity.RecoverPasswordTokenEntity;
-import com.reservalink.api.repository.entity.SubscriptionEntity;
-import com.reservalink.api.repository.entity.UserEntity;
 import com.reservalink.api.domain.User;
-import com.reservalink.api.repository.entity.BrandEntity;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.repository.BrandRepository;
+import com.reservalink.api.repository.RecoverPasswordTokenRepository;
 import com.reservalink.api.repository.UserRepository;
+import com.reservalink.api.repository.entity.BrandEntity;
+import com.reservalink.api.repository.entity.RecoverPasswordTokenEntity;
+import com.reservalink.api.repository.entity.SubscriptionEntity;
+import com.reservalink.api.repository.entity.UserEntity;
+import com.reservalink.api.security.Authority;
 import com.reservalink.api.security.JWTUtils;
 import com.reservalink.api.service.notification.NotificationService;
 import com.reservalink.api.service.payment.PaymentService;
@@ -21,16 +22,21 @@ import com.reservalink.api.utils.GenericAppConstants;
 import com.reservalink.api.utils.TokenHelper;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -104,8 +110,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public UserAuthResponse login(UserLoginRequest userLoginRequest) {
-        UserEntity userEntity = this.loadUserByUsername(userLoginRequest.getEmail());
-        if(!passwordEncoder.matches(userLoginRequest.getPassword(), userEntity.getPassword())) {
+        UserEntity userEntity = userRepository.findByEmail(userLoginRequest.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+        if (!passwordEncoder.matches(userLoginRequest.getPassword(), userEntity.getPassword())) {
             throw new BadCredentialsException("Invalid credentials");
         }
         String jwt = jwtUtils.generateToken(userEntity);
@@ -113,14 +120,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return UserAuthResponse.builder()
                 .token(jwt)
                 .id(userEntity.getId())
-                .email(userEntity.getUsername())
+                .email(userEntity.getEmail())
                 .build();
     }
 
     @Override
     public String findUserIdByBrandName(String brandName) {
         String userId = userRepository.findUserIdByBrandName(brandName);
-        if(userId == null) {
+        if (userId == null) {
             throw new UsernameNotFoundException("User Not Found");
         }
         return userId;
@@ -140,7 +147,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
         String userIdByBrandName = userRepository.findUserIdByBrandName(request.getBrandName());
 
-        if(userIdByBrandName != null && !userIdByBrandName.equals(userEntity.getId())) {
+        if (userIdByBrandName != null && !userIdByBrandName.equals(userEntity.getId())) {
             throw new BusinessRuleException(BusinessErrorCodes.UNIQUE_FIELD_ALREADY_EXISTS.name(),
                     Map.of("field", "brandName",
                             "value", request.getBrandName()));
@@ -163,14 +170,34 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public String getPublicURL(UUID userId) {
         UserEntity userEntity = userRepository.findById(userId.toString())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        return this.baseURL + "/" + "reservas/" + userEntity.getBrandEntity().getName();
+        return this.baseURL + "/" + "servicios/" + userEntity.getBrandEntity().getName();
     }
 
     @Override
-    public UserEntity loadUserByUsername(String email) throws UsernameNotFoundException {
-        return userRepository.findByEmail(email)
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        boolean subscriptionActive =
+                user.getSubscriptionEntity() != null
+                        && Boolean.FALSE.equals(user.getSubscriptionEntity().isExpired());
+
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(Authority.ROLE_USER.name()));
+
+        if (subscriptionActive) {
+            authorities.add(new SimpleGrantedAuthority(Authority.SUBSCRIPTION_ACTIVE.name()));
+        } else {
+            authorities.add(new SimpleGrantedAuthority(Authority.SUBSCRIPTION_EXPIRED.name()));
+        }
+
+        return new org.springframework.security.core.userdetails.User(
+                user.getEmail(),
+                user.getPassword(),
+                authorities
+        );
     }
+
 
     private void validateSQLConstraints(DataIntegrityViolationException ex, UserRegistrationRequest userRegistrationRequest) {
         Throwable rootCause = ex.getRootCause();
@@ -218,7 +245,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         String tokenHash = TokenHelper.hashToken(token);
 
         RecoverPasswordTokenEntity tokenEntity = recoverPasswordTokenRepository.findValidToken(tokenHash, LocalDateTime.now())
-                        .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid or expired token"));
 
         UserEntity user = tokenEntity.getUser();
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -226,5 +253,19 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
         tokenEntity.setUsed(true);
         recoverPasswordTokenRepository.saveAndFlush(tokenEntity);
+    }
+
+    @Override
+    public SubscriptionEntity findUserSubscriptionByUserEmail(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return userEntity.getSubscriptionEntity();
+    }
+
+    @Override
+    public boolean isSubscriptionExpired(String userId) {
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        return userEntity.getSubscriptionEntity().isExpired();
     }
 }

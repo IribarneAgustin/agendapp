@@ -16,17 +16,19 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final SubscriptionAccessDeniedHandler subscriptionAccessDeniedHandler;
 
     private static final List<String> publicEndpointList = List.of(
             "/auth/**",
             "/booking",
             "/booking/*/cancel",
-            "/reservas/**",
+            "/servicios/**",
             "/slot-time/offering/*",
             "/mercadopago/oauth/callback",
             "/payment/mercadopago/webhook",
             "/users/reset-password",
             "/auth/forgot-password",
+            "/subscription/expired",
 
             "/",
             "/landing.html",
@@ -37,8 +39,9 @@ public class SecurityConfig {
 
     );
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter, SubscriptionAccessDeniedHandler subscriptionAccessDeniedHandler) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.subscriptionAccessDeniedHandler = subscriptionAccessDeniedHandler;
     }
 
     @Bean
@@ -52,8 +55,11 @@ public class SecurityConfig {
                             auth.requestMatchers(endpoint).permitAll()
                     );
 
-                    auth.anyRequest().authenticated();
+                    auth.anyRequest().hasAuthority(Authority.SUBSCRIPTION_ACTIVE.name());
                 })
+                .exceptionHandling(ex -> ex
+                        .accessDeniedHandler(subscriptionAccessDeniedHandler)
+                )
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )

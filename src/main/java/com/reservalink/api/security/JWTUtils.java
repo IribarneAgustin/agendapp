@@ -1,5 +1,6 @@
 package com.reservalink.api.security;
 
+import com.reservalink.api.repository.entity.UserEntity;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -21,11 +22,11 @@ public class JWTUtils {
         return new javax.crypto.spec.SecretKeySpec(secretKey.getBytes(), SignatureAlgorithm.HS256.getJcaName());
     }
 
-    public String generateToken(UserDetails userDetails) {
+    public String generateToken(UserEntity userDetails) {
         long expirationTime = 1000L * 60 * 60 * 24 * 7;
         return Jwts.builder()
                 .claims()
-                .subject(userDetails.getUsername())
+                .subject(userDetails.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + expirationTime))
                 .and()

@@ -31,4 +31,8 @@ public interface UserService {
 
     @Transactional(rollbackFor = Exception.class)
     void resetPassword(String password, String token);
+
+    SubscriptionEntity findUserSubscriptionByUserEmail(String email);
+
+    boolean isSubscriptionExpired(String userId);
 }

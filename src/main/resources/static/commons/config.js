@@ -1,4 +1,4 @@
 (function() {
-    const BASE_URL = "https://6161440a078c.ngrok-free.app";
+    const BASE_URL = "https://reservalink.site";
     window.BASE_URL = BASE_URL;
 })();
