@@ -220,6 +220,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
             } else {
                 subscriptionEntity.setExpiration(subscriptionEntity.getExpiration().plusMonths(1));
             }
+            subscriptionEntity.setExpired(false);
         }
         SubscriptionPaymentEntity subscriptionPayment = SubscriptionPaymentEntity.builder()
                 .subscriptionEntity(user.getSubscriptionEntity())

@@ -35,7 +35,8 @@ public class SecurityConfig {
             "/favicon.ico",
             "/index.html",
             "/commons/config.js",
-            "/public/**"
+            "/public/**",
+            "/test/**"
 
     );
 

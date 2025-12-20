@@ -15,10 +15,15 @@ class DashboardManager {
     init() {
         this.setupEventListeners();
         this.loadDashboardData();
+
+        // Critical Status Checks for UI Warnings
         this.loadSubscriptionStatus();
+        this.loadMpConnectionStatus();
+
         this.setupShareableUrl();
         this.setupBookingDashboardLink();
-        this.loadMpConnectionStatus();
+
+        // Setup Mercado Pago Action Buttons
         this.setupMpConnectButton();
         this.setupMpUnlinkButton();
     }
@@ -45,7 +50,6 @@ class DashboardManager {
         }
     }
 
-
     async loadDashboardData() {
         try {
             await this.loadOfferingsStats();
@@ -55,14 +59,62 @@ class DashboardManager {
         }
     }
 
-    // --- NUEVA FUNCIÓN PARA CARGAR ESTADO DE SUSCRIPCIÓN ---
+    // --- UI HELPER: GLOBAL ALERTS ---
+
+    injectGlobalAlert(id, type, title, message, actionHtml = '') {
+        const alertsContainer = document.getElementById('globalAlerts');
+        if (!alertsContainer) return;
+
+        // Prevent duplicate alerts
+        if (document.getElementById(id)) return;
+
+        const alertDiv = document.createElement('div');
+        alertDiv.id = id;
+
+        let colors = '';
+        let icon = '';
+
+        if (type === 'danger') {
+            colors = 'bg-red-50 border-red-200 text-red-800';
+            icon = `<svg class="h-6 w-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+        } else if (type === 'warning') {
+            colors = 'bg-yellow-50 border-yellow-200 text-yellow-800';
+            icon = `<svg class="h-6 w-6 text-yellow-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>`;
+        } else {
+             colors = 'bg-blue-50 border-blue-200 text-blue-800';
+             icon = `<svg class="h-6 w-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 18a6 6 0 110-12 6 6 0 010 12z"></path></svg>`;
+        }
+
+        // Updated layout: Added more right padding (pr-10) to the container to clear the absolute close button.
+        // Also adjusted the action area to ensure it doesn't push into the close button territory.
+        alertDiv.className = `relative border-l-4 p-4 pr-10 rounded-r shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${colors}`;
+
+        alertDiv.innerHTML = `
+            <div class="flex items-start md:items-center">
+                <div class="flex-shrink-0">
+                    ${icon}
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm sm:text-base">${title}</h3>
+                    <p class="text-sm mt-1">${message}</p>
+                </div>
+            </div>
+            <div class="w-full md:w-auto flex-shrink-0 flex items-center">
+                ${actionHtml}
+            </div>
+            <button onclick="document.getElementById('${id}').remove()" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 focus:outline-none" title="Cerrar">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        `;
+
+        alertsContainer.appendChild(alertDiv);
+    }
+
+    // --- SUBSCRIPTION LOGIC ---
+
     async loadSubscriptionStatus() {
-        const statusElement = document.getElementById('subscriptionStatusDisplay');
-        if (!statusElement) return;
-
-        statusElement.textContent = 'Cargando...';
-        statusElement.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700';
-
         try {
             const response = await fetch(`${this.baseUrl}/users/${this.user.id}/subscription`, {
                 method: 'GET',
@@ -74,201 +126,52 @@ class DashboardManager {
 
             if (response.ok) {
                 const subscription = await response.json();
-                this.updateSubscriptionDisplay(subscription, statusElement);
-            } else if (response.status === 404) {
-                // No subscription found
-                this.updateSubscriptionDisplay(null, statusElement);
+                this.handleSubscriptionAlerts(subscription);
             } else if (response.status === 401) {
                 this.handleUnauthorized();
-            } else {
-                throw new Error('Error al consultar el estado de la suscripción');
             }
         } catch (error) {
             console.error('Error loading subscription status:', error);
-            statusElement.textContent = 'Error de conexión';
-            statusElement.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700';
         }
     }
 
-    updateSubscriptionDisplay(subscription, element) {
-        if (!subscription || subscription.expired) {
-            element.textContent = 'INACTIVA (¡Actívala!)';
-            element.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-red-500 text-white';
+    handleSubscriptionAlerts(subscription) {
+        let dateStr = "N/A";
+        if (subscription.expiration) {
+            const date = new Date(subscription.expiration);
+            dateStr = date.toLocaleDateString();
+        }
+
+        const checkoutLink = subscription.checkoutLink;
+        let actionBtn = '';
+        if (checkoutLink) {
+            actionBtn = `
+                <a href="${checkoutLink}" target="_blank"
+                   class="w-full md:w-auto justify-center inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                   Renovar
+                </a>
+            `;
+        }
+
+        const title = "Estado de Suscripción";
+        const message = `Tu suscripción vence el <strong>${dateStr}</strong>.`;
+
+        if (subscription.expired) {
+            this.injectGlobalAlert('sub-status', 'danger', '¡Suscripción Vencida!', `Tu servicio ha expirado el ${dateStr}. Renueva ahora.`, actionBtn);
+        } else if (checkoutLink) {
+             this.injectGlobalAlert('sub-status', 'warning', 'Próximo Vencimiento', `${message}`, actionBtn);
         } else {
-            const expirationDate = new Date(subscription.expiration);
-            const statusText = `ACTIVA (Expira: ${expirationDate.toLocaleDateString()})`;
-            element.textContent = statusText;
-            element.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-green-500 text-white';
-        }
-    }
-    // --- FIN NUEVA FUNCIÓN ---
-
-    async loadOfferingsStats() {
-        try {
-            const response = await fetch(`${this.baseUrl}/users/${this.user.id}/offerings`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const offerings = await response.json();
-                this.updateStats(offerings);
-            } else if (response.status === 401) {
-                this.handleUnauthorized();
-            } else {
-                throw new Error('Error al cargar servicios');
-            }
-        } catch (error) {
-            console.error('Error loading offerings:', error);
-            this.updateStats([]);
+             this.injectGlobalAlert('sub-status', 'info', 'Suscripción Activa', message);
         }
     }
 
-    updateStats(offerings) {
-        const activeOfferings = offerings.filter(o => o.enabled).length;
-        const activeElement = document.getElementById('activeOfferings');
-        if (activeElement) activeElement.textContent = activeOfferings;
-    }
-
-    handleUnauthorized() {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userData');
-        window.location.href = BASE_URL;
-    }
-
-    async logout() {
-        await fetch(BASE_URL + "/auth/logout", {
-            method: "POST",
-            credentials: "include"
-        });
-
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("userData");
-
-        window.location.href = BASE_URL;
-
-    }
-
-    showToast(message, type = 'info') {
-        // ... (SweetAlert logic is recommended, but keeping current toast for consistency)
-        const toast = document.getElementById('toast');
-        const toastMessage = document.getElementById('toastMessage');
-        const toastIcon = document.getElementById('toastIcon');
-
-        if (!toast || !toastMessage || !toastIcon) return;
-
-        toastMessage.textContent = message;
-
-        let iconHTML = '';
-        // Simplified icon logic for brevity, assuming the rest of the switch is correct
-        switch (type) {
-            case 'success':
-                iconHTML = '<svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-                break;
-            case 'error':
-                iconHTML = '<svg class="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-                break;
-            case 'warning':
-                iconHTML = '<svg class="h-5 w-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.664-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>';
-                break;
-            default:
-                iconHTML = '<svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
-        }
-        toastIcon.innerHTML = iconHTML;
-
-        toast.classList.remove('hidden');
-
-        setTimeout(() => {
-            this.hideToast();
-        }, 5000);
-    }
-
-    hideToast() {
-        const toast = document.getElementById('toast');
-        if (toast) {
-            toast.classList.add('hidden');
-        }
-    }
-
-    async setupShareableUrl() {
-        try {
-            const response = await fetch(`${this.baseUrl}/users/${this.user.id}/public-url`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const publicURL = await response.text();
-                const shareableUrlElement = document.getElementById('shareableUrl');
-                if (shareableUrlElement) {
-                    shareableUrlElement.textContent = publicURL;
-                }
-            } else if (response.status === 401) {
-                this.handleUnauthorized();
-            } else {
-                throw new Error('Error al obtener URL pública');
-            }
-        } catch (error) {
-            console.error('Error loading public URL:', error);
-        }
-    }
-
-    setupBookingDashboardLink() {
-        if (this.user && this.user.id) {
-            const bookingDashboardLink = document.getElementById('bookingDashboardLink');
-            if (bookingDashboardLink) {
-                bookingDashboardLink.href = `booking-dashboard.html`;
-            }
-        }
-    }
-
-    async copyShareableUrl() {
-        const shareableUrlElement = document.getElementById('shareableUrl');
-        const copyBtn = document.getElementById('copyUrlBtn');
-
-        if (shareableUrlElement && copyBtn) {
-            const url = shareableUrlElement.textContent;
-
-            try {
-                // Using document.execCommand('copy') as navigator.clipboard.writeText() might not work in some iframe environments
-                const textarea = document.createElement('textarea');
-                textarea.value = url;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-
-                const originalText = copyBtn.innerHTML;
-                copyBtn.innerHTML = `
-                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    ¡Copiado!
-                `;
-
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalText;
-                }, 2000);
-
-                this.showToast('URL copiada al portapapeles', 'success');
-            } catch (err) {
-                console.error('Error copying to clipboard:', err);
-                this.showToast('Error al copiar la URL', 'error');
-            }
-        }
-    }
+    // --- MERCADO PAGO LOGIC ---
 
     async loadMpConnectionStatus() {
         const statusElement = document.getElementById('mpConnectionStatus');
         const connectBtn = document.getElementById('connectMpBtn');
         const unlinkBtn = document.getElementById('unlinkMpBtn');
-        if (!statusElement || !connectBtn || !unlinkBtn) return;
+        const mpCard = document.getElementById('mpCard');
 
         try {
             const response = await fetch(`${this.baseUrl}/mercadopago/oauth/status/${this.user.id}`, {
@@ -283,116 +186,31 @@ class DashboardManager {
                 const data = await response.json();
 
                 if (data.connected) {
-                    // --- Estado: VINCULADO ---
-                    statusElement.innerHTML = `
-                        <svg class="h-4 w-4 mr-1 text-green-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M5 13l4 4L19 7" />
-                        </svg>
-                        Cuenta vinculada
-                    `;
-                    statusElement.className =
-                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 mb-3";
-
-                    connectBtn.style.display = "none";
-                    unlinkBtn.classList.remove("hidden");
+                    if (statusElement) {
+                        statusElement.innerHTML = `<svg class="h-4 w-4 mr-1 text-green-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Cuenta vinculada`;
+                        statusElement.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700 border border-green-300 mb-3";
+                    }
+                    if (connectBtn) connectBtn.classList.add('hidden');
+                    if (unlinkBtn) unlinkBtn.classList.remove('hidden');
+                    if (mpCard) mpCard.classList.remove("border-red-300");
 
                 } else {
-                    // --- Estado: NO VINCULADO ---
-                    statusElement.innerHTML = `
-                        <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        No vinculada
-                    `;
-                    statusElement.className =
-                        "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
+                    if (statusElement) {
+                        statusElement.innerHTML = `<svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> No vinculada`;
+                        statusElement.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
+                    }
+                    if (connectBtn) connectBtn.classList.remove('hidden');
+                    if (unlinkBtn) unlinkBtn.classList.add('hidden');
+                    if (mpCard) mpCard.classList.add("border-red-300");
 
-                    connectBtn.style.display = "inline-block";
-                    connectBtn.textContent = "Vincular cuenta";
-                    unlinkBtn.classList.add("hidden");
+                    const scrollAction = `<button onclick="document.getElementById('mpCard').scrollIntoView({behavior: 'smooth'})" class="text-sm text-yellow-800 underline font-medium">Ir a vincular</button>`;
+                    this.injectGlobalAlert('mp-missing', 'warning', 'Mercado Pago no conectado', 'Debes vincular tu cuenta para recibir pagos.', scrollAction);
                 }
-
-            } else {
-                // --- Error en el fetch ---
-                statusElement.innerHTML = `
-                    <svg class="h-4 w-4 mr-1 text-yellow-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14" />
-                    </svg>
-                    Error al obtener el estado de conexión
-                `;
-                statusElement.className =
-                    "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700 border border-yellow-300 mb-3";
-
-                connectBtn.style.display = "inline-block";
-                unlinkBtn.classList.add("hidden");
             }
-
-        } catch (err) {
-            console.error(err);
-            statusElement.innerHTML = `
-                <svg class="h-4 w-4 mr-1 text-red-600 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M12 9v2m0 4h.01M4.93 4.93l14.14 14.14" />
-                </svg>
-                Error de conexión
-            `;
-            statusElement.className =
-                "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700 border border-red-300 mb-3";
-
-            connectBtn.style.display = "inline-block";
-            unlinkBtn.classList.add("hidden");
+        } catch (error) {
+            console.error('Error checking MP status:', error);
         }
     }
-
-
-
-   setupMpUnlinkButton() {
-       const unlinkBtn = document.getElementById('unlinkMpBtn');
-       if (!unlinkBtn) return;
-
-       unlinkBtn.addEventListener('click', async () => {
-
-           const result = await Swal.fire({
-               title: "¿Desvincular cuenta?",
-               text: "Tu negocio dejará de recibir pagos hasta que vuelvas a vincular.",
-               icon: "warning",
-               showCancelButton: true,
-               confirmButtonText: "Sí, desvincular",
-               cancelButtonText: "Cancelar"
-           });
-
-           if (!result.isConfirmed) return;
-
-           try {
-               const response = await fetch(`${this.baseUrl}/mercadopago/oauth/unlink/${this.user.id}`, {
-                   method: 'DELETE',
-                   headers: {
-                       'Authorization': `Bearer ${this.token}`
-                   }
-               });
-
-               if (response.ok) {
-                   Swal.fire({
-                       icon: "success",
-                       title: "Cuenta desvinculada",
-                       text: "Tu cuenta fue desconectada correctamente."
-                   });
-
-                   this.loadMpConnectionStatus();
-               } else {
-                   this.showToast('No se pudo desvincular la cuenta', 'error');
-               }
-           } catch (err) {
-               console.error(err);
-               this.showToast('Error al intentar desvincular la cuenta', 'error');
-           }
-       });
-   }
-
-
 
     setupMpConnectButton() {
         const connectBtn = document.getElementById('connectMpBtn');
@@ -418,28 +236,133 @@ class DashboardManager {
         });
     }
 
+    setupMpUnlinkButton() {
+        const btn = document.getElementById('unlinkMpBtn');
+        if (!btn) return;
 
+        btn.addEventListener('click', async () => {
+            const result = await Swal.fire({
+                title: '¿Desvincular cuenta?',
+                text: "Ya no podrás procesar pagos.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Sí, desvincular',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                     const response = await fetch(`${this.baseUrl}/mercadopago/oauth/unlink/${this.user.id}`, {
+                         method: 'DELETE',
+                         headers: {
+                             'Authorization': `Bearer ${this.token}`,
+                             'Content-Type': 'application/json'
+                         }
+                     });
+                     if (response.ok) {
+                         Swal.fire('Desvinculado', 'La cuenta ha sido desvinculada.', 'success');
+                         this.loadMpConnectionStatus();
+                     } else {
+                         this.showToast('Error al desvincular', 'error');
+                     }
+                } catch (e) {
+                    this.showToast('Error de conexión', 'error');
+                }
+            }
+        });
+    }
+
+    // --- OTHER DATA ---
+
+    async loadOfferingsStats() {
+        try {
+            const response = await fetch(`${this.baseUrl}/users/${this.user.id}/offerings`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (response.ok) {
+                const offerings = await response.json();
+                this.updateStats(offerings);
+            } else if (response.status === 401) {
+                this.handleUnauthorized();
+            }
+        } catch (error) {
+            console.error('Error loading offerings:', error);
+        }
+    }
+
+    updateStats(offerings) {}
+
+    handleUnauthorized() {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        window.location.href = BASE_URL;
+    }
+
+    async logout() {
+        try {
+            await fetch(BASE_URL + "/auth/logout", { method: "POST", credentials: "include" });
+        } catch (e) {}
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userData");
+        window.location.href = BASE_URL;
+    }
+
+    showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const toastIcon = document.getElementById('toastIcon');
+        if (!toast) return;
+
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => this.hideToast(), 5000);
+    }
+
+    hideToast() {
+        const toast = document.getElementById('toast');
+        if (toast) toast.classList.add('hidden');
+    }
+
+    async setupShareableUrl() {
+        try {
+            const response = await fetch(`${this.baseUrl}/users/${this.user.id}/public-url`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (response.ok) {
+                const publicURL = await response.text();
+                const shareableUrlElement = document.getElementById('shareableUrl');
+                if (shareableUrlElement) shareableUrlElement.textContent = publicURL;
+            }
+        } catch (error) {}
+    }
+
+    setupBookingDashboardLink() {
+        const link = document.getElementById('bookingDashboardLink');
+        if (link) link.href = `booking-dashboard.html`;
+    }
+
+    async copyShareableUrl() {
+        const shareableUrlElement = document.getElementById('shareableUrl');
+        const copyBtn = document.getElementById('copyUrlBtn');
+        if (shareableUrlElement) {
+            const url = shareableUrlElement.textContent;
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            this.showToast('URL copiada', 'success');
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    const linked = params.get("linked");
-
-    if (linked === "true") {
-      Swal.fire({
-        icon: "success",
-        title: "Cuenta vinculada",
-        text: "Tu cuenta de Mercado Pago fue vinculada correctamente.",
-      });
-    } else if (linked === "false") {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: "No se pudo vincular tu cuenta de Mercado Pago. Intentalo nuevamente.",
-      });
-    }
-
-
     new DashboardManager();
 });
-

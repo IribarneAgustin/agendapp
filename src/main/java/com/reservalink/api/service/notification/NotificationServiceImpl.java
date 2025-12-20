@@ -272,6 +272,9 @@ public class NotificationServiceImpl implements NotificationService {
 
             strategy.send(userEntity.getEmail(), NotificationMotive.NEW_USER_REGISTERED, args);
 
+            //FIXME
+            strategy.send("agusiri96@gmail.com", NotificationMotive.APP_NEW_USER_REGISTERED, args);
+
         } catch (Exception e) {
             log.error("Unexpected error sending welcome new user email to {}", userEntity.getEmail(), e);
         }

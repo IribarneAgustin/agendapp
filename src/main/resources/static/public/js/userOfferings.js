@@ -438,7 +438,7 @@ class UserOfferingsManager {
             const totalPrice = slot.price * quantity;
             let priceHtml = `
                 <div class="flex justify-between items-end mb-1">
-                    <span class="text-sm text-gray-500 font-medium">Total Estimado</span>
+                    <span class="text-sm text-gray-500 font-medium">Total</span>
                     <span class="text-3xl font-bold text-gray-900 tracking-tight">$${totalPrice.toLocaleString('es-AR')}</span>
                 </div>`;
 

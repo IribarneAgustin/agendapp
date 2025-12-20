@@ -15,7 +15,8 @@ public enum NotificationMotive {
     SUBSCRIPTION_EXPIRED_RECOVER("subscription_expired_recover", "Recuperá tu cuenta"),
     BOOKING_REMINDER("booking_reminder", "Recordá que tenes una reserva para mañana"),
     RESET_PASSWORD("reset_password", "Recuperá tu contraseña"),
-    NEW_USER_REGISTERED("welcome_user", "¡Bienvenido a ReservaLink!");
+    NEW_USER_REGISTERED("welcome_user", "¡Bienvenido a ReservaLink!"),
+    APP_NEW_USER_REGISTERED("welcome_user", "¡Nuevo usuario registrado en ReservaLink!");
 
     private final String templateName;
     private final String subject;

@@ -68,7 +68,7 @@ public class SubscriptionJob {
         log.info("FINISHED EXPIRED SUBSCRIPTIONS BATCH PROCESS");
     }
 
-    @Scheduled(cron = "0 46 1 * * *")
+    @Scheduled(cron = "0 30 9 * * *")
     @Transactional(rollbackFor = Exception.class)
     public void sendExpirationNotifications() {
         log.info("Running cron job to send subscription expired notifications");

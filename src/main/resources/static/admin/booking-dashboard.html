@@ -181,33 +181,32 @@
         <div class="px-4 sm:px-6 py-4 bg-white sm:bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 mt-auto rounded-b-xl">
             <div class="text-sm text-gray-500 text-center sm:text-left w-full sm:w-auto">
                 Página <span id="currentPageDisplay" class="font-semibold text-gray-900">0</span> de <span id="totalPagesDisplay" class="font-semibold text-gray-900">0</span>
-                <!-- Added totalItemsDisplay back to fix JS error -->
-                <span class="hidden sm:inline mx-1">•</span>
-                <span class="block sm:inline mt-1 sm:mt-0 text-xs sm:text-sm text-gray-400 sm:text-gray-500">
-                    (<span id="totalItemsDisplay" class="font-medium text-gray-700">0</span> reservas)
-                </span>
-            </div>
-            <div class="flex space-x-3 w-full sm:w-auto">
-                <button
-                        id="prevPageBtn"
-                        class="flex-1 sm:flex-none justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        disabled
-                >
-                    Anterior
-                </button>
-                <button
-                        id="nextPageBtn"
-                        class="flex-1 sm:flex-none justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        disabled
-                >
-                    Siguiente
-                </button>
-            </div>
-        </div>
-    </div>
-</main>
+                <!-- <span class="hidden sm:inline mx-1"></span> -->
+                 <span class="block sm:inline mt-1 sm:mt-0 text-xs sm:text-sm text-gray-400 sm:text-gray-500">
+                    <span id="totalItemsDisplay" class="hidden font-medium text-gray-700">0</span>
+                 </span>
+             </div>
+             <div class="flex space-x-3 w-full sm:w-auto">
+                 <button
+                         id="prevPageBtn"
+                         class="flex-1 sm:flex-none justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                         disabled
+                 >
+                     Anterior
+                 </button>
+                 <button
+                         id="nextPageBtn"
+                         class="flex-1 sm:flex-none justify-center px-4 py-2 border border-gray-300 bg-white text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                         disabled
+                 >
+                     Siguiente
+                 </button>
+             </div>
+         </div>
+     </div>
+ </main>
 
-<script src="./js/bookingDashboard.js"></script>
-<script src="../commons/config.js"></script>
-</body>
-</html>
+ <script src="./js/bookingDashboard.js"></script>
+ <script src="../commons/config.js"></script>
+ </body>
+ </html>
