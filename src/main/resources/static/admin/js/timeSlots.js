@@ -343,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
             async function handleDeleteExistingSlot(slotId) {
                 Swal.fire({
                     title: '¿Estás seguro?',
-                    text: `¿Deseas eliminar el slot con ID ${slotId}? Esta acción es irreversible.`,
+                    text: `¿Deseas eliminar el horario?`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',

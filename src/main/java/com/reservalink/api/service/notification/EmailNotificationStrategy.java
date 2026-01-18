@@ -3,30 +3,41 @@ package com.reservalink.api.service.notification;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 
-import jakarta.mail.internet.MimeMessage;
 import java.io.StringWriter;
 import java.util.Map;
-
 
 @Slf4j
 @Service
 public class EmailNotificationStrategy implements NotificationStrategy {
 
-    @Autowired
-    private JavaMailSender mailSender;
+    private final MustacheFactory mustacheFactory;
+    private final RestTemplate restTemplate;
+    private final String domain;
+    private final String apiKey;
 
-    @Autowired
-    private MustacheFactory mustacheFactory;
-
-    @Value("${api.email.value}")
+    @Value("${mailgun.api.email-from}")
     private String emailFrom;
+
+    public EmailNotificationStrategy(
+            MustacheFactory mustacheFactory,
+            @Value("${mailgun.api.key}") String mailgunApiKey,
+            @Value("${mailgun.api.domain}") String domain
+    ) {
+        this.mustacheFactory = mustacheFactory;
+        this.domain = domain;
+        this.apiKey = mailgunApiKey;
+        this.restTemplate = new RestTemplate();
+    }
 
     @Override
     public NotificationType getType() {
@@ -47,17 +58,32 @@ public class EmailNotificationStrategy implements NotificationStrategy {
             StringWriter writer = new StringWriter();
             mustache.execute(writer, args).flush();
 
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(emailFrom, "ReservaLink");
-            helper.setTo(userEmail);
-            helper.setSubject(motive.getSubject());
-            helper.setText(writer.toString(), true);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBasicAuth("api", apiKey);
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-            mailSender.send(message);
-            log.info("Notification sent successfully");
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("from", "ReservaLink <" + emailFrom + ">");
+            body.add("to", userEmail);
+            body.add("subject", motive.getSubject());
+            body.add("html", writer.toString());
+
+            HttpEntity<MultiValueMap<String, Object>> request =
+                    new HttpEntity<>(body, headers);
+
+            restTemplate.postForEntity(
+                    "https://api.mailgun.net/v3/" + domain + "/messages",
+                    request,
+                    String.class
+            );
+
+            log.info("Email sent via Mailgun to {}", userEmail);
+
         } catch (Exception e) {
-            throw new RuntimeException("Error sending email notification for motive " + motive.name(), e);
+            log.error("Mailgun error sending email to {}", userEmail, e);
+            throw new RuntimeException(
+                    "Error sending email notification for motive " + motive.name(), e
+            );
         }
     }
 }
