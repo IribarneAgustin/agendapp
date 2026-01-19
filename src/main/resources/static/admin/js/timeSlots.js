@@ -877,7 +877,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     renderCalendar();
                 }
                 updateSummary();
-                displayMessage("Selección de fechas limpiada.", 'info');
+                displayMessage("Se limpió la selección de fechas.", 'info');
             });
 
             saveSlotsBtn.addEventListener('click', handleSaveSlots);
@@ -887,6 +887,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (removeButton) {
                     const index = parseInt(removeButton.dataset.index);
                     handleRemoveSlot(index);
+                }
+            });
+
+            document.addEventListener('input', (e) => {
+                if (!e.target.classList.contains('time-mask-simple')) return;
+
+                let val = e.target.value.replace(/\D/g, '');
+                let output = "";
+
+                if (val.length > 0) {
+                    if (parseInt(val[0]) > 2) val = "";
+
+                    if (val.length >= 2) {
+                        if (parseInt(val.slice(0, 2)) > 23) val = val[0];
+                    }
+
+                    if (val.length >= 3) {
+                        if (parseInt(val[2]) > 5) val = val.slice(0, 2);
+                    }
+
+                    if (val.length <= 2) {
+                        output = val;
+                    } else {
+                        output = val.slice(0, 2) + ":" + val.slice(2, 4);
+                    }
+                }
+
+                e.target.value = output;
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (!e.target.classList.contains('time-mask-simple'))
+                return;
+
+                if (e.key === 'Backspace' && e.target.value.length === 3) {
+                    e.target.value = e.target.value.slice(0, 2);
                 }
             });
 
