@@ -70,4 +70,34 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
     List<BookingEntity> findBySlotTimeEntityStartDateTimeBetweenAndStatusAndEnabledTrue(LocalDateTime start, LocalDateTime end, BookingStatus status);
 
 
+    @Query("""
+                SELECT COUNT(b.id) > 0
+                FROM BookingEntity b
+                JOIN b.slotTimeEntity st
+                WHERE st.resourceEntity.id = :resourceId
+                  AND b.status = 'CONFIRMED'
+                  AND st.startDateTime < :newEnd
+                  AND st.endDateTime > :newStart
+                  AND st.offeringEntity.id <> :offeringId
+            """)
+    boolean existsOverlappingBookingForResource(
+            @Param("resourceId") String resourceId,
+            @Param("offeringId") String offeringId,
+            @Param("newStart") LocalDateTime newStart,
+            @Param("newEnd") LocalDateTime newEnd
+    );
+
+
+    @Query("""
+            SELECT COUNT(b)
+            FROM BookingEntity b
+            INNER JOIN b.slotTimeEntity st
+            WHERE st.resourceEntity.id = :resourceId
+              AND st.endDateTime >= :now
+              AND st.enabled = true
+              AND b.enabled = true
+              AND b.status IN ('CONFIRMED')
+            """)
+    Integer getIncomingBookingsCountByResourceId(@Param("resourceId") String resourceId, @Param("now") LocalDateTime now);
+
 }

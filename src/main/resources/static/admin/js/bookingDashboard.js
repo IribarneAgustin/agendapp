@@ -307,6 +307,7 @@ class BookingDashboardManager {
         this.bookings.forEach(booking => {
             // --- 1. Safely Extract Simple Fields with Fallbacks ---
             const bookingId = booking.id;
+            console.log(bookingId)
             const serviceName = booking.serviceName ?? 'N/A';
             const clientName = booking.clientName ?? 'N/A';
             const clientEmail = booking.clientEmail ?? 'N/A';

@@ -240,6 +240,42 @@
             <!-- Left: Calendar & Slots (8 cols) -->
             <div class="lg:col-span-7 xl:col-span-8 space-y-6">
 
+                <!-- Profesional Selector -->
+                <div id="resourceSelectorContainer"
+                     class="hidden glass-panel rounded-[2rem] p-6 sm:p-8">
+
+                    <h3 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                        <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+                            <i data-lucide="user"></i>
+                        </div>
+                        Seleccioná un Profesional
+                    </h3>
+
+                    <p class="text-sm text-gray-500 mb-4">
+                        Elegí un profesional para ver sus horarios disponibles.
+                    </p>
+
+                    <div class="relative">
+                        <select
+                                id="resourceSelect"
+                                class="w-full appearance-none px-4 py-3 pr-10
+                   bg-white/70 border border-gray-200
+                   text-gray-900 text-sm font-medium
+                   rounded-xl shadow-sm
+                   focus:ring-2 focus:ring-indigo-500/20
+                   focus:border-indigo-500
+                   transition-all">
+
+                        </select>
+
+                        <!-- Custom arrow -->
+                        <div class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+
+
                 <!-- Calendar Card -->
                 <div class="glass-panel rounded-[2rem] p-6 sm:p-8">
                     <div class="flex items-center justify-between mb-8">

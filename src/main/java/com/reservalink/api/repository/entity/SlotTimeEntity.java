@@ -47,4 +47,7 @@ public class SlotTimeEntity extends PersistentObject {
     @Column(name = "max_capacity")
     private Integer maxCapacity;
 
+    @ManyToOne
+    @JoinColumn(name = "resource_id", nullable = false)
+    private ResourceEntity resourceEntity;
 }

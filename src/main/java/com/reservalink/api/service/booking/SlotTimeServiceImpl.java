@@ -2,13 +2,15 @@ package com.reservalink.api.service.booking;
 
 import com.reservalink.api.controller.request.SlotTimeRequest;
 import com.reservalink.api.controller.response.SlotTimeResponse;
-import com.reservalink.api.repository.entity.OfferingEntity;
-import com.reservalink.api.repository.entity.SlotTimeEntity;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.repository.BookingRepository;
 import com.reservalink.api.repository.OfferingRepository;
+import com.reservalink.api.repository.ResourceRepository;
 import com.reservalink.api.repository.SlotTimeRepository;
+import com.reservalink.api.repository.entity.OfferingEntity;
+import com.reservalink.api.repository.entity.ResourceEntity;
+import com.reservalink.api.repository.entity.SlotTimeEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +34,14 @@ public class SlotTimeServiceImpl implements SlotTimeService {
     private final ModelMapper modelMapper;
     private final OfferingRepository offeringRepository;
     private final BookingRepository bookingRepository;
+    private final ResourceRepository resourceRepository;
 
-    public SlotTimeServiceImpl(SlotTimeRepository slotTimeRepository, ModelMapper modelMapper, OfferingRepository offeringRepository, BookingRepository bookingRepository) {
+    public SlotTimeServiceImpl(SlotTimeRepository slotTimeRepository, ModelMapper modelMapper, OfferingRepository offeringRepository, BookingRepository bookingRepository, ResourceRepository resourceRepository) {
         this.slotTimeRepository = slotTimeRepository;
         this.modelMapper = modelMapper;
         this.offeringRepository = offeringRepository;
         this.bookingRepository = bookingRepository;
+        this.resourceRepository = resourceRepository;
     }
 
     @Override
@@ -53,6 +58,9 @@ public class SlotTimeServiceImpl implements SlotTimeService {
         OfferingEntity offeringEntity = offeringRepository.findById(offeringId)
                 .orElseThrow(() -> new IllegalArgumentException("Offering id not found"));
 
+        ResourceEntity resourceEntity = resourceRepository.findById(slotTimeRequestList.get(0).getResourceId())
+                .orElseThrow(() -> new IllegalArgumentException("Resource id not found"));
+
         log.info("Creating {} slots for offering id {}", slotTimeRequestList.size(), offeringEntity.getId());
 
         List<SlotTimeRequest> sorted = slotTimeRequestList.stream()
@@ -64,21 +72,23 @@ public class SlotTimeServiceImpl implements SlotTimeService {
             SlotTimeRequest next = sorted.get(i + 1);
             if (current.getEndDateTime().isAfter(next.getStartDateTime())) {
                 log.error("Creation rejected: slot time overlapped");
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                 throw new BusinessRuleException(BusinessErrorCodes.SLOT_TIME_OVERLAPPED.name(),
-                        Map.of("startDateTime", current.getStartDateTime(), "endDateTime", current.getEndDateTime())
+                        Map.of("startDateTime", current.getStartDateTime().format(formatter), "endDateTime", current.getEndDateTime().format(formatter))
                 );
             }
         }
 
-        List<SlotTimeEntity> existingSlots = slotTimeRepository.findByOfferingEntityIdAndEnabledTrue(offeringId);
+        List<SlotTimeEntity> existingSlots = slotTimeRepository.findByOfferingEntityIdAndResourceEntityIdAndEnabledTrue(offeringId, resourceEntity.getId());
         for (SlotTimeRequest req : slotTimeRequestList) {
             for (SlotTimeEntity existing : existingSlots) {
                 boolean overlaps = req.getStartDateTime().isBefore(existing.getEndDateTime()) &&
                         req.getEndDateTime().isAfter(existing.getStartDateTime());
                 if (overlaps) {
                     log.error("Creation rejected: slot time overlapped");
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
                     throw new BusinessRuleException(BusinessErrorCodes.SLOT_TIME_OVERLAPPED.name(),
-                            Map.of("startDateTime", req.getStartDateTime(), "endDateTime", req.getEndDateTime())
+                            Map.of("startDateTime", req.getStartDateTime().format(formatter), "endDateTime", req.getEndDateTime().format(formatter))
                     );
                 }
             }
@@ -93,6 +103,7 @@ public class SlotTimeServiceImpl implements SlotTimeService {
                         .capacityAvailable(offeringEntity.getCapacity())
                         .maxCapacity(offeringEntity.getCapacity())
                         .enabled(true)
+                        .resourceEntity(resourceEntity)
                         .build())
                 .toList();
 
@@ -106,8 +117,8 @@ public class SlotTimeServiceImpl implements SlotTimeService {
 
 
     @Override
-    public Page<SlotTimeResponse> findNextSlotsPageByOfferingId(UUID offeringId, Pageable pageable) {
-        return slotTimeRepository.findAllByOfferingEntityIdAndEnabledTrueAndEndDateTimeGreaterThanEqualOrderByStartDateTimeAsc(offeringId.toString(), LocalDateTime.now(), pageable)
+    public Page<SlotTimeResponse> findNextSlotsPageByOfferingId(UUID offeringId, UUID resourceId, Pageable pageable) {
+        return slotTimeRepository.findAllByOfferingEntityIdAndResourceEntityIdAndEnabledTrueAndEndDateTimeGreaterThanEqualOrderByStartDateTimeAsc(offeringId.toString(), resourceId.toString(), LocalDateTime.now(), pageable)
                 .map(slot -> modelMapper.map(slot, SlotTimeResponse.class));
     }
 
@@ -125,10 +136,11 @@ public class SlotTimeServiceImpl implements SlotTimeService {
         if (slotTimeRepository.existsOverlappingSlot(slotTimeRequest.getOfferingId().toString(), slotTimeId.toString(),
                 slotTimeRequest.getStartDateTime(), slotTimeRequest.getEndDateTime())) {
             log.error("Update rejected: slot time overlapped");
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
             throw new BusinessRuleException(BusinessErrorCodes.SLOT_TIME_OVERLAPPED.name(),
                     Map.of(
-                        "startDateTime", slotTimeRequest.getStartDateTime(),
-                        "endDateTime", slotTimeRequest.getEndDateTime()
+                            "startDateTime", slotTimeRequest.getStartDateTime().format(formatter),
+                            "endDateTime", slotTimeRequest.getEndDateTime().format(formatter)
                     )
             );
         }
@@ -154,6 +166,15 @@ public class SlotTimeServiceImpl implements SlotTimeService {
         slotTimeEntity.setEnabled(false);
 
         slotTimeRepository.save(slotTimeEntity);
+    }
+
+    public Page<SlotTimeResponse> findAllAvailableSlotTimesByOfferingAndResourceId(UUID offeringId, UUID resourceId, Pageable pageable) {
+        return slotTimeRepository.findAllAvailableSlotTimesByOfferingAndResourceId(offeringId.toString(),
+                        resourceId.toString(),
+                        LocalDateTime.now(),
+                        pageable
+                )
+                .map(slot -> modelMapper.map(slot, SlotTimeResponse.class));
     }
 
 }

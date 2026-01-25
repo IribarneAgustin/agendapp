@@ -3,6 +3,8 @@ class UserOfferingsManager {
         this.baseUrl = BASE_URL;
         this.userId = this.getUserIdFromUrl();
         this.selectedOffering = null;
+        this.selectedResource = null;
+        this.resources = [];
         this.availableSlots = []; // All fetched slots
         this.groupedSlotsByDate = {}; // Slots grouped by date 'YYYY-MM-DD'
         this.currentDate = new Date(); // Date object to track current calendar view
@@ -120,7 +122,7 @@ class UserOfferingsManager {
         });
 
         this.servicesContainer.classList.remove('hidden');
-        
+
         // Trigger 3D effects and Icons after rendering
         if(window.lucide) window.lucide.createIcons();
         if(window.initTilt) window.initTilt();
@@ -134,11 +136,11 @@ class UserOfferingsManager {
 
         // Styling update: New HTML structure for the card content
         const priceDisplay = offering.price ? `$${offering.price}` : 'Consultar';
-        
+
         card.innerHTML = `
             <div class="bg-white/50 rounded-[20px] p-8 h-full flex flex-col justify-between transition-colors group-hover:bg-white/80 relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-500"></div>
-                
+
                 <div>
                     <div class="flex justify-between items-start mb-6 relative">
                         <div class="p-3.5 bg-white shadow-sm rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
@@ -150,10 +152,10 @@ class UserOfferingsManager {
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">${offering.name}</h3>
                     <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-                      ${offering.description || 'Sin descripción disponible.'}
+                      ${offering.description || ''}
                     </p>
                 </div>
-                
+
                 <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between group-hover:border-indigo-100 transition-colors">
                     <span class="text-sm font-semibold text-gray-400 group-hover:text-indigo-500 transition-colors">Ver Disponibilidad</span>
                     <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 group-hover:translate-x-2 shadow-sm">
@@ -167,8 +169,13 @@ class UserOfferingsManager {
     }
 
     async fetchSlots(offeringId) {
+        if (!this.selectedResource) {
+            console.warn("No resource selected");
+            return [];
+        }
+
         try {
-            const response = await fetch(`${this.baseUrl}/slot-time/offering/${offeringId}?page=0&pageSize=50`, {
+            const response = await fetch(`${this.baseUrl}/slot-time/offering/${offeringId}/resource/${this.selectedResource.id}/available-slots?page=0&pageSize=50`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -329,7 +336,7 @@ class UserOfferingsManager {
 
         // Remove message if slots exist
         document.getElementById('slotMessage')?.remove();
-        
+
         // Sort slots by time
         slots.sort((a,b) => a.startDateTime.localeCompare(b.startDateTime));
 
@@ -434,7 +441,7 @@ class UserOfferingsManager {
         if (this.selectedOffering && slot && slot.price !== null) {
             // Styling update: Make visible when active
             slotPriceDisplayDiv.classList.remove('hidden');
-            
+
             const totalPrice = slot.price * quantity;
             let priceHtml = `
                 <div class="flex justify-between items-end mb-1">
@@ -472,7 +479,7 @@ class UserOfferingsManager {
 
         this.servicesContainer.classList.add('hidden');
         if(profileHeader) profileHeader.classList.add('hidden'); // Hide large header
-        
+
         this.bookingPanel.classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -484,7 +491,7 @@ class UserOfferingsManager {
                 <p>Selecciona un día en el calendario.</p>
             </div>`;
         if(window.lucide) window.lucide.createIcons();
-        
+
         this.handleSlotSelection(null);
         this.availableSlots = [];
         this.groupedSlotsByDate = {};
@@ -503,6 +510,14 @@ class UserOfferingsManager {
             </p>
         `;
         if(window.lucide) window.lucide.createIcons();
+
+        await this.loadResources();
+
+        if (!this.selectedResource && this.resources.length > 0) {
+             this.selectedResource = this.resources[0];
+        }
+
+        this.renderResourceSelector();
 
         const slots = await this.fetchSlots(offering.id);
         this.availableSlots = slots;
@@ -651,6 +666,78 @@ class UserOfferingsManager {
              // The HTML has a <p> under h3, let's try to find it.
              const p = errorState.querySelector('p');
              if(p) p.textContent = message;
+        }
+    }
+
+    renderResourceSelector() {
+        const container = document.getElementById('resourceSelectorContainer');
+        const select = document.getElementById('resourceSelect');
+
+        if (!container || !select) {
+            console.warn('Resource selector HTML not found');
+            return;
+        }
+
+        if (!this.resources || this.resources.length <= 1) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+
+        select.innerHTML = '';
+
+        this.resources.forEach(res => {
+            const option = document.createElement('option');
+            option.value = res.id;
+            option.textContent = `${res.name} ${res.lastName || ''}`;
+            select.appendChild(option);
+        });
+
+        this.selectedResource =
+            this.selectedResource ||
+            this.resources.find(r => r.isDefault) ||
+            this.resources[0];
+
+        select.value = this.selectedResource.id;
+
+        select.onchange = null;
+
+        select.addEventListener('change', async (e) => {
+            const resId = e.target.value;
+            this.selectedResource = this.resources.find(r => r.id === resId);
+
+            const slots = await this.fetchSlots(this.selectedOffering.id);
+            this.availableSlots = slots;
+            this.groupedSlotsByDate = this.groupSlotsByDate(slots);
+
+            this.renderCalendar();
+            this.slotTimeContainer.innerHTML = '';
+            this.handleSlotSelection(null);
+        });
+    }
+
+    async loadResources() {
+        try {
+            const response = await fetch(`${this.baseUrl}/resource/user/${this.userId}/offering/${this.selectedOffering.id}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error('Failed to load resources');
+
+            this.resources = await response.json();
+
+            if (this.resources.length > 0) {
+                this.selectedResource = this.resources.find(r => r.isDefault) || this.resources[0];
+            } else {
+                this.selectedResource = null;
+            }
+
+        } catch (error) {
+            console.error('Error loading resources:', error);
+            this.resources = [];
+            this.selectedResource = null;
         }
     }
 }

@@ -1,17 +1,16 @@
-
-class AdminBookingManager {
+class UserOfferingsManager {
     constructor() {
-        this.baseUrl = BASE_URL
-
+        this.baseUrl = BASE_URL;
         const userDataStorage = JSON.parse(localStorage.getItem('userData'));
         this.userId = userDataStorage.id;
         this.selectedOffering = null;
-        this.availableSlots = [];
-        this.groupedSlotsByDate = {};
-        this.currentDate = new Date();
-        this.selectedDateKey = null;
+        this.selectedResource = null;
+        this.resources = [];
+        this.availableSlots = []; // All fetched slots
+        this.groupedSlotsByDate = {}; // Slots grouped by date 'YYYY-MM-DD'
+        this.currentDate = new Date(); // Date object to track current calendar view
+        this.selectedDateKey = null; // 'YYYY-MM-DD' of the currently selected date in the calendar
 
-        // UI References
         this.servicesContainer = document.getElementById('servicesContainer');
         this.bookingPanel = document.getElementById('bookingPanel');
         this.calendarGrid = document.getElementById('calendarGrid');
@@ -20,177 +19,187 @@ class AdminBookingManager {
         this.bookingForm = document.getElementById('bookingForm');
 
         if (!this.userId) {
-            this.showError('ID de usuario no encontrado. Asegúrese de que la URL contiene ?userId=...');
+            this.showError('ID de usuario no válido');
             return;
         }
-
-        this.init();
-    }
-
-    init() {
         this.setupEventListeners();
         this.loadOfferings();
     }
 
-    getUserIdFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('userId');
-    }
 
     setupEventListeners() {
         document.getElementById('prevMonthBtn').addEventListener('click', () => this.changeMonth(-1));
         document.getElementById('nextMonthBtn').addEventListener('click', () => this.changeMonth(1));
-        document.getElementById('backToServicesBtn').addEventListener('click', () => this.resetView());
+
+        document.getElementById('backToServicesBtn').addEventListener('click', () => this.cancelBooking());
 
         if (this.bookingForm) {
             this.bookingForm.addEventListener('submit', (e) => this.createBooking(e));
         }
     }
 
-    async loadOfferings() {
+    getFormattedDate(date) {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+
+        return [year, month, day].join('-');
+    }
+
+    formatTime(dateTimeStr) {
+        if (!dateTimeStr) return '';
         try {
-            document.getElementById('loadingState').classList.remove('hidden');
-
-            const response = await fetch(`${this.baseUrl}/users/${this.userId}/offerings`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) throw new Error('Error loading services');
-
-            const offerings = await response.json();
-            this.renderOfferings(offerings);
-        } catch (error) {
-            console.error(error);
-            document.getElementById('loadingState').classList.add('hidden');
-            document.getElementById('errorState').classList.remove('hidden');
+            const date = new Date(dateTimeStr);
+            const options = { hour: '2-digit', minute: '2-digit', hour12: false };
+            return date.toLocaleTimeString('es-ES', options);
+        } catch (e) {
+            return dateTimeStr.substring(11, 16);
         }
     }
 
-    async fetchSlots(offeringId) {
+    getYYYYMMDD(dateTimeStr) {
+        return dateTimeStr.substring(0, 10);
+    }
+
+    async loadOfferings() {
         try {
-            const response = await fetch(`${this.baseUrl}/slot-time/offering/${offeringId}?page=0&pageSize=200`, {
+            this.showLoading();
+
+            const response = await fetch(`${this.baseUrl}/users/${this.userId}/offerings`, {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            if (!response.ok) throw new Error('Error loading slots');
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
 
-            const data = await response.json();
-            return data.content || [];
+            const offerings = await response.json();
+            this.displayOfferings(offerings);
+
         } catch (error) {
-            Swal.fire('Error', 'No se pudieron cargar los horarios', 'error');
+            console.error('Error loading offerings:', error);
+            this.showError('No se pudieron cargar los servicios. Verifica la URL y la disponibilidad del backend.');
+        }
+    }
+
+    displayOfferings(offerings) {
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const noServicesState = document.getElementById('noServicesState');
+        const servicesGrid = document.getElementById('servicesGrid');
+        const profileHeader = document.getElementById('profileHeader'); // Added styling hook
+
+        loadingState.classList.add('hidden');
+        errorState.classList.add('hidden');
+        noServicesState.classList.add('hidden');
+        this.bookingPanel.classList.add('hidden');
+
+        if(profileHeader) profileHeader.classList.remove('hidden');
+
+        const activeOfferings = offerings.filter(offering => offering.enabled);
+
+        if (activeOfferings.length === 0) {
+            noServicesState.classList.remove('hidden');
+            return;
+        }
+
+        servicesGrid.innerHTML = '';
+
+        activeOfferings.forEach(offering => {
+            const serviceCard = this.createServiceCard(offering);
+            servicesGrid.appendChild(serviceCard);
+        });
+
+        this.servicesContainer.classList.remove('hidden');
+
+        if(window.lucide) window.lucide.createIcons();
+        if(window.initTilt) window.initTilt();
+    }
+
+    createServiceCard(offering) {
+        const card = document.createElement('div');
+        card.className = 'glass-panel glass-card-hover rounded-3xl p-1 cursor-pointer transition-all duration-300 h-full group';
+        card.addEventListener('click', () => this.selectService(offering));
+
+        const priceDisplay = offering.price ? `$${offering.price}` : 'Consultar';
+
+        card.innerHTML = `
+            <div class="bg-white/50 rounded-[20px] p-8 h-full flex flex-col justify-between transition-colors group-hover:bg-white/80 relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150 duration-500"></div>
+
+                <div>
+                    <div class="flex justify-between items-start mb-6 relative">
+                        <div class="p-3.5 bg-white shadow-sm rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
+                            <i data-lucide="briefcase" class="w-6 h-6"></i>
+                        </div>
+                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+                            ${priceDisplay}
+                        </span>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">${offering.name}</h3>
+                    <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+                      ${offering.description || ''}
+                    </p>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between group-hover:border-indigo-100 transition-colors">
+                    <span class="text-sm font-semibold text-gray-400 group-hover:text-indigo-500 transition-colors">Ver Disponibilidad</span>
+                    <div class="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300 group-hover:translate-x-2 shadow-sm">
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        return card;
+    }
+
+    async fetchSlots(offeringId) {
+        if (!this.selectedResource) {
+            console.warn("No resource selected");
+            return [];
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/slot-time/offering/${offeringId}/resource/${this.selectedResource.id}/available-slots?page=0&pageSize=50`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: No se pudieron cargar horarios.`);
+            }
+
+            const pageResponse = await response.json();
+            return pageResponse.content || [];
+
+        } catch (error) {
+            console.error('Error fetching slots:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de Carga',
+                text: 'No se pudieron cargar los horarios para este servicio. Intenta más tarde.',
+                confirmButtonColor: '#ef4444'
+            });
             return [];
         }
     }
 
-    renderOfferings(offerings) {
-        document.getElementById('loadingState').classList.add('hidden');
-        const grid = document.getElementById('servicesGrid');
-        grid.innerHTML = '';
-
-        const activeOfferings = offerings.filter(o => o.enabled);
-
-        activeOfferings.forEach(offering => {
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col justify-between transform hover:-translate-y-1';
-            card.onclick = () => this.selectService(offering);
-
-            card.innerHTML = `
-                <div>
-                    <div class="flex items-start justify-between mb-3">
-                        <h3 class="text-xl font-semibold text-gray-900">${offering.name}</h3>
-                    </div>
-                    <p class="text-gray-600 mb-4 line-clamp-3">${offering.description}</p>
-                </div>
-                <div class="mt-4">
-                    <button class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-medium shadow-md shadow-indigo-300">
-                        Ver Disponibilidad
-                    </button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-
-        this.servicesContainer.classList.remove('hidden');
-    }
-
-    async selectService(offering) {
-        this.selectedOffering = offering;
-        this.servicesContainer.classList.add('hidden');
-        this.bookingPanel.classList.remove('hidden');
-
-        const infoBox = document.getElementById('selectedServiceInfo');
-        infoBox.innerHTML = `
-            <h4 class="font-bold text-indigo-900 text-lg">${offering.name}</h4>
-        `;
-
-        const slots = await this.fetchSlots(offering.id);
-        this.availableSlots = slots;
-        this.groupSlotsByDate(slots);
-        this.renderCalendar();
-    }
-
     groupSlotsByDate(slots) {
-        this.groupedSlotsByDate = {};
+        const groups = {};
         slots.forEach(slot => {
-            const dateKey = slot.startDateTime.substring(0, 10); // YYYY-MM-DD
-            if (!this.groupedSlotsByDate[dateKey]) this.groupedSlotsByDate[dateKey] = [];
-            this.groupedSlotsByDate[dateKey].push(slot);
+            const dateKey = this.getYYYYMMDD(slot.startDateTime);
+            if (!groups[dateKey]) {
+                groups[dateKey] = [];
+            }
+            groups[dateKey].push(slot);
         });
-    }
-
-    renderCalendar() {
-        const year = this.currentDate.getFullYear();
-        const month = this.currentDate.getMonth();
-        const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-
-        this.currentMonthYear.textContent = `${monthNames[month]} ${year}`;
-        this.calendarGrid.innerHTML = '';
-
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
-
-        for (let i = 0; i < startOffset; i++) {
-            const empty = document.createElement('div');
-            empty.className = 'date-cell text-gray-400';
-            this.calendarGrid.appendChild(empty);
-        }
-
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        for (let d = 1; d <= daysInMonth; d++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            const hasSlots = this.groupedSlotsByDate[dateStr] && this.groupedSlotsByDate[dateStr].some(s => s.capacityAvailable > 0);
-
-            const btn = document.createElement('button');
-            btn.textContent = d;
-            btn.type = 'button';
-
-            let classes = ['date-cell', 'border', 'border-gray-200', 'text-gray-800'];
-
-            if (dateStr === todayStr) {
-                classes.push('today', 'font-bold');
-            }
-
-            if (dateStr === this.selectedDateKey) {
-                classes.push('selected-date');
-            }
-
-            if (hasSlots) {
-                classes.push('available', 'border-indigo-300', 'cursor-pointer');
-                btn.onclick = () => this.selectDate(dateStr, btn);
-            } else {
-                btn.disabled = true;
-                classes.push('text-gray-400', 'border-gray-100', 'opacity-50');
-            }
-
-            btn.className = classes.join(' ');
-            this.calendarGrid.appendChild(btn);
-        }
+        return groups;
     }
 
     changeMonth(delta) {
@@ -198,158 +207,547 @@ class AdminBookingManager {
         this.renderCalendar();
     }
 
-    selectDate(dateStr, btnElement) {
-        document.querySelectorAll('.date-cell').forEach(b => b.classList.remove('selected-date'));
-        btnElement.classList.add('selected-date');
-        this.selectedDateKey = dateStr;
-        this.renderSlots(dateStr);
+    handleDateClick(event) {
+        const dateString = event.currentTarget.dataset.date;
+
+        this.calendarGrid.querySelectorAll('.date-cell').forEach(cell => cell.classList.remove('selected-date'));
+
+        event.currentTarget.classList.add('selected-date');
+        this.selectedDateKey = dateString;
+
+        this.renderTimeSlots(dateString);
+
     }
 
-    renderSlots(dateKey) {
-        const container = document.getElementById('slotTimeContainer');
-        container.innerHTML = '';
-        const slots = this.groupedSlotsByDate[dateKey] || [];
+    renderCalendar() {
+        const todayFormatted = this.getFormattedDate(new Date());
 
-        // Sort slots
-        slots.sort((a, b) => a.startDateTime.localeCompare(b.startDateTime));
+        this.calendarGrid.innerHTML = '';
+        const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-        if(slots.length === 0) {
-             container.innerHTML = '<p class="col-span-full text-center text-gray-500">No hay horarios disponibles.</p>';
-             return;
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+
+        const monthName = monthNames[month];
+        this.currentMonthYear.textContent = `${monthName} ${year}`;
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const startDayIndex = (firstDayOfMonth.getDay() + 6) % 7;
+        const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+        const today = new Date();
+
+
+        for (let i = 0; i < startDayIndex; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'date-cell text-gray-300'; // Styling update
+            this.calendarGrid.appendChild(emptyCell);
+        }
+
+        for (let day = 1; day <= lastDayOfMonth; day++) {
+            const date = new Date(year, month, day);
+            const dateString = this.getFormattedDate(date);
+            const hasSlots = this.groupedSlotsByDate[dateString] && this.groupedSlotsByDate[dateString].length > 0;
+
+            const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+            const cell = document.createElement('button');
+            cell.type = 'button';
+            cell.textContent = day;
+            cell.dataset.date = dateString;
+
+            let cellClasses = ['date-cell'];
+
+            if (dateString === todayFormatted) {
+                cellClasses.push('today');
+            }
+
+            if (isPast) {
+                cell.setAttribute('disabled', 'true');
+                cellClasses.push('text-gray-300');
+            } else if (hasSlots) {
+                const isDateAvailable = this.groupedSlotsByDate[dateString].some(slot => slot.capacityAvailable > 0);
+
+                if (isDateAvailable) {
+                    cellClasses.push('available', 'text-gray-700', 'hover:bg-indigo-50');
+                    cell.addEventListener('click', (e) => this.handleDateClick(e));
+                } else {
+                    cell.setAttribute('disabled', 'true');
+                    cellClasses.push('text-gray-400', 'line-through', 'opacity-50');
+                }
+            } else {
+                cell.setAttribute('disabled', 'true');
+                cellClasses.push('text-gray-300');
+            }
+
+            if (dateString === this.selectedDateKey) {
+                 cellClasses.push('selected-date');
+                 this.renderTimeSlots(dateString);
+            }
+
+            cell.className = cellClasses.join(' ');
+            this.calendarGrid.appendChild(cell);
+        }
+    }
+
+    renderTimeSlots(dateKey) {
+        const slots = this.groupedSlotsByDate[dateKey];
+
+        this.slotTimeContainer.innerHTML = '';
+        this.handleSlotSelection(null);
+
+        if (!slots || slots.length === 0) {
+            // Styling update: better empty state
+            this.slotTimeContainer.innerHTML = `
+                <div class="col-span-full text-center py-8 text-gray-400 flex flex-col items-center border-2 border-dashed border-gray-200 rounded-xl">
+                    <i data-lucide="clock-4" class="w-6 h-6 mb-2 opacity-50"></i>
+                    <p class="text-sm">No hay horarios disponibles.</p>
+                </div>`;
+            if(window.lucide) window.lucide.createIcons();
+            return;
         }
 
         document.getElementById('slotMessage')?.remove();
 
-        slots.forEach(slot => {
-            const time = new Date(slot.startDateTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            const btn = document.createElement('button');
-            btn.type = 'button';
+        slots.sort((a,b) => a.startDateTime.localeCompare(b.startDateTime));
 
+        let availableSlotButtons = [];
+
+        slots.forEach(slot => {
+            const button = document.createElement('button');
             const available = slot.capacityAvailable > 0;
-            let btnClasses = ['slot-time-btn', 'px-3', 'py-2', 'text-sm', 'bg-white', 'border', 'rounded-lg', 'transition-all', 'duration-150', 'font-medium'];
+
+            button.type = 'button';
+
+            let btnClasses = ['slot-time-btn', 'w-full', 'py-3', 'px-2', 'text-sm', 'rounded-xl', 'border', 'font-medium', 'flex', 'items-center', 'justify-center', 'gap-2'];
 
             if (available) {
-                btnClasses.push('border-indigo-300', 'text-indigo-600', 'hover:bg-indigo-50', 'hover:border-indigo-500');
-                btn.onclick = () => this.selectSlot(slot, btn);
+                 btnClasses.push('bg-white', 'border-indigo-100', 'text-indigo-600', 'hover:border-indigo-500', 'hover:shadow-md', 'hover:-translate-y-0.5');
             } else {
-                btnClasses.push('border-gray-300', 'text-gray-500', 'cursor-not-allowed', 'opacity-70');
-                btn.disabled = true;
+                 btnClasses.push('bg-gray-50', 'border-gray-100', 'text-gray-400', 'cursor-not-allowed');
+                 button.disabled = true;
             }
 
-            btn.className = btnClasses.join(' ');
-            btn.textContent = time;
-            container.appendChild(btn);
+            button.className = btnClasses.join(' ');
+
+            const time = this.formatTime(slot.startDateTime);
+            const capacityText = (available && slot.capacityAvailable <= 3)
+                ? `<span class="text-[10px] bg-orange-100 text-orange-600 px-1.5 rounded-md ml-1">Quedan ${slot.capacityAvailable}</span>`
+                : '';
+
+            button.innerHTML = `${time} ${capacityText}`;
+            button.setAttribute('data-slot-id', slot.id);
+
+            if (available) {
+                availableSlotButtons.push({ button, slot });
+
+                button.addEventListener('click', () => {
+                    this.slotTimeContainer.querySelectorAll('.slot-time-btn').forEach(btn => btn.classList.remove('selected'));
+                    button.classList.add('selected');
+                    this.handleSlotSelection(slot.id);
+                });
+            }
+
+            this.slotTimeContainer.appendChild(button);
         });
-    }
 
-    selectSlot(slot, btnElement) {
-        document.querySelectorAll('.slot-time-btn').forEach(b => b.classList.remove('selected'));
-        btnElement.classList.add('selected');
+        if (availableSlotButtons.length === 1) {
+            const { button, slot } = availableSlotButtons[0];
 
-        document.getElementById('slotTimeId').value = slot.id;
-        document.getElementById('submitBookingBtn').disabled = false;
+            button.classList.add('selected');
 
-        this.updatePrice(slot);
-    }
-
-    updatePrice(slot) {
-        const qtyInput = document.getElementById('quantity');
-        const priceDisplay = document.getElementById('slotPriceDisplay');
-
-        const updateCalc = () => {
-            const qty = parseInt(qtyInput.value) || 1;
-            const total = (slot.price || 0) * qty;
-
-            priceDisplay.classList.remove('text-gray-500', 'italic', 'text-center');
-            priceDisplay.classList.add('bg-indigo-100', 'p-3', 'rounded-lg');
-
-            priceDisplay.innerHTML = `
-                <p class="text-lg font-semibold text-indigo-700">
-                    Precio Total: <span class="text-2xl ml-2">$${total.toFixed(2)}</span>
-                </p>
-            `;
-        };
-
-        qtyInput.max = slot.capacityAvailable;
-        qtyInput.onchange = updateCalc;
-        qtyInput.onkeyup = updateCalc;
-        updateCalc();
-    }
-
-    async createBooking(e) {
-        e.preventDefault();
-        const btn = document.getElementById('submitBookingBtn');
-        const originalText = btn.textContent;
-
-        try {
-            btn.disabled = true;
-            btn.textContent = 'Procesando...';
-
-            const formData = new FormData(e.target);
-            const payload = {
-                slotTimeId: formData.get('slotTimeId'),
-                name: formData.get('name'),
-                email: formData.get('email'),
-                phoneNumber: formData.get('phoneNumber'),
-                quantity: parseInt(formData.get('quantity'))
-            };
-
-            const response = await fetch(`${this.baseUrl}/booking/admin`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al crear reserva');
-            }
-
-            await Swal.fire({
-                icon: 'success',
-                title: 'Reserva Creada',
-                text: 'La reserva se ha registrado exitosamente.',
-                confirmButtonColor: '#4f46e5' // Indigo 600
-            });
-
-            this.resetView();
-
-        } catch (error) {
-            console.error(error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message,
-                confirmButtonColor: '#d33'
-            });
-        } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+            this.handleSlotSelection(slot.id);
         }
     }
 
-    resetView() {
-        this.bookingForm.reset();
-        this.selectedOffering = null;
-        this.selectedDateKey = null;
 
-        const priceDisplay = document.getElementById('slotPriceDisplay');
-        priceDisplay.innerHTML = '<p class="text-gray-500 italic text-center">Selecciona un horario para ver el precio.</p>';
-        priceDisplay.classList.remove('bg-indigo-100', 'p-3', 'rounded-lg');
+    handleSlotSelection(slotId) {
+        const slotTimeIdInput = document.getElementById('slotTimeId');
+        const submitBookingBtn = document.getElementById('submitBookingBtn');
+        const quantityInput = document.getElementById('quantity');
+        const quantityContainer = document.getElementById('quantityContainer'); // Hook for UI
 
-        document.getElementById('submitBookingBtn').disabled = true;
-        this.bookingPanel.classList.add('hidden');
-        this.servicesContainer.classList.remove('hidden');
-        this.loadOfferings();
+        slotTimeIdInput.value = slotId || '';
+
+        const slot = this.availableSlots.find(s => s.id === slotId);
+
+        if (slot) {
+            if (slot.capacityAvailable <= 1) {
+                quantityInput.value = 1;
+                quantityInput.disabled = true;
+                if(quantityContainer) quantityContainer.classList.add('hidden');
+            } else {
+                quantityInput.disabled = false;
+                quantityInput.value = 1;
+                quantityInput.max = slot.capacityAvailable;
+                if(quantityContainer) quantityContainer.classList.remove('hidden');
+            }
+        } else {
+            if(quantityContainer) quantityContainer.classList.add('hidden');
+        }
+
+        this.updateSlotPriceDisplay(slotId);
+
+        quantityInput.oninput = () => this.updateSlotPriceDisplay(slotId);
+
+        submitBookingBtn.disabled = !slotId;
     }
 
-    showError(msg) {
-        Swal.fire('Error', msg, 'error');
+    updateSlotPriceDisplay(slotId) {
+        const slotPriceDisplayDiv = document.getElementById('slotPriceDisplay');
+        const slot = this.availableSlots.find(s => s.id === slotId);
+        const quantityInput = document.getElementById('quantity');
+        const quantity = Number(quantityInput?.value || 1);
+
+        if (!slotPriceDisplayDiv) return;
+
+        if (this.selectedOffering && slot && slot.price !== null) {
+            slotPriceDisplayDiv.classList.remove('hidden');
+
+            const totalPrice = slot.price * quantity;
+            let priceHtml = `
+                <div class="flex justify-between items-end mb-1">
+                    <span class="text-sm text-gray-500 font-medium">Total</span>
+                    <span class="text-3xl font-bold text-gray-900 tracking-tight">$${totalPrice.toLocaleString('es-AR')}</span>
+                </div>`;
+
+            if (this.selectedOffering.advancePaymentPercentage > 0) {
+                const advanceAmount = totalPrice * (this.selectedOffering.advancePaymentPercentage / 100);
+                priceHtml += `
+                    <div class="bg-indigo-50 rounded-lg p-3 mt-3 flex justify-between items-center border border-indigo-100">
+                        <div class="flex items-center gap-2 text-sm text-indigo-700">
+                            <i data-lucide="wallet" class="w-4 h-4"></i>
+                            <span>Seña a pagar hoy (${this.selectedOffering.advancePaymentPercentage}%)</span>
+                        </div>
+                        <span class="font-bold text-indigo-700">$${advanceAmount.toLocaleString('es-AR')}</span>
+                    </div>`;
+            }
+
+            slotPriceDisplayDiv.innerHTML = priceHtml;
+            if(window.lucide) window.lucide.createIcons();
+
+        } else {
+             slotPriceDisplayDiv.classList.add('hidden');
+        }
+    }
+
+
+    async selectService(offering) {
+        this.selectedOffering = offering;
+        const selectedServiceInfo = document.getElementById('selectedServiceInfo');
+        const dateMessage = document.getElementById('dateMessage');
+        const profileHeader = document.getElementById('profileHeader');
+
+        this.servicesContainer.classList.add('hidden');
+        if(profileHeader) profileHeader.classList.add('hidden');
+
+        this.bookingPanel.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        this.currentDate = new Date();
+        this.selectedDateKey = null;
+        this.slotTimeContainer.innerHTML = `
+            <div class="col-span-full text-center py-10 text-gray-400 flex flex-col items-center border-2 border-dashed border-gray-200 rounded-2xl">
+                <i data-lucide="mouse-pointer-click" class="w-8 h-8 mb-3 opacity-40"></i>
+                <p>Selecciona un día en el calendario.</p>
+            </div>`;
+        if(window.lucide) window.lucide.createIcons();
+
+        this.handleSlotSelection(null);
+        this.availableSlots = [];
+        this.groupedSlotsByDate = {};
+        dateMessage.classList.remove('hidden');
+
+        // Styling update: Enhanced summary
+        selectedServiceInfo.innerHTML = `
+            <div class="flex items-center gap-3 mb-3">
+                 <div class="p-2 bg-white shadow-sm rounded-lg text-indigo-600">
+                    <i data-lucide="bookmark" class="w-5 h-5"></i>
+                </div>
+                <h4 class="text-xl font-bold text-gray-900">${offering.name}</h4>
+            </div>
+            <p class="text-gray-600 text-sm pl-1 whitespace-pre-line">
+                ${offering.description || ''}
+            </p>
+        `;
+        if(window.lucide) window.lucide.createIcons();
+
+        await this.loadResources();
+
+        if (!this.selectedResource && this.resources.length > 0) {
+             this.selectedResource = this.resources[0];
+        }
+
+        this.renderResourceSelector();
+
+        const slots = await this.fetchSlots(offering.id);
+        this.availableSlots = slots;
+        this.groupedSlotsByDate = this.groupSlotsByDate(slots);
+
+        dateMessage.classList.add('hidden');
+        this.renderCalendar();
+
+        if (slots.length === 0 || slots.every(slot => slot.capacityAvailable == 0 || slot.capacityAvailable == null)) {
+            this.slotTimeContainer.innerHTML = '<p class="col-span-full text-center text-rose-500 font-semibold bg-rose-50 p-4 rounded-xl">Sin horarios disponibles actualmente.</p>';
+            dateMessage.textContent = 'No hay fechas disponibles.';
+            dateMessage.classList.remove('hidden');
+        }
+
+        this.bookingForm.reset();
+    }
+
+    cancelBooking() {
+        this.bookingPanel.classList.add('hidden');
+        this.servicesContainer.classList.remove('hidden');
+
+        const profileHeader = document.getElementById('profileHeader');
+        if(profileHeader) profileHeader.classList.remove('hidden'); // Show header again
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        this.selectedOffering = null;
+        this.availableSlots = [];
+        this.groupedSlotsByDate = {};
+        this.selectedDateKey = null;
+        this.currentDate = new Date();
+        this.bookingForm.reset();
+    }
+
+    async createBooking(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+
+        const bookingData = {
+            slotTimeId: formData.get('slotTimeId'),
+            email: formData.get('email'),
+            phoneNumber: formData.get('phoneNumber'),
+            name: formData.get('name'),
+            quantity: formData.get('quantity') ? formData.get('quantity') : 1
+        };
+
+        if (!bookingData.slotTimeId || !bookingData.email || !bookingData.phoneNumber || !bookingData.name) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Faltan Datos',
+                text: 'Por favor, selecciona un horario y completa todos los campos.',
+                confirmButtonColor: '#fb923c'
+            });
+            return;
+        }
+
+        try {
+            const createBookingButton = form.querySelector('button[type="submit"]');
+            const originalText = createBookingButton.innerHTML;
+            createBookingButton.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+            createBookingButton.disabled = true;
+
+            const response = await fetch(`${this.baseUrl}/booking/admin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bookingData)
+            });
+
+            if (!response.ok) {
+                const errorBody = await response.json();
+                if (errorBody?.errorCode === "NO_CAPACITY_AVAILABLE") {
+                    throw new Error('El horario que intentaste reservar acaba de agotarse. Por favor, selecciona otro.');
+                }
+                throw new Error(errorBody.message || 'Error desconocido al crear la reserva.');
+            }
+
+            const result = await response.json();
+
+            if (result.checkoutURL) {
+                window.location.href = result.checkoutURL;
+                return;
+            }
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Reserva Exitosa!',
+                html: `Tu reserva para <strong>${this.selectedOffering.name}</strong> ha sido agendada.`,
+                confirmButtonText: 'Genial',
+                confirmButtonColor: '#4f46e5'
+            });
+
+            this.cancelBooking();
+
+        } catch (error) {
+            console.error('Booking creation error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al Reservar',
+                text: `No se pudo completar la reserva.`,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#ef4444'
+            });
+        } finally {
+            const createBookingButton = form.querySelector('button[type="submit"]');
+            // Restore original styled content
+            createBookingButton.innerHTML = `<span>Confirmar Reserva</span><i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+            if(window.lucide) window.lucide.createIcons();
+            createBookingButton.disabled = !document.getElementById('slotTimeId').value;
+        }
+    }
+
+
+    showLoading() {
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const noServicesState = document.getElementById('noServicesState');
+        const profileHeader = document.getElementById('profileHeader');
+
+        loadingState.classList.remove('hidden');
+        errorState.classList.add('hidden');
+        noServicesState.classList.add('hidden');
+        this.servicesContainer.classList.add('hidden');
+        this.bookingPanel.classList.add('hidden');
+        if(profileHeader) profileHeader.classList.add('hidden');
+    }
+
+    showError(message) {
+        const loadingState = document.getElementById('loadingState');
+        const errorState = document.getElementById('errorState');
+        const noServicesState = document.getElementById('noServicesState');
+        const profileHeader = document.getElementById('profileHeader');
+
+        loadingState.classList.add('hidden');
+        errorState.classList.remove('hidden');
+        noServicesState.classList.add('hidden');
+        this.servicesContainer.classList.add('hidden');
+        this.bookingPanel.classList.add('hidden');
+        if(profileHeader) profileHeader.classList.add('hidden');
+
+        const errorTitle = errorState.querySelector('h3');
+        if (errorTitle && message) {
+             const p = errorState.querySelector('p');
+             if(p) p.textContent = message;
+        }
+    }
+
+    renderResourceSelector() {
+        const container = document.getElementById('resourceSelectorContainer');
+        const select = document.getElementById('resourceSelect');
+
+        if (!container || !select) {
+            console.warn('Resource selector HTML not found');
+            return;
+        }
+
+        if (!this.resources || this.resources.length <= 1) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+
+        select.innerHTML = '';
+
+        this.resources.forEach(res => {
+            const option = document.createElement('option');
+            option.value = res.id;
+            option.textContent = `${res.name} ${res.lastName || ''}`;
+            select.appendChild(option);
+        });
+
+        this.selectedResource =
+            this.selectedResource ||
+            this.resources.find(r => r.isDefault) ||
+            this.resources[0];
+
+        select.value = this.selectedResource.id;
+
+        select.onchange = null;
+
+        select.addEventListener('change', async (e) => {
+            const resId = e.target.value;
+            this.selectedResource = this.resources.find(r => r.id === resId);
+
+            const slots = await this.fetchSlots(this.selectedOffering.id);
+            this.availableSlots = slots;
+            this.groupedSlotsByDate = this.groupSlotsByDate(slots);
+
+            this.renderCalendar();
+            this.slotTimeContainer.innerHTML = '';
+            this.handleSlotSelection(null);
+        });
+    }
+
+    async loadResources() {
+        try {
+            const response = await fetch(`${this.baseUrl}/resource/user/${this.userId}/offering/${this.selectedOffering.id}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) throw new Error('Failed to load resources');
+
+            this.resources = await response.json();
+
+            if (this.resources.length > 0) {
+                this.selectedResource = this.resources.find(r => r.isDefault) || this.resources[0];
+            } else {
+                this.selectedResource = null;
+            }
+
+        } catch (error) {
+            console.error('Error loading resources:', error);
+            this.resources = [];
+            this.selectedResource = null;
+        }
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new AdminBookingManager();
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookedSuccess = urlParams.get('bookedSuccess');
+
+    if (bookedSuccess === 'true') {
+        Swal.fire({
+            icon: 'success',
+            title: '¡Reserva Completada!',
+            text: 'Tu reserva se completó correctamente. Revisa tu correo electrónico para ver los detalles.',
+            confirmButtonColor: '#4f46e5',
+            confirmButtonText: 'Aceptar'
+        }).then(() => {
+            urlParams.delete('bookedSuccess');
+            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+            window.history.replaceState({}, '', newUrl);
+        });
+    } else if (bookedSuccess === 'false') {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error en el Pago',
+            text: 'Ocurrió un error al procesar el pago, no se pudo completar la reserva correctamente.',
+            confirmButtonColor: '#4f46e5',
+            confirmButtonText: 'Aceptar'
+        }).then(() => {
+            // Remove query param from URL
+            urlParams.delete('bookedSuccess');
+            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+            window.history.replaceState({}, '', newUrl);
+        });
+    }
+
+    function initTilt() {
+        const cards = document.querySelectorAll('.glass-card-hover');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -2; // Subtle rotation
+                const rotateY = ((x - centerX) / centerX) * 2;
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+            });
+        });
+    }
+    window.initTilt = initTilt;
+
+    new UserOfferingsManager();
 });

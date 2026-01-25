@@ -11,9 +11,12 @@ import java.util.UUID;
 public interface SlotTimeService {
     List<SlotTimeResponse> createList(List<SlotTimeRequest> slotTimeRequestList);
 
-    Page<SlotTimeResponse> findNextSlotsPageByOfferingId(UUID offeringId, Pageable pageable);
+    Page<SlotTimeResponse> findNextSlotsPageByOfferingId(UUID offeringId, UUID resourceId, Pageable pageable);
 
     SlotTimeResponse update(UUID slotTimeId, SlotTimeRequest slotTimeRequest);
 
     void delete(UUID slotTimeId);
+
+    Page<SlotTimeResponse> findAllAvailableSlotTimesByOfferingAndResourceId(UUID offeringId, UUID resourceId, Pageable pageable);
+
 }

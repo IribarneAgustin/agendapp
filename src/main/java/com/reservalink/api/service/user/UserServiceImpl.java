@@ -4,11 +4,13 @@ import com.reservalink.api.controller.request.UserLoginRequest;
 import com.reservalink.api.controller.request.UserRegistrationRequest;
 import com.reservalink.api.controller.request.UserRequest;
 import com.reservalink.api.controller.response.UserAuthResponse;
+import com.reservalink.api.domain.Resource;
 import com.reservalink.api.domain.User;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.repository.BrandRepository;
 import com.reservalink.api.repository.RecoverPasswordTokenRepository;
+import com.reservalink.api.repository.ResourceRepository;
 import com.reservalink.api.repository.UserRepository;
 import com.reservalink.api.repository.entity.BrandEntity;
 import com.reservalink.api.repository.entity.RecoverPasswordTokenEntity;
@@ -53,12 +55,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final PaymentService paymentService;
     private final NotificationService notificationService;
     private final RecoverPasswordTokenRepository recoverPasswordTokenRepository;
+    private final ResourceRepository resourceRepository;
 
     @Value("${api.base.url}")
     private String baseURL;
 
     public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder, JWTUtils jwtUtils,
-                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService, RecoverPasswordTokenRepository recoverPasswordTokenRepository) {
+                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService, RecoverPasswordTokenRepository recoverPasswordTokenRepository, ResourceRepository resourceRepository) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
@@ -67,6 +70,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         this.paymentService = paymentService;
         this.notificationService = notificationService;
         this.recoverPasswordTokenRepository = recoverPasswordTokenRepository;
+        this.resourceRepository = resourceRepository;
     }
 
     public User register(UserRegistrationRequest userRegistrationRequest) {
@@ -83,6 +87,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
             BrandEntity brandEntity = brandRepository.save(BrandEntity.builder()
                     .name(userRegistrationRequest.getBrandName())
+                    .enabled(true)
                     .build());
             userEntity.setBrandEntity(brandEntity);
 
@@ -99,6 +104,17 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             userEntity.setSubscriptionEntity(subscriptionEntity);
 
             savedUserEntity = userRepository.saveAndFlush(userEntity);
+
+            Resource resource = Resource.builder()
+                    .name(savedUserEntity.getName())
+                    .lastName(savedUserEntity.getLastName())
+                    .userId(savedUserEntity.getId())
+                    .isDefault(true)
+                    .enabled(true)
+                    .build();
+
+            resourceRepository.create(resource);
+
             notificationService.sendNewUserRegistered(userEntity);
 
             return modelMapper.map(savedUserEntity, User.class);

@@ -44,12 +44,13 @@ public class SlotTimeController {
                 .body(response);
     }
 
-    @GetMapping("/offering/{offeringId}")
-    public ResponseEntity<Page<SlotTimeResponse>> findAllByOfferingId(@NotNull @PathVariable UUID offeringId,
-                                                                       @RequestParam(defaultValue = "0") Integer page,
-                                                                       @RequestParam(defaultValue = "10") Integer pageSize) {
+    @GetMapping("/offering/{offeringId}/resource/{resourceId}")
+    public ResponseEntity<Page<SlotTimeResponse>> findAllByOfferingIdAndResourceId(@NotNull @PathVariable UUID offeringId,
+                                                                                   @NotNull @PathVariable UUID resourceId,
+                                                                                   @RequestParam(defaultValue = "0") Integer page,
+                                                                                   @RequestParam(defaultValue = "10") Integer pageSize) {
         Pageable pageable = PageRequest.of(page, pageSize);
-        Page<SlotTimeResponse> response = slotTimeService.findNextSlotsPageByOfferingId(offeringId, pageable);
+        Page<SlotTimeResponse> response = slotTimeService.findNextSlotsPageByOfferingId(offeringId, resourceId, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -71,5 +72,15 @@ public class SlotTimeController {
         log.info("New request to delete the following slot: {}", slotTimeId);
         slotTimeService.delete(slotTimeId);
         log.info("Slot deleted successfully");
+    }
+
+    @GetMapping("/offering/{offeringId}/resource/{resourceId}/available-slots")
+    public ResponseEntity<Page<SlotTimeResponse>> findAllAvailableSlotTimesByOffering(@NotNull @PathVariable UUID offeringId,
+                                                                                      @NotNull @PathVariable UUID resourceId,
+                                                                                      @RequestParam(defaultValue = "0") Integer page,
+                                                                                      @RequestParam(defaultValue = "10") Integer pageSize) {
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<SlotTimeResponse> response = slotTimeService.findAllAvailableSlotTimesByOfferingAndResourceId(offeringId, resourceId, pageable);
+        return ResponseEntity.ok(response);
     }
 }

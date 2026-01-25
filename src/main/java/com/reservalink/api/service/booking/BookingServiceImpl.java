@@ -11,6 +11,7 @@ import com.reservalink.api.repository.entity.BookingEntity;
 import com.reservalink.api.repository.entity.BookingPaymentEntity;
 import com.reservalink.api.repository.entity.BookingStatus;
 import com.reservalink.api.repository.entity.PaymentStatus;
+import com.reservalink.api.repository.entity.ResourceEntity;
 import com.reservalink.api.repository.entity.SlotTimeEntity;
 import com.reservalink.api.repository.BookingRepository;
 import com.reservalink.api.repository.SlotTimeRepository;
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -51,6 +53,22 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponse create(BookingRequest bookingRequest, Boolean isAdmin) throws Exception {
         SlotTimeEntity slotTimeEntity = slotTimeRepository.findById(bookingRequest.getSlotTimeId().toString())
                 .orElseThrow(() -> new IllegalArgumentException("The SlotTimeId: " + bookingRequest.getSlotTimeId() + " does not exists"));
+
+        ResourceEntity resourceEntity = slotTimeEntity.getResourceEntity();
+
+        boolean isResourceBusy =
+                bookingRepository.existsOverlappingBookingForResource(
+                        resourceEntity.getId(),
+                        slotTimeEntity.getOfferingEntity().getId(),
+                        slotTimeEntity.getEndDateTime(),
+                        slotTimeEntity.getStartDateTime()
+                );
+
+        if (isResourceBusy) {
+            throw new BusinessRuleException(
+                    BusinessErrorCodes.RESOURCE_NOT_AVAILABLE.name()
+            );
+        }
 
         Integer newCapacity = slotTimeEntity.getCapacityAvailable() - bookingRequest.getQuantity();
         if(newCapacity < 0){
