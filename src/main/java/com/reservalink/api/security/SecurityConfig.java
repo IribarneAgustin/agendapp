@@ -23,12 +23,13 @@ public class SecurityConfig {
             "/booking",
             "/booking/*/cancel",
             "/servicios/**",
-            "/slot-time/offering/*",
+            "/slot-time/offering/**",
             "/mercadopago/oauth/callback",
             "/payment/mercadopago/webhook",
             "/users/reset-password",
             "/auth/forgot-password",
             "/subscription/expired",
+            "/resource/user/*/offering/*",
 
             "/",
             "/landing.html",
@@ -50,6 +51,7 @@ public class SecurityConfig {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> {
+                    //because we have multiples verbs for the same path, so publicEndpointList doesn't fit
                     auth.requestMatchers(HttpMethod.GET, "/users/*/offerings").permitAll();
 
                     publicEndpointList.forEach(endpoint ->
