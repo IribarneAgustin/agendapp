@@ -1,11 +1,11 @@
-package com.reservalink.api.service.user;
+package com.reservalink.api.application.service.user;
 
-import com.reservalink.api.controller.request.UserLoginRequest;
-import com.reservalink.api.controller.request.UserRegistrationRequest;
-import com.reservalink.api.controller.request.UserRequest;
-import com.reservalink.api.controller.response.UserAuthResponse;
+import com.reservalink.api.adapter.input.controller.request.UserLoginRequest;
+import com.reservalink.api.adapter.input.controller.request.UserRegistrationRequest;
+import com.reservalink.api.adapter.input.controller.request.UserRequest;
+import com.reservalink.api.adapter.input.controller.response.UserAuthResponse;
 import com.reservalink.api.domain.User;
-import com.reservalink.api.repository.entity.SubscriptionEntity;
+import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;

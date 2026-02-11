@@ -1,25 +1,25 @@
-package com.reservalink.api.service.user;
+package com.reservalink.api.application.service.user;
 
-import com.reservalink.api.controller.request.UserLoginRequest;
-import com.reservalink.api.controller.request.UserRegistrationRequest;
-import com.reservalink.api.controller.request.UserRequest;
-import com.reservalink.api.controller.response.UserAuthResponse;
+import com.reservalink.api.application.output.ResourceRepositoryPort;
+import com.reservalink.api.adapter.input.controller.request.UserLoginRequest;
+import com.reservalink.api.adapter.input.controller.request.UserRegistrationRequest;
+import com.reservalink.api.adapter.input.controller.request.UserRequest;
+import com.reservalink.api.adapter.input.controller.response.UserAuthResponse;
 import com.reservalink.api.domain.Resource;
 import com.reservalink.api.domain.User;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
-import com.reservalink.api.repository.BrandRepository;
-import com.reservalink.api.repository.RecoverPasswordTokenRepository;
-import com.reservalink.api.repository.ResourceRepository;
-import com.reservalink.api.repository.UserRepository;
-import com.reservalink.api.repository.entity.BrandEntity;
-import com.reservalink.api.repository.entity.RecoverPasswordTokenEntity;
-import com.reservalink.api.repository.entity.SubscriptionEntity;
-import com.reservalink.api.repository.entity.UserEntity;
-import com.reservalink.api.security.Authority;
-import com.reservalink.api.security.JWTUtils;
-import com.reservalink.api.service.notification.NotificationService;
-import com.reservalink.api.service.payment.PaymentService;
+import com.reservalink.api.adapter.output.repository.BrandRepository;
+import com.reservalink.api.adapter.output.repository.RecoverPasswordTokenRepository;
+import com.reservalink.api.adapter.output.repository.UserRepository;
+import com.reservalink.api.adapter.output.repository.entity.BrandEntity;
+import com.reservalink.api.adapter.output.repository.entity.RecoverPasswordTokenEntity;
+import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
+import com.reservalink.api.adapter.output.repository.entity.UserEntity;
+import com.reservalink.api.config.security.Authority;
+import com.reservalink.api.config.security.JWTUtils;
+import com.reservalink.api.application.service.notification.NotificationService;
+import com.reservalink.api.application.service.payment.PaymentService;
 import com.reservalink.api.utils.GenericAppConstants;
 import com.reservalink.api.utils.TokenHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,13 +56,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final PaymentService paymentService;
     private final NotificationService notificationService;
     private final RecoverPasswordTokenRepository recoverPasswordTokenRepository;
-    private final ResourceRepository resourceRepository;
+    private final ResourceRepositoryPort resourceRepository;
 
     @Value("${api.base.url}")
     private String baseURL;
 
     public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder, JWTUtils jwtUtils,
-                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService, RecoverPasswordTokenRepository recoverPasswordTokenRepository, ResourceRepository resourceRepository) {
+                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService, RecoverPasswordTokenRepository recoverPasswordTokenRepository, ResourceRepositoryPort resourceRepository) {
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
         this.passwordEncoder = passwordEncoder;
@@ -92,7 +93,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             userEntity.setBrandEntity(brandEntity);
 
             UserEntity savedUserEntity = userRepository.saveAndFlush(userEntity);
-            String checkoutLink = paymentService.createSubscriptionCheckoutURL(savedUserEntity.getId());
+            String checkoutLink = paymentService.createSubscriptionCheckoutURL(savedUserEntity.getId(), Collections.emptyList());
 
             SubscriptionEntity subscriptionEntity = SubscriptionEntity.builder()
                     .expired(Boolean.FALSE)

@@ -1,13 +1,11 @@
-package com.reservalink.api.scheduler;
+package com.reservalink.api.adapter.input.scheduler;
 
-import com.reservalink.api.repository.PaymentRepository;
-import com.reservalink.api.repository.entity.SubscriptionEntity;
-import com.reservalink.api.repository.entity.SubscriptionNotificationEntity;
-import com.reservalink.api.repository.entity.UserEntity;
-import com.reservalink.api.repository.BookingRepository;
-import com.reservalink.api.repository.SubscriptionRepository;
-import com.reservalink.api.repository.UserRepository;
-import com.reservalink.api.service.notification.NotificationService;
+import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
+import com.reservalink.api.adapter.output.repository.entity.UserEntity;
+import com.reservalink.api.adapter.output.repository.BookingRepository;
+import com.reservalink.api.adapter.output.repository.SubscriptionRepository;
+import com.reservalink.api.adapter.output.repository.UserRepository;
+import com.reservalink.api.application.service.notification.NotificationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,11 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 

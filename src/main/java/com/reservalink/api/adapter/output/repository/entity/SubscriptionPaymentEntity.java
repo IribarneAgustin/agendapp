@@ -1,4 +1,4 @@
-package com.reservalink.api.repository.entity;
+package com.reservalink.api.adapter.output.repository.entity;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
