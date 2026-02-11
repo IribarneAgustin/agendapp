@@ -33,4 +33,4 @@ build/
 .vscode/
 .env
 
-src/main/java/com/reservalink/api/controller/TestController.java
+src/main/java/com/reservalink/api/adapter/input/controller/TestController.java
