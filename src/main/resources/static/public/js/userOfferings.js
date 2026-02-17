@@ -588,10 +588,20 @@ class UserOfferingsManager {
             });
 
             if (!response.ok) {
-                const errorBody = await response.json();
+                let errorBody = {};
+                try {
+                    errorBody = await response.json();
+                } catch (e) {
+                    throw new Error('Error inesperado del servidor.');
+                }
                 if (errorBody?.errorCode === "NO_CAPACITY_AVAILABLE") {
                     throw new Error('El horario que intentaste reservar acaba de agotarse. Por favor, selecciona otro.');
                 }
+
+                if (errorBody?.errorCode === "INVALID_PHONE_NUMBER") {
+                    throw new Error('El número de teléfono ingresado es inválido. Por favor, intente nuevamente.');
+                }
+
                 throw new Error(errorBody.message || 'Error desconocido al crear la reserva.');
             }
 
@@ -613,14 +623,15 @@ class UserOfferingsManager {
             this.cancelBooking();
 
         } catch (error) {
-            console.error('Booking creation error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error al Reservar',
-                text: `No se pudo completar la reserva.`,
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#ef4444'
-            });
+              console.error('Booking creation error:', error);
+
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Error al Reservar',
+                  text: error.message || 'No se pudo completar la reserva.',
+                  confirmButtonText: 'Entendido',
+                  confirmButtonColor: '#ef4444'
+              });
         } finally {
             const createBookingButton = form.querySelector('button[type="submit"]');
             // Restore original styled content

@@ -10,10 +10,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 public class User {
+    private String id;
     private String name;
     private String lastName;
     private String email;
     private String phone;
     private String brandName;
     private Boolean enabled;
+    private String subscriptionId;
 }

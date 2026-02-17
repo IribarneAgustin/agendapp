@@ -385,15 +385,17 @@
                             </div>
 
                             <div class="space-y-1.5">
-                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Teléfono</label>
+                                <label class="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Teléfono Celular</label>
                                 <div class="relative group">
                                     <i data-lucide="phone" class="absolute left-4 top-3.5 w-5 h-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors"></i>
                                     <input type="tel" id="phoneNumber" name="phoneNumber" required
                                            class="w-full pl-12 pr-4 py-3 bg-white/60 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder-gray-400"
-                                           placeholder="+54 9 11...">
+                                           placeholder="+54 9 11..."
+                                           minlength="10"
+                                           maxlength="20"
+                                           pattern="^\+?[0-9\s\-]{10,20}$">
                                 </div>
                             </div>
-
                             <div id="quantityContainer" class="hidden space-y-1.5 animate-fade-in">
                                 <label class="text-xs font-bold text-gray-500 uppercase tracking-wide ml-1">Cantidad de Personas</label>
                                 <div class="relative group">

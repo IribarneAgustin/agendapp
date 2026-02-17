@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @Data
 public class Subscription {
     private String id;
-    private String userId;
     private Boolean expired;
     private LocalDateTime creationDateTime;
     private LocalDateTime expiration;

@@ -1,5 +1,6 @@
 package com.reservalink.api.adapter.output.repository;
 
+import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,4 +24,9 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
 
     List<UserEntity> findBySubscriptionEntity_EnabledTrueAndSubscriptionEntity_ExpiredFalseAndSubscriptionEntity_ExpirationBefore(
             LocalDateTime dateTime);
+
+    @Query("SELECT u.subscriptionEntity FROM UserEntity u WHERE u.id = :userId AND u.enabled = true")
+    Optional<SubscriptionEntity> findByUserIdAndEnabledTrue(String userId);
+
+    Optional<UserEntity> findBySubscriptionEntity_IdAndEnabledTrue(String userSubscriptionId);
 }

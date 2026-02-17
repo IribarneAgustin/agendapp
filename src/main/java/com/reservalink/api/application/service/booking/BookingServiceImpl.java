@@ -4,6 +4,7 @@ import com.reservalink.api.adapter.input.controller.request.BookingRequest;
 import com.reservalink.api.adapter.input.controller.request.BookingSearchRequest;
 import com.reservalink.api.adapter.input.controller.response.BookingGridResponse;
 import com.reservalink.api.adapter.input.controller.response.BookingResponse;
+import com.reservalink.api.application.validator.PhoneNumberValidator;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.adapter.output.repository.PaymentRepository;
@@ -38,20 +39,24 @@ public class BookingServiceImpl implements BookingService {
     private final NotificationService notificationService;
     private final PaymentService paymentService;
     private final PaymentRepository bookingPaymentRepository;
+    private final PhoneNumberValidator phoneNumberValidator;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, SlotTimeRepository slotTimeRepository, ModelMapper modelMapper, NotificationService notificationService, PaymentService paymentService, PaymentRepository bookingPaymentRepository) {
+    public BookingServiceImpl(BookingRepository bookingRepository, SlotTimeRepository slotTimeRepository, ModelMapper modelMapper, NotificationService notificationService, PaymentService paymentService, PaymentRepository bookingPaymentRepository, PhoneNumberValidator phoneNumberValidator) {
         this.bookingRepository = bookingRepository;
         this.slotTimeRepository = slotTimeRepository;
         this.modelMapper = modelMapper;
         this.notificationService = notificationService;
         this.paymentService = paymentService;
         this.bookingPaymentRepository = bookingPaymentRepository;
+        this.phoneNumberValidator = phoneNumberValidator;
     }
 
     @Override
     public BookingResponse create(BookingRequest bookingRequest, Boolean isAdmin) throws Exception {
         SlotTimeEntity slotTimeEntity = slotTimeRepository.findById(bookingRequest.getSlotTimeId().toString())
                 .orElseThrow(() -> new IllegalArgumentException("The SlotTimeId: " + bookingRequest.getSlotTimeId() + " does not exists"));
+
+        String cleanPhoneNumber = phoneNumberValidator.formatAndValidate(bookingRequest.getPhoneNumber());
 
         ResourceEntity resourceEntity = slotTimeEntity.getResourceEntity();
 
@@ -80,7 +85,7 @@ public class BookingServiceImpl implements BookingService {
                 .slotTimeEntity(slotTimeEntity)
                 .name(bookingRequest.getName())
                 .email(bookingRequest.getEmail())
-                .phoneNumber(bookingRequest.getPhoneNumber())
+                .phoneNumber(cleanPhoneNumber)
                 .quantity(bookingRequest.getQuantity())
                 .build();
 
