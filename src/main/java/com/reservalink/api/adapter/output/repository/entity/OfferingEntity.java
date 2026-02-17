@@ -3,6 +3,7 @@ package com.reservalink.api.adapter.output.repository.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -45,5 +46,9 @@ public class OfferingEntity extends PersistentObject {
 
     @Column(name = "status")
     private Boolean status;
+
+    @Lob
+    @Column(name = "terms_and_conditions")
+    private String termsAndConditions;
 
 }

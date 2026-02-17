@@ -26,4 +26,6 @@ public class OfferingResponse {
     private Integer advancePaymentPercentage;
 
     private Boolean enabled;
+
+    private String termsAndConditions;
 }

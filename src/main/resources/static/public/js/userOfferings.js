@@ -532,6 +532,8 @@ class UserOfferingsManager {
             dateMessage.classList.remove('hidden');
         }
 
+        this.renderTermsAndConditions();
+
         this.bookingForm.reset();
     }
 
@@ -573,6 +575,22 @@ class UserOfferingsManager {
                 confirmButtonColor: '#fb923c'
             });
             return;
+        }
+
+        if (this.selectedOffering?.termsAndConditions?.trim()) {
+            const termsCheckbox = document.getElementById('termsAccepted');
+
+            if (!termsCheckbox || !termsCheckbox.checked) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Debes aceptar los términos',
+                    text: 'Para continuar con la reserva debes aceptar los términos y condiciones.',
+                    confirmButtonColor: '#fb923c'
+                });
+                return;
+            }
+
+            bookingData.termsAccepted = true;
         }
 
         try {
@@ -751,6 +769,27 @@ class UserOfferingsManager {
             this.selectedResource = null;
         }
     }
+
+    renderTermsAndConditions() {
+        const termsContainer = document.getElementById('termsContainer');
+        const termsContent = document.getElementById('termsContent');
+        const checkbox = document.getElementById('termsAccepted');
+
+        if (!termsContainer || !termsContent || !checkbox) return;
+
+        if (!this.selectedOffering?.termsAndConditions) {
+            termsContainer.classList.add('hidden');
+            return;
+        }
+
+        termsContainer.classList.remove('hidden');
+
+        termsContent.textContent = this.selectedOffering.termsAndConditions;
+        termsContent.style.whiteSpace = "pre-line";
+
+        checkbox.checked = false;
+    }
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {

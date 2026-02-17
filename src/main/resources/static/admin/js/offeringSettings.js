@@ -145,19 +145,16 @@ class OfferingManager {
         });
     }
 
-    // REFACTORED: Layout changed to stacked and yellow color removed
     createOfferingCard(offering) {
         const card = document.createElement('div');
         card.className = 'offering-card bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-600 transition-all duration-200 cursor-pointer';
 
         card.addEventListener('click', (e) => {
-            // Prevent opening the edit modal if the delete button or the new configure button was clicked
             if (e.target.closest('.delete-btn') || e.target.closest('.configure-btn')) {
                 return;
             }
-            offeringManager.editOffering(offering.id); // Default: open the modal/edit form
+            offeringManager.editOffering(offering.id);
         });
-
 
         card.innerHTML = `
             <div class="flex justify-between items-start mb-4">
@@ -203,14 +200,10 @@ class OfferingManager {
             </div>
         `;
 
-        // Attach the specific click listener to the new button element
         const configureBtn = card.querySelector('.configure-btn');
         if (configureBtn) {
             configureBtn.addEventListener('click', (e) => {
-                // Stop propagation so the card's general click event (editOffering) isn't triggered
                 e.stopPropagation();
-
-                // Action: Redirect to the time slots page
                 window.location.href = `./time-slots.html?offeringId=${offering.id}`;
             });
         }
@@ -236,14 +229,15 @@ class OfferingManager {
             document.getElementById('description').value = offering.description || '';
             document.getElementById('capacity').value = offering.capacity || 1;
             advanceInput.value = offering.advancePaymentPercentage || 0;
+            document.getElementById('termsAndConditions').value = offering.termsAndConditions || '';
             this.currentOfferingId = offering.id;
         } else {
             this.currentOfferingId = null;
             document.getElementById('capacity').value = 1;
             advanceInput.value = 0;
+            document.getElementById('termsAndConditions').value = '';
         }
 
-        // Update the slider value display
         advanceValue.textContent = advanceInput.value;
         modal.classList.remove('hidden');
     }
@@ -270,6 +264,7 @@ class OfferingManager {
             description: formData.get('description').trim(),
             capacity: parseInt(formData.get('capacity')),
             advancePaymentPercentage: parseInt(formData.get('advancePaymentPercentage')) || 0,
+            termsAndConditions: formData.get('termsAndConditions') || null
         };
 
         if (!offeringData.name) {
@@ -311,7 +306,6 @@ class OfferingManager {
                     const newOffering = await response.json();
                     this.currentOfferingId = newOffering.id;
                     this.isEditMode = true;
-
                 }
 
                 this.closeModal();
@@ -335,7 +329,6 @@ class OfferingManager {
         }
     }
 
-
     async deleteOffering(offeringId) {
         const offering = this.offerings.find(o => o.id === offeringId);
         if (!offering) return;
@@ -345,8 +338,8 @@ class OfferingManager {
             text: `Se eliminará el servicio: ${this.escapeHtml(offering.name)}. Esta acción no se puede deshacer.`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc2626', // Red-600
-            cancelButtonColor: '#6b7280', // Gray-500
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar'
         });
@@ -401,7 +394,7 @@ class OfferingManager {
     handleUnauthorized() {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-         window.location.href = BASE_URL;
+        window.location.href = BASE_URL;
     }
 
     logout() {

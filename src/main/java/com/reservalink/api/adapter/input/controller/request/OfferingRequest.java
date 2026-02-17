@@ -34,4 +34,6 @@ public class OfferingRequest {
     @Max(value = 100, message = "Advance payment cannot exceed 100%")
     private Integer advancePaymentPercentage;
 
+    private String termsAndConditions;
+
 }
