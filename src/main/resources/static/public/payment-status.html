@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado del Pago</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Tailwind (optional) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const params = new URLSearchParams(window.location.search);
+        const success = params.get("success");
+
+        function redirectToDashboard() {
+            setTimeout(() => {
+                window.location.href = "/admin/dashboard.html";
+            }, 2500);
+        }
+
+        if (success === "true") {
+
+            Swal.fire({
+                icon: "success",
+                title: "¡Pago aprobado!",
+                text: "Tu funcionalidad premium fue activada correctamente.",
+                confirmButtonColor: "#16a34a",
+                timer: 2500,
+                showConfirmButton: true
+            });
+
+            redirectToDashboard();
+
+        } else {
+
+            Swal.fire({
+                icon: "error",
+                title: "Pago rechazado",
+                text: "Hubo un problema con el pago. Intenta nuevamente.",
+                confirmButtonColor: "#dc2626",
+                timer: 3000,
+                showConfirmButton: true
+            });
+
+            redirectToDashboard();
+        }
+
+    });
+</script>
+
+</body>
+</html>
