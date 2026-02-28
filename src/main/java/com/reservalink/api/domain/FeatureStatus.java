@@ -1,5 +1,5 @@
 package com.reservalink.api.domain;
 
 public enum FeatureStatus {
-    PENDING, ACTIVE, EXPIRED, DELETED
+    PENDING, ACTIVE, EXPIRED, EXCHANGED, DELETED
 }

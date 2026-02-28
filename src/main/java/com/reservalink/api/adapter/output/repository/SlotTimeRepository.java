@@ -42,16 +42,7 @@ public interface SlotTimeRepository extends JpaRepository<SlotTimeEntity, String
                   AND st.resourceEntity.id = :resourceId
                   AND st.enabled = true
                   AND st.endDateTime >= :now
-                  AND NOT EXISTS (
-                      SELECT 1
-                      FROM BookingEntity b
-                      JOIN b.slotTimeEntity bst
-                      WHERE bst.resourceEntity.id = st.resourceEntity.id
-                        AND b.status IN ('CONFIRMED')
-                        AND bst.startDateTime < st.endDateTime
-                        AND bst.endDateTime > st.startDateTime
-                        AND st.offeringEntity.id <> bst.offeringEntity.id
-                  )
+                  AND st.capacityAvailable > 0
                 ORDER BY st.startDateTime ASC
             """)
     Page<SlotTimeEntity> findAllAvailableSlotTimesByOfferingAndResourceId(

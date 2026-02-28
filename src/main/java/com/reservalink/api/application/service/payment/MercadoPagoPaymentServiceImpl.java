@@ -15,8 +15,7 @@ import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.application.output.UserRepositoryPort;
 import com.reservalink.api.application.service.notification.NotificationService;
-import com.reservalink.api.application.service.user.FeatureLifecycleService;
-import com.reservalink.api.application.service.user.FeatureUsageService;
+import com.reservalink.api.application.service.feature.FeatureLifecycleService;
 import com.reservalink.api.domain.FeatureName;
 import com.reservalink.api.domain.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
@@ -28,6 +27,8 @@ import com.reservalink.api.domain.SubscriptionFeature;
 import com.reservalink.api.domain.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -70,6 +71,8 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
 
     private final SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort;
 
+    private final Environment environment;
+
     @Value("${api.base.url}")
     private String baseURL;
 
@@ -87,7 +90,10 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                                          NotificationService notificationService,
                                          SubscriptionRepositoryPort subscriptionRepositoryPort,
                                          FeatureLifecycleService featureLifecycleService,
-                                         FeatureUsageRepositoryPort featureUsageRepositoryPort, UserRepositoryPort userRepositoryPort, SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort) {
+                                         FeatureUsageRepositoryPort featureUsageRepositoryPort,
+                                         UserRepositoryPort userRepositoryPort,
+                                         SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort,
+                                         Environment environment) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.restTemplate = restTemplate;
@@ -98,6 +104,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         this.featureUsageRepositoryPort = featureUsageRepositoryPort;
         this.userRepositoryPort = userRepositoryPort;
         this.subscriptionFeatureRepositoryPort = subscriptionFeatureRepositoryPort;
+        this.environment = environment;
     }
 
     @Override
@@ -120,6 +127,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                         )
                 },
                 "external_reference", externalId,
+                "notification_url", baseURL + "/payment/mercadopago/webhook",
                 "back_urls", Map.of(
                         "success", baseURL + "/public/subscription-payment.html?success=true",
                         "failure", baseURL + "/public/subscription-payment.html?success=false"
@@ -127,7 +135,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                 "auto_return", "approved",
                 "metadata" , Map.of(
                         "premiumFeatures", features.isEmpty() ? Collections.emptyList() : features.stream()
-                        .map(FeatureUsage::getId)
+                        .map(FeatureUsage::getSubscriptionFeatureId)
                         .toList())
         );
 
@@ -135,7 +143,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return response.getBody().get("init_point").toString();
+            return environment.acceptsProfiles(Profiles.of("dev")) ? response.getBody().get("sandbox_init_point").toString() : response.getBody().get("init_point").toString();
         } else {
             throw new RuntimeException("Error creating subscription preference");
         }
@@ -281,9 +289,10 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                         )
                 },
                 "external_reference", externalId,
+                "notification_url", baseURL + "/payment/mercadopago/webhook",
                 "back_urls", Map.of(
-                        "success", baseURL + "/admin/features.html?success=true",
-                        "failure", baseURL + "/admin/features.html?success=false"
+                        "success", baseURL + "/public/payment-status.html?success=true",
+                        "failure", baseURL + "/public/payment-status.html?success=false"
                 ),
                 "auto_return", "approved"
         );
@@ -292,7 +301,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return response.getBody().get("init_point").toString();
+            return environment.acceptsProfiles(Profiles.of("dev")) ? response.getBody().get("sandbox_init_point").toString() : response.getBody().get("init_point").toString();
         } else {
             throw new RuntimeException("Error creating preference");
         }
@@ -326,7 +335,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
 
             List<String> premiumFeatureIds = extractPremiumFeatureIds(payment);
             if (!premiumFeatureIds.isEmpty()) {
-                featureLifecycleService.renew(premiumFeatureIds);
+                featureLifecycleService.renew(premiumFeatureIds, subscriptionEntity.getId());
             }
 
         }
@@ -348,6 +357,14 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
             log.info("Processing payment for FeatureUsage id {}", featureUsageId);
             FeatureUsage featureUsage = featureUsageRepositoryPort.findById(featureUsageId)
                     .orElseThrow(() -> new IllegalArgumentException("Feature Usage Id not found: " + featureUsageId));
+
+            //TODO: when more features premium be added, refactor to handle the name correctly. (fetch from their repo)
+            featureUsageRepositoryPort.findByUserSubscriptionIdAndFeatureNameAndStatus(featureUsage.getSubscriptionId(), FeatureName.WHATSAPP_NOTIFICATIONS , FeatureStatus.ACTIVE)
+                    .ifPresent(activeFeature -> {
+                        activeFeature.setFeatureStatus(FeatureStatus.EXCHANGED);
+                        featureUsageRepositoryPort.update(activeFeature);
+                    });
+
             featureUsage.setFeatureStatus(FeatureStatus.ACTIVE);
             featureUsageRepositoryPort.update(featureUsage);
 

@@ -1,10 +1,11 @@
-package com.reservalink.api.application.service.user;
+package com.reservalink.api.application.service.feature;
 
 import com.reservalink.api.adapter.input.controller.request.FeatureUsageRequest;
 import com.reservalink.api.application.dto.FeatureUsageDetail;
 import com.reservalink.api.application.dto.FeatureUsageResponse;
 import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
+import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.application.output.UserRepositoryPort;
 import com.reservalink.api.application.service.payment.PaymentService;
 import com.reservalink.api.domain.FeatureStatus;
@@ -28,12 +29,14 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
     private final UserRepositoryPort userRepositoryPort;
     private final PaymentService paymentService;
     private final FeatureUsageRepositoryPort featureUsageRepositoryPort;
+    private final SubscriptionRepositoryPort subscriptionRepositoryPort;
 
-    public FeatureUsageServiceImpl(SubscriptionFeatureRepositoryPort subscriptionFeatureRepository, UserRepositoryPort userRepositoryPort, PaymentService paymentService, FeatureUsageRepositoryPort featureUsageRepositoryPort) {
+    public FeatureUsageServiceImpl(SubscriptionFeatureRepositoryPort subscriptionFeatureRepository, UserRepositoryPort userRepositoryPort, PaymentService paymentService, FeatureUsageRepositoryPort featureUsageRepositoryPort, SubscriptionRepositoryPort subscriptionRepositoryPort) {
         this.subscriptionFeatureRepository = subscriptionFeatureRepository;
         this.userRepositoryPort = userRepositoryPort;
         this.paymentService = paymentService;
         this.featureUsageRepositoryPort = featureUsageRepositoryPort;
+        this.subscriptionRepositoryPort = subscriptionRepositoryPort;
     }
 
 
@@ -45,27 +48,20 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
         Subscription subscription = userRepositoryPort.findUserSubscriptionByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Subscription not found for user id " + userId));
 
-        featureUsageRepositoryPort
-                .findBySubscriptionFeatureIdAndUserSubscriptionIdAndStatus(subscriptionFeature.getId(), subscription.getId(), FeatureStatus.ACTIVE)
-                .ifPresent(featureUsage -> {
-                    throw new BusinessRuleException(BusinessErrorCodes.FEATURE_ALREADY_EXISTS.name());
-                });
+        FeatureUsage newFeatureUsage = FeatureUsage.builder()
+                .subscriptionFeatureId(subscriptionFeature.getId())
+                .subscriptionId(subscription.getId())
+                .featureStatus(FeatureStatus.PENDING)
+                .enabled(true)
+                .usage(0)
+                .build();
 
-        FeatureUsage featureUsage = featureUsageRepositoryPort.findBySubscriptionFeatureIdAndUserSubscriptionIdAndStatus(subscriptionFeature.getId(), subscription.getId(), FeatureStatus.PENDING)
-                .orElse(FeatureUsage.builder()
-                        .subscriptionFeatureId(subscriptionFeature.getId())
-                        .build()
-                );
-        featureUsage.setFeatureStatus(FeatureStatus.PENDING);
-        featureUsage.setSubscriptionId(subscription.getId());
-        featureUsage.setEnabled(Boolean.TRUE);
-        featureUsage.setUsage(0);
-        featureUsage = featureUsage.getId() != null ? featureUsageRepositoryPort.update(featureUsage) : featureUsageRepositoryPort.create(featureUsage);
+        FeatureUsage savedFeatureUsage = featureUsageRepositoryPort.create(newFeatureUsage);
 
-        String checkoutURL = paymentService.createPremiumFeatureCheckoutURL(subscriptionFeature, featureUsage.getId());
+        String checkoutURL = paymentService.createPremiumFeatureCheckoutURL(subscriptionFeature, savedFeatureUsage.getId());
 
         return FeatureUsageResponse.builder()
-                .featureUsage(featureUsage)
+                .featureUsage(savedFeatureUsage)
                 .premiumFeatureCheckoutURL(checkoutURL)
                 .build();
     }
@@ -83,6 +79,11 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
         featureUsage.setEnabled(false);
         featureUsage.setFeatureStatus(FeatureStatus.DELETED);
         featureUsageRepositoryPort.update(featureUsage);
+
+        List<FeatureUsage> featureUsagesAvailable = featureUsageRepositoryPort.findAllAvailableByUserId(userId);
+        String newSubscriptionCheckoutURL = paymentService.createSubscriptionCheckoutURL(userId, featureUsagesAvailable);
+        subscription.setCheckoutLink(newSubscriptionCheckoutURL);
+        subscriptionRepositoryPort.update(subscription);
     }
 
     @Override

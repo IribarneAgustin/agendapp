@@ -127,23 +127,22 @@ class BookingDashboardManager {
         }
     }
 
-    /**
-     * Calls the API to get paginated and filtered bookings.
-     * @returns {Promise<{data: Array<Object>, totalPages: number, totalItems: number}>}
-     */
     async fetchBookings(pageNumber, pageSize) {
         if (!this.authToken) return { data: [], totalPages: 0, totalItems: 0 };
-
         this.isLoading = true;
         const params = new URLSearchParams();
 
-        // 1. Mandatory pagination parameters
         params.append('pageNumber', pageNumber.toString());
         params.append('pageSize', pageSize.toString());
 
-        // 2. Filters
+        if (this.bookingTypeFilter === 'INCOMING' && !this.startDateFilter) {
+            const today = new Date().toISOString().split('T')[0];
+            params.append('startDate', today);
+        } else if (this.startDateFilter) {
+            params.append('startDate', this.startDateFilter);
+        }
+
         if (this.clientNameFilter) params.append('clientName', this.clientNameFilter);
-        if (this.startDateFilter) params.append('startDate', this.startDateFilter);
         if (this.monthFilter && this.monthFilter !== 'ALL') params.append('month', this.monthFilter);
         if (this.offeringIdFilter && this.offeringIdFilter !== 'ALL') params.append('offeringId', this.offeringIdFilter);
 
@@ -157,29 +156,13 @@ class BookingDashboardManager {
                 }
             });
 
-            if (response.status === 401) {
-                this.showStatusMessage("Sesión expirada (401). Intente cerrar e iniciar sesión nuevamente.", true);
-                this.isLoading = false;
-                return { data: [], totalPages: 0, totalItems: 0 };
-            }
-
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
             const result = await response.json();
 
-            let fetchedBookings = result.content || [];
-
-            // INCOMING Filter: Apply local filter if needed
-            if (this.bookingTypeFilter === 'INCOMING') {
-                const now = new Date();
-                fetchedBookings = fetchedBookings.filter(booking => new Date(booking.startDateTime) >= now);
-            }
-
             this.isLoading = false;
             return {
-                data: fetchedBookings,
+                data: result.content || [],
                 totalPages: result.totalPages || 0,
                 totalItems: result.totalElements || 0,
             };
@@ -307,7 +290,7 @@ class BookingDashboardManager {
         this.bookings.forEach(booking => {
             // --- 1. Safely Extract Simple Fields with Fallbacks ---
             const bookingId = booking.id;
-            console.log(bookingId)
+
             const serviceName = booking.serviceName ?? 'N/A';
             const clientName = booking.clientName ?? 'N/A';
             const clientEmail = booking.clientEmail ?? 'N/A';

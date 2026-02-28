@@ -13,7 +13,8 @@ import java.util.Optional;
 
 @Repository
 public interface FeatureUsageJpaRepository extends JpaRepository<FeatureUsageEntity, String> {
-    Optional<FeatureUsageEntity> findByEnabledTrueAndSubscriptionFeatureEntity_IdAndSubscriptionEntity_IdAndFeatureStatus(String subscriptionFeatureId, String userSubscriptionId, FeatureStatus featureStatus);
+    Optional<FeatureUsageEntity> findByEnabledTrueAndSubscriptionEntity_IdAndSubscriptionFeatureEntity_NameAndFeatureStatus(
+            String userSubscriptionId, FeatureName featureName, FeatureStatus featureStatus);
 
     Optional<FeatureUsageEntity> findByIdAndEnabledTrue(String featureUsageId);
 
