@@ -575,6 +575,22 @@ class UserOfferingsManager {
             return;
         }
 
+        if (this.selectedOffering?.termsAndConditions?.trim()) {
+            const result = await Swal.fire({
+                title: 'Términos y Condiciones',
+                html: `<div style="text-align: left; white-space: pre-line; max-height: 400px; overflow-y: auto;">${this.selectedOffering.termsAndConditions}</div>`,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Aceptar y Confirmar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#ef4444'
+            });
+
+            if (!result.isConfirmed)
+            return;
+        }
+
         try {
             const createBookingButton = form.querySelector('button[type="submit"]');
             const originalText = createBookingButton.innerHTML;
@@ -671,10 +687,6 @@ class UserOfferingsManager {
 
         const errorTitle = errorState.querySelector('h3');
         if (errorTitle && message) {
-            // Logic correction: Don't replace Title with message, maybe add paragraph
-             // Keeping strictly as per request, but minimal styling touch:
-             // Since errorState structure changed in HTML, let's target the paragraph if possible, or just leave as is if simple text.
-             // The HTML has a <p> under h3, let's try to find it.
              const p = errorState.querySelector('p');
              if(p) p.textContent = message;
         }
@@ -751,39 +763,9 @@ class UserOfferingsManager {
             this.selectedResource = null;
         }
     }
+
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const bookedSuccess = urlParams.get('bookedSuccess');
-
-    if (bookedSuccess === 'true') {
-        Swal.fire({
-            icon: 'success',
-            title: '¡Reserva Completada!',
-            text: 'Tu reserva se completó correctamente. Revisa tu correo electrónico para ver los detalles.',
-            confirmButtonColor: '#4f46e5',
-            confirmButtonText: 'Aceptar'
-        }).then(() => {
-            // Remove query param from URL
-            urlParams.delete('bookedSuccess');
-            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-            window.history.replaceState({}, '', newUrl);
-        });
-    } else if (bookedSuccess === 'false') {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error en el Pago',
-            text: 'Ocurrió un error al procesar el pago, no se pudo completar la reserva correctamente.',
-            confirmButtonColor: '#4f46e5',
-            confirmButtonText: 'Aceptar'
-        }).then(() => {
-            // Remove query param from URL
-            urlParams.delete('bookedSuccess');
-            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-            window.history.replaceState({}, '', newUrl);
-        });
-    }
-
     new UserOfferingsManager();
 });

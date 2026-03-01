@@ -4,9 +4,6 @@ class OfferingManager {
         this.token = localStorage.getItem('authToken');
         this.user = this.getStoredUser();
         this.offerings = [];
-        this.currentOffering = null;
-        this.currentOfferingId = null;
-        this.isEditMode = false;
 
         // Check authentication
         if (!this.token || !this.user) {
@@ -34,56 +31,16 @@ class OfferingManager {
             logoutBtn.addEventListener('click', this.logout.bind(this));
         }
 
-        // Modal controls
+        // Redirect to new page instead of modal
         const addOfferingBtn = document.getElementById('addOfferingBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const offeringForm = document.getElementById('offeringForm');
-        const offeringModal = document.getElementById('offeringModal');
-
         if (addOfferingBtn) {
-            addOfferingBtn.addEventListener('click', () => this.openModal());
-        }
-        if (closeModalBtn) {
-            closeModalBtn.addEventListener('click', () => this.closeModal());
-        }
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => this.closeModal());
-        }
-        if (offeringForm) {
-            offeringForm.addEventListener('submit', this.handleFormSubmit.bind(this));
-        }
-
-        // Close modal when clicking backdrop
-        if (offeringModal) {
-            offeringModal.addEventListener('click', (e) => {
-                if (e.target === offeringModal) {
-                    this.closeModal();
-                }
-            });
-        }
-
-        // Configure button logic inside the MODAL (using the ID 'configureSlotsBtn').
-        // This button handles redirection AFTER a service is saved or while editing inside the modal.
-        const configureModalBtn = document.getElementById("configureSlotsBtn");
-        if (configureModalBtn) {
-            configureModalBtn.addEventListener("click", () => {
-                const serviceId = this.currentOfferingId;
-
-                if (!serviceId) {
-                    this.showAlert("Debes guardar el servicio antes de configurar horarios.", 'warning');
-                    return;
-                }
-
-                // Action: Redirect to the time slots page from the modal
-                window.location.href = `./time-slots.html?offeringId=${serviceId}`;
+            addOfferingBtn.addEventListener('click', () => {
+                window.location.href = './offering-crud.html';
             });
         }
     }
 
-
     async loadOfferings() {
-        // Show loading state
         const loadingState = document.getElementById('loadingState');
         if (loadingState) {
             loadingState.classList.remove('hidden');
@@ -145,19 +102,16 @@ class OfferingManager {
         });
     }
 
-    // REFACTORED: Layout changed to stacked and yellow color removed
     createOfferingCard(offering) {
         const card = document.createElement('div');
         card.className = 'offering-card bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-600 transition-all duration-200 cursor-pointer';
 
         card.addEventListener('click', (e) => {
-            // Prevent opening the edit modal if the delete button or the new configure button was clicked
             if (e.target.closest('.delete-btn') || e.target.closest('.configure-btn')) {
                 return;
             }
-            offeringManager.editOffering(offering.id); // Default: open the modal/edit form
+            offeringManager.editOffering(offering.id);
         });
-
 
         card.innerHTML = `
             <div class="flex justify-between items-start mb-4">
@@ -203,14 +157,10 @@ class OfferingManager {
             </div>
         `;
 
-        // Attach the specific click listener to the new button element
         const configureBtn = card.querySelector('.configure-btn');
         if (configureBtn) {
             configureBtn.addEventListener('click', (e) => {
-                // Stop propagation so the card's general click event (editOffering) isn't triggered
                 e.stopPropagation();
-
-                // Action: Redirect to the time slots page
                 window.location.href = `./time-slots.html?offeringId=${offering.id}`;
             });
         }
@@ -218,123 +168,10 @@ class OfferingManager {
         return card;
     }
 
-    openModal(offering = null) {
-        this.isEditMode = !!offering;
-        this.currentOffering = offering;
-
-        const modal = document.getElementById('offeringModal');
-        const form = document.getElementById('offeringForm');
-        const advanceInput = document.getElementById('advancePaymentPercentage');
-        const advanceValue = document.getElementById('advanceValue');
-
-        if (!modal || !form || !advanceInput || !advanceValue) return;
-
-        form.reset();
-
-        if (this.isEditMode && offering) {
-            document.getElementById('name').value = offering.name || '';
-            document.getElementById('description').value = offering.description || '';
-            document.getElementById('capacity').value = offering.capacity || 1;
-            advanceInput.value = offering.advancePaymentPercentage || 0;
-            this.currentOfferingId = offering.id;
-        } else {
-            this.currentOfferingId = null;
-            document.getElementById('capacity').value = 1;
-            advanceInput.value = 0;
-        }
-
-        // Update the slider value display
-        advanceValue.textContent = advanceInput.value;
-        modal.classList.remove('hidden');
-    }
-
-    closeModal() {
-        const modal = document.getElementById('offeringModal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-        this.currentOffering = null;
-        this.currentOfferingId = null;
-        this.isEditMode = false;
-    }
-
-    async handleFormSubmit(e) {
-        e.preventDefault();
-
-        const form = e.target;
-        const formData = new FormData(form);
-
-        const offeringData = {
-            userId: this.user.id,
-            name: formData.get('name').trim(),
-            description: formData.get('description').trim(),
-            capacity: parseInt(formData.get('capacity')),
-            advancePaymentPercentage: parseInt(formData.get('advancePaymentPercentage')) || 0,
-        };
-
-        if (!offeringData.name) {
-            this.showAlert('El nombre del servicio es requerido', 'error');
-            return;
-        }
-        if (offeringData.capacity < 1) {
-            this.showAlert('La capacidad debe ser al menos 1', 'error');
-            return;
-        }
-
-        try {
-            let response;
-            let method = 'POST';
-            let url = `${this.baseUrl}/users/${this.user.id}/offerings`;
-
-            if (this.isEditMode && this.currentOffering) {
-                method = 'PUT';
-                url = `${this.baseUrl}/users/${this.user.id}/offerings/${this.currentOffering.id}`;
-            }
-
-            response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Authorization': `Bearer ${this.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(offeringData)
-            });
-
-            if (response.ok) {
-                this.showAlert(
-                    this.isEditMode ? 'Servicio actualizado correctamente' : 'Servicio creado correctamente',
-                    'success'
-                );
-                await this.loadOfferings();
-
-                if (!this.isEditMode) {
-                    const newOffering = await response.json();
-                    this.currentOfferingId = newOffering.id;
-                    this.isEditMode = true;
-
-                }
-
-                this.closeModal();
-
-            } else if (response.status === 401) {
-                this.handleUnauthorized();
-            } else {
-                const errorData = await response.text();
-                throw new Error(errorData || 'Error al guardar el servicio');
-            }
-        } catch (error) {
-            console.error('Error saving offering:', error);
-            this.showAlert('Error al guardar el servicio', 'error');
-        }
-    }
-
     editOffering(offeringId) {
-        const offering = this.offerings.find(o => o.id === offeringId);
-        if (offering) {
-            this.openModal(offering);
-        }
+        // Redirect to new page in edit mode
+        window.location.href = `./offering-crud.html?id=${offeringId}`;
     }
-
 
     async deleteOffering(offeringId) {
         const offering = this.offerings.find(o => o.id === offeringId);
@@ -345,8 +182,8 @@ class OfferingManager {
             text: `Se eliminará el servicio: ${this.escapeHtml(offering.name)}. Esta acción no se puede deshacer.`,
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#dc2626', // Red-600
-            cancelButtonColor: '#6b7280', // Gray-500
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar'
         });
@@ -401,13 +238,13 @@ class OfferingManager {
     handleUnauthorized() {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-         window.location.href = BASE_URL;
+        window.location.href = this.baseUrl;
     }
 
     logout() {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-        window.location.href = BASE_URL;
+        window.location.href = this.baseUrl;
     }
 
     showAlert(message, icon = 'info') {
