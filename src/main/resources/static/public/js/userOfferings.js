@@ -532,8 +532,6 @@ class UserOfferingsManager {
             dateMessage.classList.remove('hidden');
         }
 
-        this.renderTermsAndConditions();
-
         this.bookingForm.reset();
     }
 
@@ -589,8 +587,8 @@ class UserOfferingsManager {
                 cancelButtonColor: '#ef4444'
             });
 
-            if (!result.isConfirmed) return;
-            bookingData.termsAccepted = true;
+            if (!result.isConfirmed)
+            return;
         }
 
         try {
@@ -764,26 +762,6 @@ class UserOfferingsManager {
             this.resources = [];
             this.selectedResource = null;
         }
-    }
-
-    renderTermsAndConditions() {
-        const termsContainer = document.getElementById('termsContainer');
-        const termsContent = document.getElementById('termsContent');
-        const checkbox = document.getElementById('termsAccepted');
-
-        if (!termsContainer || !termsContent || !checkbox) return;
-
-        if (!this.selectedOffering?.termsAndConditions) {
-            termsContainer.classList.add('hidden');
-            return;
-        }
-
-        termsContainer.classList.add('hidden'); // Hide the static form version
-
-        termsContent.textContent = this.selectedOffering.termsAndConditions;
-        termsContent.style.whiteSpace = "pre-line";
-
-        checkbox.checked = false;
     }
 
 }

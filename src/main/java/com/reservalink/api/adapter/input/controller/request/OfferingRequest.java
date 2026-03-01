@@ -34,6 +34,7 @@ public class OfferingRequest {
     @Max(value = 100, message = "Advance payment cannot exceed 100%")
     private Integer advancePaymentPercentage;
 
+    @Size(max = 2000, message = "Terms and conditions must be at most 2000 characters")
     private String termsAndConditions;
 
 }
