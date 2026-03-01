@@ -8,32 +8,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f9fafb;
         }
-        .modal-backdrop {
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
-        }
-        /* Custom styling for SweetAlert to match placement of old toast */
         .sweetalert-container {
             z-index: 9999;
         }
-        .offeringEntity-card {
-            /* Styles to visually indicate it's clickable */
+        .offering-card {
             transition: all 0.2s ease-in-out;
             cursor: pointer;
         }
-        .offeringEntity-card:hover {
+        .offering-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border-color: #4f46e5; /* indigo-600 */
+            border-color: #4f46e5;
         }
-        /* Fix for button inside clickable card */
         .delete-btn {
             z-index: 10;
             position: relative;
@@ -99,7 +91,7 @@
                 </svg>
                 <h3 class="text-lg font-medium text-gray-900 mb-2">No tienes servicios creados</h3>
                 <p class="text-gray-600 mb-4">Comienza creando tu primer servicio para gestionar tus reservas.</p>
-                <button onclick="offeringManager.openModal()" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-200">
+                <button onclick="window.location.href='./offering-crud.html'" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors duration-200">
                     <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
@@ -109,107 +101,6 @@
         </div>
     </div>
 </div>
-
-<!-- Modal for Add/Edit Offering -->
-<div id="offeringModal" class="fixed inset-0 z-50 hidden">
-    <div class="modal-backdrop fixed inset-0"></div>
-    <div class="fixed inset-0 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all scale-100 opacity-100">
-
-            <form id="offeringForm" class="p-6 space-y-5">
-                <div>
-                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                        Nombre del Servicio *
-                    </label>
-                    <input type="text" id="name" name="name" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                           placeholder="Ej. Corte de pelo, Consulta Médica, Alquiler de Cancha">
-                </div>
-
-                <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                        Descripción
-                    </label>
-                    <textarea id="description" name="description" rows="3"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="Detalles sobre el servicio ofrecido"></textarea>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4">
-                    <div class="w-full">
-                        <label for="capacity" class="block text-sm font-medium text-gray-700 mb-1">
-                            Capacidad máxima de personas por horario
-                        </label>
-                        <input
-                                type="number"
-                                id="capacity"
-                                name="capacity"
-                                min="1"
-                                required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                value="1"
-                        >
-                    </div>
-                </div>
-
-                <div>
-                    <label for="advancePaymentPercentage" class="block text-sm font-medium text-gray-700 mb-1">
-                        Porcentaje de Adelanto (Seña)
-                    </label>
-                    <p class="text-xs font-normal text-gray-500 mb-2">
-                        Al configurar un porcentaje es importante que tengas tu cuenta de Mercado Pago vinculada, de lo contrario, no se podrán realizar reservas en este servicio.
-                    </p>
-                    <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
-                        <input
-                                type="range"
-                                id="advancePaymentPercentage"
-                                name="advancePaymentPercentage"
-                                min="0"
-                                max="100"
-                                value="0"
-                                class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                oninput="document.getElementById('advanceValue').textContent = this.value"
-                        >
-                        <div class="flex items-center gap-1 text-base font-bold text-gray-900 w-12 justify-end">
-                            <span id="advanceValue">0</span><span class="ml-0.5">%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
-                    <label for="termsAndConditions" class="block text-sm font-medium text-gray-700 mb-1">
-                        Términos y Condiciones (Opcional)
-                    </label>
-                    <textarea
-                            id="termsAndConditions"
-                            name="termsAndConditions"
-                            rows="6"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="Ej:
-                    - No se aceptan cancelaciones dentro de las 24hs.
-                    - En caso de inasistencia se pierde la seña.
-                    - El turno puede reprogramarse con 48hs de anticipación."></textarea>
-                    <p class="text-xs text-gray-500 mt-1">
-                        Se mostrarán al cliente antes de confirmar la reserva.
-                    </p>
-                </div>
-
-
-                <div class="flex space-x-3 pt-4">
-                    <button type="submit" id="submitBtn"
-                            class="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200 shadow-md">
-                        Guardar Servicio
-                    </button>
-                    <button type="button" id="cancelBtn"
-                            class="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors duration-200">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
 <script src="./js/offeringSettings.js"></script>
 <script src="../commons/config.js"></script>
 </body>

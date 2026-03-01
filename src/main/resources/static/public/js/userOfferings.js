@@ -578,18 +578,18 @@ class UserOfferingsManager {
         }
 
         if (this.selectedOffering?.termsAndConditions?.trim()) {
-            const termsCheckbox = document.getElementById('termsAccepted');
+            const result = await Swal.fire({
+                title: 'Términos y Condiciones',
+                html: `<div style="text-align: left; white-space: pre-line; max-height: 400px; overflow-y: auto;">${this.selectedOffering.termsAndConditions}</div>`,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Aceptar y Confirmar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#ef4444'
+            });
 
-            if (!termsCheckbox || !termsCheckbox.checked) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Debes aceptar los términos',
-                    text: 'Para continuar con la reserva debes aceptar los términos y condiciones.',
-                    confirmButtonColor: '#fb923c'
-                });
-                return;
-            }
-
+            if (!result.isConfirmed) return;
             bookingData.termsAccepted = true;
         }
 
@@ -689,10 +689,6 @@ class UserOfferingsManager {
 
         const errorTitle = errorState.querySelector('h3');
         if (errorTitle && message) {
-            // Logic correction: Don't replace Title with message, maybe add paragraph
-             // Keeping strictly as per request, but minimal styling touch:
-             // Since errorState structure changed in HTML, let's target the paragraph if possible, or just leave as is if simple text.
-             // The HTML has a <p> under h3, let's try to find it.
              const p = errorState.querySelector('p');
              if(p) p.textContent = message;
         }
@@ -782,7 +778,7 @@ class UserOfferingsManager {
             return;
         }
 
-        termsContainer.classList.remove('hidden');
+        termsContainer.classList.add('hidden'); // Hide the static form version
 
         termsContent.textContent = this.selectedOffering.termsAndConditions;
         termsContent.style.whiteSpace = "pre-line";
@@ -793,36 +789,5 @@ class UserOfferingsManager {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const bookedSuccess = urlParams.get('bookedSuccess');
-
-    if (bookedSuccess === 'true') {
-        Swal.fire({
-            icon: 'success',
-            title: '¡Reserva Completada!',
-            text: 'Tu reserva se completó correctamente. Revisa tu correo electrónico para ver los detalles.',
-            confirmButtonColor: '#4f46e5',
-            confirmButtonText: 'Aceptar'
-        }).then(() => {
-            // Remove query param from URL
-            urlParams.delete('bookedSuccess');
-            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-            window.history.replaceState({}, '', newUrl);
-        });
-    } else if (bookedSuccess === 'false') {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error en el Pago',
-            text: 'Ocurrió un error al procesar el pago, no se pudo completar la reserva correctamente.',
-            confirmButtonColor: '#4f46e5',
-            confirmButtonText: 'Aceptar'
-        }).then(() => {
-            // Remove query param from URL
-            urlParams.delete('bookedSuccess');
-            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
-            window.history.replaceState({}, '', newUrl);
-        });
-    }
-
     new UserOfferingsManager();
 });

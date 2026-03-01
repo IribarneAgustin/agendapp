@@ -47,7 +47,6 @@ public class OfferingEntity extends PersistentObject {
     @Column(name = "status")
     private Boolean status;
 
-    @Lob
     @Column(name = "terms_and_conditions")
     private String termsAndConditions;
 
