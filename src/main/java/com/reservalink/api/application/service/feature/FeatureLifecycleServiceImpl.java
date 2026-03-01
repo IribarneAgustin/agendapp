@@ -1,9 +1,11 @@
-package com.reservalink.api.application.service.user;
+package com.reservalink.api.application.service.feature;
 
 import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
+import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
 import com.reservalink.api.domain.FeatureName;
 import com.reservalink.api.domain.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
+import com.reservalink.api.domain.SubscriptionFeature;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import lombok.extern.slf4j.Slf4j;
@@ -17,22 +19,28 @@ public class FeatureLifecycleServiceImpl implements FeatureLifecycleService {
 
     private final FeatureUsageRepositoryPort featureUsageRepositoryPort;
 
-    public FeatureLifecycleServiceImpl(FeatureUsageRepositoryPort featureUsageRepositoryPort) {
+    private final SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort;
+
+    public FeatureLifecycleServiceImpl(FeatureUsageRepositoryPort featureUsageRepositoryPort,
+                                       SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort) {
         this.featureUsageRepositoryPort = featureUsageRepositoryPort;
+        this.subscriptionFeatureRepositoryPort = subscriptionFeatureRepositoryPort;
     }
 
     @Override
-    public void renew(List<String> premiumFeatureIds) {
-        List<FeatureUsage> expiredFeatures = featureUsageRepositoryPort.findAllById(premiumFeatureIds);
+    public void renew(List<String> premiumFeatureIds, String subscriptionId) {
+        List<SubscriptionFeature> expiredFeatures = subscriptionFeatureRepositoryPort.findAllByIds(premiumFeatureIds);
         expiredFeatures.forEach(expiredFeatureUsage -> {
-
-            expiredFeatureUsage.setFeatureStatus(FeatureStatus.EXPIRED);
-            featureUsageRepositoryPort.update(expiredFeatureUsage);
+            featureUsageRepositoryPort.findByUserSubscriptionIdAndFeatureNameAndStatus(subscriptionId, expiredFeatureUsage.getName() , FeatureStatus.ACTIVE)
+                    .ifPresent(expiredUsage -> {
+                        expiredUsage.setFeatureStatus(FeatureStatus.EXPIRED);
+                        featureUsageRepositoryPort.update(expiredUsage);
+                    });
 
             FeatureUsage newFeatureUsage = FeatureUsage.builder()
                     .featureStatus(FeatureStatus.ACTIVE)
-                    .subscriptionId(expiredFeatureUsage.getSubscriptionId())
-                    .subscriptionFeatureId(expiredFeatureUsage.getSubscriptionFeatureId())
+                    .subscriptionId(subscriptionId)
+                    .subscriptionFeatureId(expiredFeatureUsage.getId())
                     .enabled(Boolean.TRUE)
                     .usage(0)
                     .build();

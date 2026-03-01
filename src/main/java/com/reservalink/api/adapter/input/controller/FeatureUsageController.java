@@ -3,7 +3,7 @@ package com.reservalink.api.adapter.input.controller;
 import com.reservalink.api.adapter.input.controller.request.FeatureUsageRequest;
 import com.reservalink.api.application.dto.FeatureUsageResponse;
 import com.reservalink.api.application.dto.FeatureUsageDetail;
-import com.reservalink.api.application.service.user.FeatureUsageService;
+import com.reservalink.api.application.service.feature.FeatureUsageService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

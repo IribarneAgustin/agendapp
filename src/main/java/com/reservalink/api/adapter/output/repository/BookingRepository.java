@@ -25,7 +25,7 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
                 :clientName IS NULL OR
                 LOWER(b.name) LIKE LOWER(CONCAT('%', :clientName, '%'))
             )
-              AND (:startDate IS NULL OR DATE(st.startDateTime) = :startDate)
+              AND (:startDate IS NULL OR DATE(st.startDateTime) >= :startDate)
               AND (:month IS NULL OR FUNCTION('DATE_FORMAT', st.startDateTime, '%m') = :month)
               AND (:offeringId IS NULL OR o.id = :offeringId)
               AND (o.userEntity.id = :userId)

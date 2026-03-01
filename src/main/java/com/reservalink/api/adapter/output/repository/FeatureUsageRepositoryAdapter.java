@@ -23,9 +23,9 @@ public class FeatureUsageRepositoryAdapter implements FeatureUsageRepositoryPort
     }
 
     @Override
-    public Optional<FeatureUsage> findBySubscriptionFeatureIdAndUserSubscriptionIdAndStatus(String subscriptionFeatureId, String userSubscriptionId, FeatureStatus featureStatus) {
+    public Optional<FeatureUsage> findByUserSubscriptionIdAndFeatureNameAndStatus(String userSubscriptionId,FeatureName featureName, FeatureStatus featureStatus) {
         return featureUsageJpaRepository
-                .findByEnabledTrueAndSubscriptionFeatureEntity_IdAndSubscriptionEntity_IdAndFeatureStatus(subscriptionFeatureId, userSubscriptionId, featureStatus)
+                .findByEnabledTrueAndSubscriptionEntity_IdAndSubscriptionFeatureEntity_NameAndFeatureStatus(userSubscriptionId, featureName, featureStatus)
                 .map(this::toDomain);
     }
 

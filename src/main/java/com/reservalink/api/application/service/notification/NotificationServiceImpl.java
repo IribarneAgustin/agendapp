@@ -272,11 +272,7 @@ public class NotificationServiceImpl implements NotificationService {
             args.put("date", booking.getSlotTimeEntity()
                     .getStartDateTime()
                     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            args.put("time",
-                    booking.getSlotTimeEntity().getStartDateTime().toLocalTime().format(timeFormatter)
-                            + " - " +
-                            booking.getSlotTimeEntity().getEndDateTime().toLocalTime().format(timeFormatter)
-            );
+            args.put("time", booking.getSlotTimeEntity().getStartDateTime().toLocalTime().format(timeFormatter));
             args.put("cancelLink", baseURL + "/booking/" + booking.getId());
             args.put("subscriptionId", subscriptionId);
             args.put("bookingId", booking.getId());

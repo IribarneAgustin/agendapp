@@ -1,9 +1,9 @@
-FROM maven:3.8.5-openjdk-17 AS build
+FROM maven:3.9.9-eclipse-temurin-23 AS build
 WORKDIR /app
 COPY . .
 RUN mvn -DskipTests clean package
 
-FROM openjdk:17.0.1-jdk-slim
+FROM eclipse-temurin:23-jdk
 WORKDIR /app
 COPY --from=build /app/target/api-0.0.1-SNAPSHOT.jar api.jar
 EXPOSE 8080

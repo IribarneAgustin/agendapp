@@ -4,7 +4,7 @@ import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
 import com.reservalink.api.application.output.BookingRepositoryPort;
 import com.reservalink.api.application.service.notification.NotificationChannel;
 import com.reservalink.api.application.service.notification.NotificationService;
-import com.reservalink.api.application.service.user.FeatureLifecycleService;
+import com.reservalink.api.application.service.feature.FeatureLifecycleService;
 import com.reservalink.api.domain.BookingStatus;
 import com.reservalink.api.domain.FeatureName;
 import lombok.extern.slf4j.Slf4j;
@@ -56,16 +56,17 @@ public class BookingReminderServiceImpl implements BookingReminderService {
                                         .getId()
                         ));
 
-        bookingsBySubscription.forEach((subscriptionId, subscriptionBookings) -> {
+        for (Map.Entry<String, List<BookingEntity>> entry : bookingsBySubscription.entrySet()) {
+            String subscriptionId = entry.getKey();
+            List<BookingEntity> subscriptionBookings = entry.getValue();
 
-            if (featureLifecycleService.canUse(subscriptionId, FeatureName.WHATSAPP_NOTIFICATIONS)) {
-                notificationService.sendBookingReminder(subscriptionBookings, NotificationChannel.WHATSAPP);
-
-                subscriptionBookings.forEach(booking ->
-                        featureLifecycleService.consume(subscriptionId, FeatureName.WHATSAPP_NOTIFICATIONS)
-                );
+            for (BookingEntity booking : subscriptionBookings) {
+                if (featureLifecycleService.canUse(subscriptionId, FeatureName.WHATSAPP_NOTIFICATIONS)) {
+                    notificationService.sendBookingReminder(List.of(booking), NotificationChannel.WHATSAPP);
+                    featureLifecycleService.consume(subscriptionId, FeatureName.WHATSAPP_NOTIFICATIONS);
+                }
             }
-        });
+        }
 
         log.info("{} booking reminders processed.", bookings.size());
     }
