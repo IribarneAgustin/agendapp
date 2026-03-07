@@ -5,6 +5,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -17,7 +18,6 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
-
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
@@ -27,7 +27,7 @@ import org.hibernate.envers.Audited;
 @Entity
 @Table(name = "booking")
 @Audited
-@AuditTable(value="booking_audit")
+@AuditTable(value = "booking_audit")
 public class BookingEntity extends PersistentObject {
 
     @ManyToOne
@@ -49,5 +49,9 @@ public class BookingEntity extends PersistentObject {
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "booking_package_id")
+    private BookingPackageEntity bookingPackage;
 
 }

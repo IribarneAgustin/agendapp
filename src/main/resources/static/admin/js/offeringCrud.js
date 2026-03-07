@@ -106,6 +106,8 @@ class OfferingCrudManager {
         document.getElementById('name').value = offering.name || '';
         document.getElementById('description').value = offering.description || '';
         document.getElementById('capacity').value = offering.capacity || 1;
+        document.getElementById('sessionLimit').value = offering.sessionLimit || 0;
+        document.getElementById('packagePrice').value = offering.packagePrice || '';
 
         const advanceInput = document.getElementById('advancePaymentPercentage');
         advanceInput.value = offering.advancePaymentPercentage || 0;
@@ -124,11 +126,18 @@ class OfferingCrudManager {
         const form = e.target;
         const formData = new FormData(form);
 
+        let sessionLimit = parseInt(formData.get('sessionLimit'));
+        if (isNaN(sessionLimit) || sessionLimit <= 0) sessionLimit = null;
+        let packagePrice = parseFloat(formData.get('packagePrice'));
+        if (isNaN(packagePrice) || packagePrice < 0) packagePrice = null;
+
         const offeringData = {
             userId: this.user.id,
             name: formData.get('name').trim(),
             description: formData.get('description').trim(),
             capacity: parseInt(formData.get('capacity')),
+            sessionLimit: sessionLimit,
+            packagePrice: packagePrice,
             advancePaymentPercentage: parseInt(formData.get('advancePaymentPercentage')) || 0,
             termsAndConditions: formData.get('termsAndConditions') || null
         };

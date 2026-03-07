@@ -15,4 +15,7 @@ public interface PaymentService {
 
     String createPremiumFeatureCheckoutURL(SubscriptionFeature subscriptionFeature, String featureUsageId);
 
+    String createPackageCheckoutURL(
+            com.reservalink.api.adapter.output.repository.entity.BookingPackageEntity bookingPackage, Double price);
+
 }

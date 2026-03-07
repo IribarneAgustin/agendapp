@@ -123,6 +123,7 @@ class OfferingManager {
                     </div>
                     <div class="ml-3">
                         <h3 class="text-xl font-bold text-gray-900">${this.escapeHtml(offering.name)}</h3>
+                        ${offering.sessionLimit > 0 ? `<span class="inline-flex items-center gap-1 bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-bold mt-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg> Pack de ${offering.sessionLimit} sesiones</span>` : ''}
                     </div>
                 </div>
                 <div class="flex space-x-2">
@@ -149,6 +150,13 @@ class OfferingManager {
                         ${offering.advancePaymentPercentage > 0 ? `${offering.advancePaymentPercentage}% Requerido` : 'No Requerido (0%)'}
                     </p>
                 </div>
+                ${offering.sessionLimit > 0 ? `
+                <div class="col-span-2 mt-2 pt-2 border-t border-indigo-50">
+                    <p class="text-sm text-indigo-500 font-medium">Precio Total del Pack</p>
+                    <p class="text-lg font-bold text-indigo-700">
+                        ${offering.packagePrice ? '$' + offering.packagePrice : 'No definido'}
+                    </p>
+                </div>` : ''}
             </div>
             <div class="flex pt-2">
                 <button type="button" class="configure-btn flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-md">

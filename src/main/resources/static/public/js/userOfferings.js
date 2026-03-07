@@ -9,6 +9,9 @@ class UserOfferingsManager {
         this.groupedSlotsByDate = {}; // Slots grouped by date 'YYYY-MM-DD'
         this.currentDate = new Date(); // Date object to track current calendar view
         this.selectedDateKey = null; // 'YYYY-MM-DD' of the currently selected date in the calendar
+        this.isPackageMode = false;
+        this.sessionLimit = 1;
+        this.selectedSlotIds = [];
 
         // DOM Elements
         this.servicesContainer = document.getElementById('servicesContainer');
@@ -105,7 +108,7 @@ class UserOfferingsManager {
         noServicesState.classList.add('hidden');
         this.bookingPanel.classList.add('hidden');
 
-        if(profileHeader) profileHeader.classList.remove('hidden');
+        if (profileHeader) profileHeader.classList.remove('hidden');
 
         const activeOfferings = offerings.filter(offering => offering.enabled);
 
@@ -124,8 +127,8 @@ class UserOfferingsManager {
         this.servicesContainer.classList.remove('hidden');
 
         // Trigger 3D effects and Icons after rendering
-        if(window.lucide) window.lucide.createIcons();
-        if(window.initTilt) window.initTilt();
+        if (window.lucide) window.lucide.createIcons();
+        if (window.initTilt) window.initTilt();
     }
 
     createServiceCard(offering) {
@@ -146,9 +149,12 @@ class UserOfferingsManager {
                         <div class="p-3.5 bg-white shadow-sm rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300">
                             <i data-lucide="briefcase" class="w-6 h-6"></i>
                         </div>
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
-                            ${priceDisplay}
-                        </span>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+                                ${priceDisplay}
+                            </span>
+                            ${offering.sessionLimit > 0 ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Pack × ${offering.sessionLimit} sesiones</span>` : ''}
+                        </div>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">${offering.name}</h3>
                     <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
@@ -303,9 +309,9 @@ class UserOfferingsManager {
 
             // Apply selection class if this date was previously selected
             if (dateString === this.selectedDateKey) {
-                 cellClasses.push('selected-date');
-                 // Re-render time slots if the selected date is in the current month view
-                 this.renderTimeSlots(dateString);
+                cellClasses.push('selected-date');
+                // Re-render time slots if the selected date is in the current month view
+                this.renderTimeSlots(dateString);
             }
 
             cell.className = cellClasses.join(' ');
@@ -330,7 +336,7 @@ class UserOfferingsManager {
                     <i data-lucide="clock-4" class="w-6 h-6 mb-2 opacity-50"></i>
                     <p class="text-sm">No hay horarios disponibles.</p>
                 </div>`;
-            if(window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
             return;
         }
 
@@ -338,7 +344,7 @@ class UserOfferingsManager {
         document.getElementById('slotMessage')?.remove();
 
         // Sort slots by time
-        slots.sort((a,b) => a.startDateTime.localeCompare(b.startDateTime));
+        slots.sort((a, b) => a.startDateTime.localeCompare(b.startDateTime));
 
         let availableSlotButtons = [];
 
@@ -352,10 +358,10 @@ class UserOfferingsManager {
             let btnClasses = ['slot-time-btn', 'w-full', 'py-3', 'px-2', 'text-sm', 'rounded-xl', 'border', 'font-medium', 'flex', 'items-center', 'justify-center', 'gap-2'];
 
             if (available) {
-                 btnClasses.push('bg-white', 'border-indigo-100', 'text-indigo-600', 'hover:border-indigo-500', 'hover:shadow-md', 'hover:-translate-y-0.5');
+                btnClasses.push('bg-white', 'border-indigo-100', 'text-indigo-600', 'hover:border-indigo-500', 'hover:shadow-md', 'hover:-translate-y-0.5');
             } else {
-                 btnClasses.push('bg-gray-50', 'border-gray-100', 'text-gray-400', 'cursor-not-allowed');
-                 button.disabled = true;
+                btnClasses.push('bg-gray-50', 'border-gray-100', 'text-gray-400', 'cursor-not-allowed');
+                button.disabled = true;
             }
 
             button.className = btnClasses.join(' ');
@@ -372,11 +378,39 @@ class UserOfferingsManager {
             if (available) {
                 availableSlotButtons.push({ button, slot });
 
-                button.addEventListener('click', () => {
-                    // Handle selection of this specific slot
-                    this.slotTimeContainer.querySelectorAll('.slot-time-btn').forEach(btn => btn.classList.remove('selected'));
+                if (this.selectedSlotIds.includes(slot.id)) {
                     button.classList.add('selected');
-                    this.handleSlotSelection(slot.id);
+                }
+
+                button.addEventListener('click', () => {
+                    if (this.isPackageMode) {
+                        if (button.classList.contains('selected')) {
+                            // Deselect
+                            button.classList.remove('selected');
+                            this.selectedSlotIds = this.selectedSlotIds.filter(id => id !== slot.id);
+                        } else {
+                            // Select up to limit
+                            if (this.selectedSlotIds.length < this.sessionLimit) {
+                                button.classList.add('selected');
+                                this.selectedSlotIds.push(slot.id);
+                            } else {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Límite alcanzado',
+                                    text: `Solo puedes seleccionar hasta ${this.sessionLimit} horario(s).`,
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        }
+                        this.handleSlotSelection(slot.id); // Triggers UI update
+                    } else {
+                        // normal selection mode
+                        this.slotTimeContainer.querySelectorAll('.slot-time-btn').forEach(btn => btn.classList.remove('selected'));
+                        button.classList.add('selected');
+                        this.selectedSlotIds = [slot.id];
+                        this.handleSlotSelection(slot.id);
+                    }
                 });
             }
 
@@ -400,34 +434,45 @@ class UserOfferingsManager {
         const quantityInput = document.getElementById('quantity');
         const quantityContainer = document.getElementById('quantityContainer'); // Hook for UI
 
-        slotTimeIdInput.value = slotId || '';
+        // In package mode, slotTimeId isn't a single value, we maintain selectedSlotIds array
+        if (!this.isPackageMode) {
+            slotTimeIdInput.value = slotId || '';
+            const slot = this.availableSlots.find(s => s.id === slotId);
 
-        const slot = this.availableSlots.find(s => s.id === slotId);
-
-        // Show quantity logic
-        if (slot) {
-            if (slot.capacityAvailable <= 1) {
-                quantityInput.value = 1;
-                quantityInput.disabled = true;
-                if(quantityContainer) quantityContainer.classList.add('hidden');
+            // Show quantity logic
+            if (slot) {
+                if (slot.capacityAvailable <= 1) {
+                    quantityInput.value = 1;
+                    quantityInput.disabled = true;
+                    if (quantityContainer) quantityContainer.classList.add('hidden');
+                } else {
+                    quantityInput.disabled = false;
+                    quantityInput.value = 1;
+                    quantityInput.max = slot.capacityAvailable;
+                    if (quantityContainer) quantityContainer.classList.remove('hidden');
+                }
             } else {
-                quantityInput.disabled = false;
-                quantityInput.value = 1;
-                quantityInput.max = slot.capacityAvailable;
-                if(quantityContainer) quantityContainer.classList.remove('hidden');
+                if (quantityContainer) quantityContainer.classList.add('hidden');
             }
         } else {
-            if(quantityContainer) quantityContainer.classList.add('hidden');
+            // Package mode UI
+            if (quantityContainer) quantityContainer.classList.add('hidden');
+            slotTimeIdInput.value = this.selectedSlotIds.length > 0 ? this.selectedSlotIds[0] : '';
         }
 
         // Update price display
+        // Ensure price display updates when no slots selected in package mode as well
         this.updateSlotPriceDisplay(slotId);
 
         // Update price on quantity change
         quantityInput.oninput = () => this.updateSlotPriceDisplay(slotId);
 
         // Control button state
-        submitBookingBtn.disabled = !slotId;
+        if (this.isPackageMode) {
+            submitBookingBtn.disabled = this.selectedSlotIds.length !== this.sessionLimit;
+        } else {
+            submitBookingBtn.disabled = this.selectedSlotIds.length === 0;
+        }
     }
 
     updateSlotPriceDisplay(slotId) {
@@ -438,12 +483,31 @@ class UserOfferingsManager {
 
         if (!slotPriceDisplayDiv) return;
 
-        if (this.selectedOffering && slot && slot.price !== null) {
+        if (this.selectedOffering && this.selectedSlotIds.length > 0) {
             // Styling update: Make visible when active
             slotPriceDisplayDiv.classList.remove('hidden');
 
-            const totalPrice = slot.price * quantity;
-            let priceHtml = `
+            let totalPrice = 0;
+            if (this.isPackageMode) {
+                totalPrice = this.selectedOffering.packagePrice || 0;
+            } else {
+                if (slot && slot.price !== null) {
+                    totalPrice = slot.price * quantity;
+                }
+            }
+
+            let priceHtml = ``;
+            if (this.isPackageMode) {
+                priceHtml += `
+                    <div class="flex justify-between items-center mb-4 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                        <span class="text-sm font-semibold text-indigo-800">Sesiones seleccionadas</span>
+                        <span class="text-sm font-bold text-indigo-700 bg-white px-2 py-1 rounded-lg border border-indigo-200 shadow-sm">
+                            ${this.selectedSlotIds.length} / ${this.sessionLimit}
+                        </span>
+                    </div>`;
+            }
+
+            priceHtml += `
                 <div class="flex justify-between items-end mb-1">
                     <span class="text-sm text-gray-500 font-medium">Total</span>
                     <span class="text-3xl font-bold text-gray-900 tracking-tight">$${totalPrice.toLocaleString('es-AR')}</span>
@@ -462,11 +526,11 @@ class UserOfferingsManager {
             }
 
             slotPriceDisplayDiv.innerHTML = priceHtml;
-            if(window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
 
         } else {
-             // Hide if no valid selection
-             slotPriceDisplayDiv.classList.add('hidden');
+            // Hide if no valid selection
+            slotPriceDisplayDiv.classList.add('hidden');
         }
     }
 
@@ -478,10 +542,14 @@ class UserOfferingsManager {
         const profileHeader = document.getElementById('profileHeader');
 
         this.servicesContainer.classList.add('hidden');
-        if(profileHeader) profileHeader.classList.add('hidden'); // Hide large header
+        if (profileHeader) profileHeader.classList.add('hidden'); // Hide large header
 
         this.bookingPanel.classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        this.isPackageMode = offering.sessionLimit > 0;
+        this.sessionLimit = offering.sessionLimit || 1;
+        this.selectedSlotIds = [];
 
         this.currentDate = new Date();
         this.selectedDateKey = null; // Clear previous selection
@@ -490,7 +558,7 @@ class UserOfferingsManager {
                 <i data-lucide="mouse-pointer-click" class="w-8 h-8 mb-3 opacity-40"></i>
                 <p>Selecciona un día en el calendario.</p>
             </div>`;
-        if(window.lucide) window.lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons();
 
         this.handleSlotSelection(null);
         this.availableSlots = [];
@@ -504,17 +572,18 @@ class UserOfferingsManager {
                     <i data-lucide="bookmark" class="w-5 h-5"></i>
                 </div>
                 <h4 class="text-xl font-bold text-gray-900">${offering.name}</h4>
+                ${this.isPackageMode ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-1 flex items-center gap-1 rounded-full text-xs font-bold whitespace-nowrap"><i data-lucide="layers" class="w-3 h-3"></i> Pack de ${this.sessionLimit} sesiones</span>` : ''}
             </div>
             <p class="text-gray-600 text-sm pl-1 whitespace-pre-line">
                 ${offering.description || ''}
             </p>
         `;
-        if(window.lucide) window.lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons();
 
         await this.loadResources();
 
         if (!this.selectedResource && this.resources.length > 0) {
-             this.selectedResource = this.resources[0];
+            this.selectedResource = this.resources[0];
         }
 
         this.renderResourceSelector();
@@ -538,10 +607,10 @@ class UserOfferingsManager {
     cancelBooking() {
         this.bookingPanel.classList.add('hidden');
         this.servicesContainer.classList.remove('hidden');
-        
+
         const profileHeader = document.getElementById('profileHeader');
-        if(profileHeader) profileHeader.classList.remove('hidden'); // Show header again
-        
+        if (profileHeader) profileHeader.classList.remove('hidden'); // Show header again
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         this.selectedOffering = null;
@@ -557,22 +626,43 @@ class UserOfferingsManager {
         const form = event.target;
         const formData = new FormData(form);
 
-        const bookingData = {
-            slotTimeId: formData.get('slotTimeId'),
-            email: formData.get('email'),
-            phoneNumber: formData.get('phoneNumber'),
-            name: formData.get('name'),
-            quantity: formData.get('quantity') ? formData.get('quantity') : 1
-        };
+        let bookingData = {};
+        if (this.isPackageMode) {
+            bookingData = {
+                offeringId: this.selectedOffering.id,
+                slotTimeIds: this.selectedSlotIds,
+                customerEmail: formData.get('email'),
+                customerPhone: formData.get('phoneNumber'),
+                customerName: formData.get('name')
+            };
 
-        if (!bookingData.slotTimeId || !bookingData.email || !bookingData.phoneNumber || !bookingData.name) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Faltan Datos',
-                text: 'Por favor, selecciona un horario y completa todos los campos.',
-                confirmButtonColor: '#fb923c'
-            });
-            return;
+            if (this.selectedSlotIds.length !== this.sessionLimit || !bookingData.customerEmail || !bookingData.customerPhone || !bookingData.customerName) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Faltan Datos',
+                    text: `Por favor, selecciona ${this.sessionLimit} horarios y completa todos los campos.`,
+                    confirmButtonColor: '#fb923c'
+                });
+                return;
+            }
+        } else {
+            bookingData = {
+                slotTimeId: this.selectedSlotIds[0],
+                email: formData.get('email'),
+                phoneNumber: formData.get('phoneNumber'),
+                name: formData.get('name'),
+                quantity: formData.get('quantity') ? formData.get('quantity') : 1
+            };
+
+            if (!bookingData.slotTimeId || !bookingData.email || !bookingData.phoneNumber || !bookingData.name) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Faltan Datos',
+                    text: 'Por favor, selecciona un horario y completa todos los campos.',
+                    confirmButtonColor: '#fb923c'
+                });
+                return;
+            }
         }
 
         if (this.selectedOffering?.termsAndConditions?.trim()) {
@@ -588,7 +678,7 @@ class UserOfferingsManager {
             });
 
             if (!result.isConfirmed)
-            return;
+                return;
         }
 
         try {
@@ -597,7 +687,9 @@ class UserOfferingsManager {
             createBookingButton.innerHTML = '<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
             createBookingButton.disabled = true;
 
-            const response = await fetch(`${this.baseUrl}/booking`, {
+            const endpoint = this.isPackageMode ? `${this.baseUrl}/booking-package` : `${this.baseUrl}/booking`;
+
+            const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bookingData)
@@ -639,20 +731,20 @@ class UserOfferingsManager {
             this.cancelBooking();
 
         } catch (error) {
-              console.error('Booking creation error:', error);
+            console.error('Booking creation error:', error);
 
-              Swal.fire({
-                  icon: 'error',
-                  title: 'Error al Reservar',
-                  text: error.message || 'No se pudo completar la reserva.',
-                  confirmButtonText: 'Entendido',
-                  confirmButtonColor: '#ef4444'
-              });
+            Swal.fire({
+                icon: 'error',
+                title: 'Error al Reservar',
+                text: error.message || 'No se pudo completar la reserva.',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#ef4444'
+            });
         } finally {
             const createBookingButton = form.querySelector('button[type="submit"]');
             // Restore original styled content
             createBookingButton.innerHTML = `<span>Confirmar Reserva</span><i data-lucide="arrow-right" class="w-4 h-4"></i>`;
-            if(window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons();
             createBookingButton.disabled = !document.getElementById('slotTimeId').value;
         }
     }
@@ -669,7 +761,7 @@ class UserOfferingsManager {
         noServicesState.classList.add('hidden');
         this.servicesContainer.classList.add('hidden');
         this.bookingPanel.classList.add('hidden');
-        if(profileHeader) profileHeader.classList.add('hidden');
+        if (profileHeader) profileHeader.classList.add('hidden');
     }
 
     showError(message) {
@@ -683,12 +775,12 @@ class UserOfferingsManager {
         noServicesState.classList.add('hidden');
         this.servicesContainer.classList.add('hidden');
         this.bookingPanel.classList.add('hidden');
-        if(profileHeader) profileHeader.classList.add('hidden');
+        if (profileHeader) profileHeader.classList.add('hidden');
 
         const errorTitle = errorState.querySelector('h3');
         if (errorTitle && message) {
-             const p = errorState.querySelector('p');
-             if(p) p.textContent = message;
+            const p = errorState.querySelector('p');
+            if (p) p.textContent = message;
         }
     }
 

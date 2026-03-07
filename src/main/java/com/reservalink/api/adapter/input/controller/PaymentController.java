@@ -3,6 +3,7 @@ package com.reservalink.api.adapter.input.controller;
 import com.reservalink.api.adapter.input.controller.request.MpWebhookRequest;
 import com.reservalink.api.adapter.input.controller.request.MpWebhookType;
 import com.reservalink.api.application.service.booking.BookingService;
+import com.reservalink.api.application.service.bookingPackage.BookingPackageService;
 import com.reservalink.api.application.service.payment.PaymentService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @Slf4j
 @RestController
 @RequestMapping("/payment")
@@ -20,10 +20,13 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final BookingService bookingService;
+    private final BookingPackageService bookingPackageService;
 
-    public PaymentController(PaymentService paymentService, BookingService bookingService) {
+    public PaymentController(PaymentService paymentService, BookingService bookingService,
+            BookingPackageService bookingPackageService) {
         this.paymentService = paymentService;
         this.bookingService = bookingService;
+        this.bookingPackageService = bookingPackageService;
     }
 
     @PostMapping("/mercadopago/webhook")
@@ -34,8 +37,13 @@ public class PaymentController {
             String id = payload.data() != null ? payload.data().id() : null;
             if (MpWebhookType.PAYMENT == type) {
                 String externalId = paymentService.processPaymentWebhook(id);
-                if (externalId != null && !externalId.startsWith("SUBSCRIPTION-") && !externalId.startsWith("FEATURE-")) {
-                    bookingService.confirmBooking(externalId);
+                if (externalId != null) {
+                    if (externalId.startsWith("PACKAGE-")) {
+                        String packageId = externalId.substring(8);
+                        bookingPackageService.confirmPackageBookings(packageId);
+                    } else if (!externalId.startsWith("SUBSCRIPTION-") && !externalId.startsWith("FEATURE-")) {
+                        bookingService.confirmBooking(externalId);
+                    }
                 }
             } else {
                 log.warn("Unhandled webhook type: {}", payload.type());
@@ -46,6 +54,5 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
 
 }
