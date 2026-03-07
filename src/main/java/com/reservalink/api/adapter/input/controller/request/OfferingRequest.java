@@ -37,4 +37,8 @@ public class OfferingRequest {
     @Size(max = 2000, message = "Terms and conditions must be at most 2000 characters")
     private String termsAndConditions;
 
+    private Integer sessionLimit;
+
+    private Double packagePrice;
+
 }

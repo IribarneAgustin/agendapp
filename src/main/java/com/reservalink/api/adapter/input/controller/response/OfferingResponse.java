@@ -28,4 +28,8 @@ public class OfferingResponse {
     private Boolean enabled;
 
     private String termsAndConditions;
+
+    private Integer sessionLimit;
+
+    private Double packagePrice;
 }
