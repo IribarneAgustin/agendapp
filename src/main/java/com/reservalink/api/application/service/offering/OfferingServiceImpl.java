@@ -2,6 +2,8 @@ package com.reservalink.api.application.service.offering;
 
 import com.reservalink.api.adapter.input.controller.request.OfferingRequest;
 import com.reservalink.api.adapter.input.controller.response.OfferingResponse;
+import com.reservalink.api.domain.PackageSession;
+import com.reservalink.api.domain.PackageSessionStatus;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.adapter.output.repository.BookingRepository;
@@ -11,7 +13,6 @@ import com.reservalink.api.adapter.output.repository.UserRepository;
 import com.reservalink.api.adapter.output.repository.entity.OfferingEntity;
 import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
-import com.reservalink.api.application.service.packageSession.PackageSessionService;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -49,13 +50,16 @@ public class OfferingServiceImpl implements OfferingService {
     public OfferingResponse create(OfferingRequest offeringRequest) {
         OfferingEntity offeringEntity = modelMapper.map(offeringRequest, OfferingEntity.class);
         UserEntity user = userRepository.findById(offeringRequest.getUserId().toString())
-                .orElseThrow(
-                        () -> new IllegalArgumentException("User not found with id: " + offeringRequest.getUserId()));
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + offeringRequest.getUserId()));
         offeringEntity.setEnabled(true);
         offeringEntity.setUserEntity(user);
         OfferingResponse response = modelMapper.map(offeringRepository.save(offeringEntity), OfferingResponse.class);
         if (offeringRequest.getSessionLimit() != null && offeringRequest.getPackagePrice() != null) {
-            packageSessionService.createPackageSessionTemplate(offeringRequest, response);
+            PackageSession packageSession = packageSessionService.processPackageSession(offeringRequest);
+            if (packageSession != null && PackageSessionStatus.ACTIVE.equals(packageSession.getStatus())) {
+                response.setSessionLimit(packageSession.getSessionLimit());
+                response.setPackagePrice(packageSession.getPrice().doubleValue());
+            }
         }
         return response;
     }
@@ -66,16 +70,17 @@ public class OfferingServiceImpl implements OfferingService {
             throw new IllegalArgumentException("Invalid offering id");
         }
         OfferingEntity existing = offeringRepository.findById(offeringRequest.getId().toString())
-                .orElseThrow(
-                        () -> new IllegalArgumentException("Offering not found with id: " + offeringRequest.getId()));
+                .orElseThrow(() -> new IllegalArgumentException("Offering not found with id: " + offeringRequest.getId()));
 
         modelMapper.map(offeringRequest, existing);
 
         OfferingEntity updated = offeringRepository.save(existing);
 
         OfferingResponse response = modelMapper.map(updated, OfferingResponse.class);
-        if (offeringRequest.getSessionLimit() != null && offeringRequest.getPackagePrice() != null) {
-            packageSessionService.createPackageSessionTemplate(offeringRequest, response);
+        PackageSession packageSession = packageSessionService.processPackageSession(offeringRequest);
+        if (packageSession != null && PackageSessionStatus.ACTIVE.equals(packageSession.getStatus())) {
+            response.setSessionLimit(packageSession.getSessionLimit());
+            response.setPackagePrice(packageSession.getPrice().doubleValue());
         }
         return response;
     }

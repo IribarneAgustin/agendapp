@@ -1,10 +1,11 @@
-package com.reservalink.api.application.service.packageSession;
+package com.reservalink.api.application.service.offering;
 
 import com.reservalink.api.adapter.input.controller.request.OfferingRequest;
 import com.reservalink.api.adapter.input.controller.response.OfferingResponse;
+import com.reservalink.api.domain.PackageSession;
 
 public interface PackageSessionService {
-    void createPackageSessionTemplate(OfferingRequest request, OfferingResponse response);
+    PackageSession processPackageSession(OfferingRequest request);
 
     void enrichOfferingResponse(OfferingResponse response);
 }

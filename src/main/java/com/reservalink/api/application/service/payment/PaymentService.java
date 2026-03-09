@@ -1,9 +1,12 @@
 package com.reservalink.api.application.service.payment;
 
 import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
+import com.reservalink.api.domain.BookingPackage;
 import com.reservalink.api.domain.FeatureUsage;
+import com.reservalink.api.domain.PackageSession;
 import com.reservalink.api.domain.SubscriptionFeature;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface PaymentService {
@@ -15,7 +18,6 @@ public interface PaymentService {
 
     String createPremiumFeatureCheckoutURL(SubscriptionFeature subscriptionFeature, String featureUsageId);
 
-    String createPackageCheckoutURL(
-            com.reservalink.api.adapter.output.repository.entity.BookingPackageEntity bookingPackage, Double price);
+    String createPackageCheckoutURL(BookingPackage bookingPackage, PackageSession packageSession);
 
 }

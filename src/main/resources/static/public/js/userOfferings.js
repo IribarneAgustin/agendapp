@@ -153,7 +153,7 @@ class UserOfferingsManager {
                             <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
                                 ${priceDisplay}
                             </span>
-                            ${offering.sessionLimit > 0 ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Pack × ${offering.sessionLimit} sesiones</span>` : ''}
+                            ${offering.sessionLimit > 0 && offering.packagePrice != null ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold">Pack × ${offering.sessionLimit} sesiones</span>` : ''}
                         </div>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">${offering.name}</h3>
@@ -399,7 +399,7 @@ class UserOfferingsManager {
                                     title: 'Límite alcanzado',
                                     text: `Solo puedes seleccionar hasta ${this.sessionLimit} horario(s).`,
                                     timer: 2000,
-                                    showConfirmButton: false
+                                    showConfirmButton: true
                                 });
                             }
                         }
@@ -420,8 +420,15 @@ class UserOfferingsManager {
         if (availableSlotButtons.length === 1) {
             const { button, slot } = availableSlotButtons[0];
 
-            // Add visual selected state
-            button.classList.add('selected');
+            if (this.isPackageMode) {
+                if (!this.selectedSlotIds.includes(slot.id) && this.selectedSlotIds.length < this.sessionLimit) {
+                    this.selectedSlotIds.push(slot.id);
+                    button.classList.add('selected');
+                }
+            } else {
+                this.selectedSlotIds = [slot.id];
+                button.classList.add('selected');
+            }
 
             this.handleSlotSelection(slot.id);
         }
@@ -456,7 +463,18 @@ class UserOfferingsManager {
             }
         } else {
             // Package mode UI
-            if (quantityContainer) quantityContainer.classList.add('hidden');
+            const slot = this.availableSlots.find(s => s.id === (slotId || this.selectedSlotIds[0]));
+            if (slot && slot.capacityAvailable > 1) {
+                quantityInput.disabled = false;
+                quantityInput.max = slot.capacityAvailable;
+                if (quantityContainer) quantityContainer.classList.remove('hidden');
+            } else if (slot && slot.capacityAvailable <= 1) {
+                quantityInput.value = 1;
+                quantityInput.disabled = true;
+                if (quantityContainer) quantityContainer.classList.add('hidden');
+            } else {
+                if (quantityContainer) quantityContainer.classList.add('hidden');
+            }
             slotTimeIdInput.value = this.selectedSlotIds.length > 0 ? this.selectedSlotIds[0] : '';
         }
 
@@ -498,12 +516,30 @@ class UserOfferingsManager {
 
             let priceHtml = ``;
             if (this.isPackageMode) {
+                const selectedSlots = this.selectedSlotIds.map(id => this.availableSlots.find(s => s.id === id)).filter(Boolean);
+                selectedSlots.sort((a, b) => a.startDateTime.localeCompare(b.startDateTime));
+
                 priceHtml += `
-                    <div class="flex justify-between items-center mb-4 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
-                        <span class="text-sm font-semibold text-indigo-800">Sesiones seleccionadas</span>
-                        <span class="text-sm font-bold text-indigo-700 bg-white px-2 py-1 rounded-lg border border-indigo-200 shadow-sm">
-                            ${this.selectedSlotIds.length} / ${this.sessionLimit}
-                        </span>
+                    <div class="mb-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm font-semibold text-indigo-800">Sesiones seleccionadas</span>
+                            <span class="text-sm font-bold text-indigo-700 bg-white px-2 py-1 rounded-lg border border-indigo-200 shadow-sm">
+                                ${this.selectedSlotIds.length} / ${this.sessionLimit}
+                            </span>
+                        </div>
+                        <ul class="space-y-2">
+                            ${selectedSlots.map(s => `
+                                <li class="flex items-center justify-between gap-2 text-xs text-indigo-600 bg-white/50 p-2 rounded-lg border border-indigo-50">
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="calendar" class="w-3 h-3"></i>
+                                        <span>${new Date(s.startDateTime).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })} - ${this.formatTime(s.startDateTime)} hs</span>
+                                    </div>
+                                    <button type="button" onclick="window.userOfferingsManager.removeSelectedSlot('${s.id}')" class="p-1 hover:bg-rose-100 hover:text-rose-600 rounded-md transition-colors">
+                                        <i data-lucide="x" class="w-3 h-3"></i>
+                                    </button>
+                                </li>
+                            `).join('')}
+                        </ul>
                     </div>`;
             }
 
@@ -547,7 +583,7 @@ class UserOfferingsManager {
         this.bookingPanel.classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
-        this.isPackageMode = offering.sessionLimit > 0;
+        this.isPackageMode = offering.sessionLimit > 0 && offering.packagePrice != null;
         this.sessionLimit = offering.sessionLimit || 1;
         this.selectedSlotIds = [];
 
@@ -633,7 +669,8 @@ class UserOfferingsManager {
                 slotTimeIds: this.selectedSlotIds,
                 customerEmail: formData.get('email'),
                 customerPhone: formData.get('phoneNumber'),
-                customerName: formData.get('name')
+                customerName: formData.get('name'),
+                quantity: formData.get('quantity') ? parseInt(formData.get('quantity')) : 1
             };
 
             if (this.selectedSlotIds.length !== this.sessionLimit || !bookingData.customerEmail || !bookingData.customerPhone || !bookingData.customerName) {
@@ -856,8 +893,23 @@ class UserOfferingsManager {
         }
     }
 
+    removeSelectedSlot(slotId) {
+        if (!this.isPackageMode) return;
+
+        // 1. Remove from array
+        this.selectedSlotIds = this.selectedSlotIds.filter(id => id !== slotId);
+
+        // 2. Visually update buttons if they are currently rendered in the slotTimeContainer
+        const btn = this.slotTimeContainer.querySelector(`[data-slot-id="${slotId}"]`);
+        if (btn) {
+            btn.classList.remove('selected');
+        }
+
+        // 3. Trigger UI update (preview, price, booking button state)
+        this.handleSlotSelection(null);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    new UserOfferingsManager();
+    window.userOfferingsManager = new UserOfferingsManager();
 });

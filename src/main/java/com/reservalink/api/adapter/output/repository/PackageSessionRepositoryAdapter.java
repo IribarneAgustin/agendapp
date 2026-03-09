@@ -1,7 +1,9 @@
 package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.PackageSessionEntity;
+import com.reservalink.api.adapter.output.repository.mapper.PackageSessionPersistenceMapper;
 import com.reservalink.api.application.output.PackageSessionRepositoryPort;
+import com.reservalink.api.domain.PackageSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,19 +14,22 @@ import java.util.Optional;
 public class PackageSessionRepositoryAdapter implements PackageSessionRepositoryPort {
 
     private final PackageSessionJpaRepository jpaRepository;
+    private final PackageSessionPersistenceMapper mapper;
 
     @Override
-    public PackageSessionEntity save(PackageSessionEntity entity) {
-        return jpaRepository.save(entity);
+    public PackageSession save(PackageSession domain) {
+        PackageSessionEntity entityToSave = mapper.toEntity(domain);
+        PackageSessionEntity savedEntity = jpaRepository.save(entityToSave);
+        return mapper.toDomain(savedEntity);
     }
 
     @Override
-    public Optional<PackageSessionEntity> findById(String id) {
-        return jpaRepository.findById(id);
+    public Optional<PackageSession> findById(String id) {
+        return jpaRepository.findByIdAndEnabledTrue(id).map(mapper::toDomain);
     }
 
     @Override
-    public Optional<PackageSessionEntity> findByOfferingId(String offeringId) {
-        return jpaRepository.findByOfferingEntityId(offeringId);
+    public Optional<PackageSession> findByOfferingId(String offeringId) {
+        return jpaRepository.findByOfferingEntityIdAndEnabledTrue(offeringId).map(mapper::toDomain);
     }
 }

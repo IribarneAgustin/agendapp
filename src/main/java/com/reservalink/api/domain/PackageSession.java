@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -12,7 +14,11 @@ import lombok.NoArgsConstructor;
 public class PackageSession {
     private String id;
     private String offeringId;
+    private String offeringName;
+    private String userId;
+    private Integer advancePaymentPercentage;
     private Integer sessionLimit;
-    private Double price;
+    private BigDecimal price;
     private PackageSessionStatus status;
+    private boolean enabled;
 }

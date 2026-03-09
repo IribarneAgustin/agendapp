@@ -16,9 +16,11 @@ import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.application.output.UserRepositoryPort;
 import com.reservalink.api.application.service.notification.NotificationService;
 import com.reservalink.api.application.service.feature.FeatureLifecycleService;
+import com.reservalink.api.domain.BookingPackage;
 import com.reservalink.api.domain.FeatureName;
 import com.reservalink.api.domain.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
+import com.reservalink.api.domain.PackageSession;
 import com.reservalink.api.domain.PaymentMethod;
 import com.reservalink.api.domain.PaymentStatus;
 import com.reservalink.api.domain.PaymentType;
@@ -140,12 +142,16 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return environment.acceptsProfiles(Profiles.of("dev"))
-                    ? response.getBody().get("sandbox_init_point").toString()
-                    : response.getBody().get("init_point").toString();
+            return getInitPointBasedOnEnvironment(response);
         } else {
             throw new RuntimeException("Error creating subscription preference");
         }
+    }
+
+    private String getInitPointBasedOnEnvironment(ResponseEntity<Map> response) {
+        return environment.acceptsProfiles(Profiles.of("dev"))
+                ? response.getBody().get("sandbox_init_point").toString()
+                : response.getBody().get("init_point").toString();
     }
 
     private BigDecimal calculateFeaturesPricing(List<FeatureUsage> features) {
@@ -182,7 +188,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         headers.setBearerAuth(accessToken);
         Double amountToPaid = slotTimeEntity.getPrice()
                 * (slotTimeEntity.getOfferingEntity().getAdvancePaymentPercentage() / 100.0);
-        String externalId = UUID.randomUUID().toString();
+        String externalId = "BOOKING-" + bookingEntity.getId();
 
         Map<String, Object> preferenceBody = Map.of(
                 "items", new Object[] {
@@ -293,9 +299,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return environment.acceptsProfiles(Profiles.of("dev"))
-                    ? response.getBody().get("sandbox_init_point").toString()
-                    : response.getBody().get("init_point").toString();
+            return getInitPointBasedOnEnvironment(response);
         } else {
             throw new RuntimeException("Error creating preference");
         }
@@ -374,7 +378,6 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
             User user = userRepositoryPort.findBySubscriptionId(userSubscriptionId)
                     .orElseThrow(() -> new IllegalArgumentException(
                             "User not found for subscription id: " + userSubscriptionId));
-            ;
 
             String newSubscriptionCheckoutURL = createSubscriptionCheckoutURL(user.getId(), List.of(featureUsage));
             userSubscription.setCheckoutLink(newSubscriptionCheckoutURL);
@@ -398,63 +401,52 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public String createPackageCheckoutURL(
-            com.reservalink.api.adapter.output.repository.entity.BookingPackageEntity bookingPackage, Double price) {
+    public String createPackageCheckoutURL(BookingPackage bookingPackage, PackageSession packageSession) {
         log.info("Creating package checkout URL for bookingPackage: {}", bookingPackage.getId());
-        String userId = bookingPackage.getPackageSession().getOfferingEntity().getUserEntity().getId();
-        com.reservalink.api.adapter.output.repository.entity.PaymentAccountTokenEntity token = tokenRepository
-                .findByUserEntityId(userId)
+        PaymentAccountTokenEntity token = tokenRepository.findByUserEntityId(packageSession.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not linked to MercadoPago"));
-
-        String accessToken = token.getAccessToken();
         String url = "https://api.mercadopago.com/checkout/preferences";
 
-        org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+        HttpHeaders headers = new HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(accessToken);
+        headers.setBearerAuth(token.getAccessToken());
 
         String externalId = "PACKAGE-" + bookingPackage.getId();
+        String description = "Pack de " + packageSession.getSessionLimit() + " sesiones";
 
-        String offeringName = bookingPackage.getPackageSession().getOfferingEntity().getName();
-        Integer limit = bookingPackage.getPackageSession().getSessionLimit();
-
-        java.util.Map<String, Object> preferenceBody = java.util.Map.of(
-                "items", new Object[] {
-                        java.util.Map.of(
-                                "title", "Pack - " + offeringName,
-                                "description", "Pack de " + limit + " sesiones",
+        Map<String, Object> preferenceBody = Map.of(
+                "items", List.of(
+                        Map.of(
+                                "title", packageSession.getOfferingName(),
+                                "description", description,
                                 "quantity", 1,
                                 "currency_id", "ARS",
-                                "unit_price", price)
-                },
+                                "unit_price", packageSession.getPrice())
+                ),
                 "external_reference", externalId,
                 "back_urls", java.util.Map.of(
-                        "success", baseURL + "/public/user-offerings.html?userId=" + userId + "&bookedSuccess=true",
-                        "failure", baseURL + "/public/user-offerings.html?userId=" + userId + "&bookedSuccess=false"),
+                        "success", baseURL + "/public/user-offerings.html?userId=" + packageSession.getUserId() + "&bookedSuccess=true",
+                        "failure", baseURL + "/public/user-offerings.html?userId=" + packageSession.getUserId() + "&bookedSuccess=false"),
                 "auto_return", "approved");
 
-        org.springframework.http.HttpEntity<java.util.Map<String, Object>> entity = new org.springframework.http.HttpEntity<>(
-                preferenceBody, headers);
+        org.springframework.http.HttpEntity<java.util.Map<String, Object>> entity =
+                new org.springframework.http.HttpEntity<>(preferenceBody, headers);
 
         try {
-            org.springframework.http.ResponseEntity<java.util.Map> response = restTemplate.postForEntity(url, entity,
-                    java.util.Map.class);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, java.util.Map.class);
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Object checkoutUrl = response.getBody().get("init_point");
+                Object checkoutUrl = getInitPointBasedOnEnvironment(response);
                 if (checkoutUrl != null) {
-                    log.info("Package checkout URL generated successfully");
+                    log.info("Package checkout URL generated: {}", checkoutUrl);
                     return checkoutUrl.toString();
-                } else {
-                    throw new RuntimeException("No checkout URL returned from MercadoPago");
                 }
-            } else {
-                throw new RuntimeException("Error creating preference: " + response.getStatusCode());
+                throw new RuntimeException("No checkout URL (init_point) returned from MercadoPago");
             }
-
+            throw new RuntimeException("MercadoPago preference error: " + response.getStatusCode());
         } catch (Exception e) {
-            log.error("Error creating MercadoPago package preference", e);
-            throw new RuntimeException("Failed to create MercadoPago package preference", e);
+            log.error("Failed to create MercadoPago preference for package {}", bookingPackage.getId(), e);
+            throw e;
         }
     }
 }

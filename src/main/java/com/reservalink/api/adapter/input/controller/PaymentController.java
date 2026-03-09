@@ -2,9 +2,11 @@ package com.reservalink.api.adapter.input.controller;
 
 import com.reservalink.api.adapter.input.controller.request.MpWebhookRequest;
 import com.reservalink.api.adapter.input.controller.request.MpWebhookType;
+import com.reservalink.api.application.service.booking.BookingPackageService;
 import com.reservalink.api.application.service.booking.BookingService;
-import com.reservalink.api.application.service.bookingPackage.BookingPackageService;
 import com.reservalink.api.application.service.payment.PaymentService;
+import com.reservalink.api.application.service.payment.webhook.PaymentWebhookService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,18 +18,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/payment")
+@RequiredArgsConstructor
 public class PaymentController {
 
     private final PaymentService paymentService;
     private final BookingService bookingService;
     private final BookingPackageService bookingPackageService;
-
-    public PaymentController(PaymentService paymentService, BookingService bookingService,
-            BookingPackageService bookingPackageService) {
-        this.paymentService = paymentService;
-        this.bookingService = bookingService;
-        this.bookingPackageService = bookingPackageService;
-    }
+    private final PaymentWebhookService paymentWebhookService;
 
     @PostMapping("/mercadopago/webhook")
     public ResponseEntity<Void> handleMpWebhook(@RequestBody MpWebhookRequest payload) {
@@ -39,8 +36,9 @@ public class PaymentController {
                 String externalId = paymentService.processPaymentWebhook(id);
                 if (externalId != null) {
                     if (externalId.startsWith("PACKAGE-")) {
-                        String packageId = externalId.substring(8);
-                        bookingPackageService.confirmPackageBookings(packageId);
+                        //String packageId = externalId.substring(8);
+                        //bookingPackageService.confirmPackageBookings(packageId);
+                        paymentWebhookService.processWebhook(id);
                     } else if (!externalId.startsWith("SUBSCRIPTION-") && !externalId.startsWith("FEATURE-")) {
                         bookingService.confirmBooking(externalId);
                     }

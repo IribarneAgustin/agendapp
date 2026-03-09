@@ -1,13 +1,12 @@
 package com.reservalink.api.application.output;
 
-import com.reservalink.api.adapter.output.repository.entity.PackageSessionEntity;
-
+import com.reservalink.api.domain.PackageSession;
 import java.util.Optional;
 
 public interface PackageSessionRepositoryPort {
-    PackageSessionEntity save(PackageSessionEntity entity);
+    PackageSession save(PackageSession packageSession);
 
-    Optional<PackageSessionEntity> findById(String id);
+    Optional<PackageSession> findById(String id);
 
-    Optional<PackageSessionEntity> findByOfferingId(String offeringId);
+    Optional<PackageSession> findByOfferingId(String offeringId);
 }

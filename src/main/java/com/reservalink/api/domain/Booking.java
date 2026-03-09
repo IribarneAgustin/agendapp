@@ -17,4 +17,6 @@ public class Booking {
     private String name;
     private Integer quantity;
     private BookingStatus status;
+    private String bookingPackageId;
+    private Boolean enabled;
 }

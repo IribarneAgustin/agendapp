@@ -17,6 +17,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -52,6 +53,7 @@ public class BookingEntity extends PersistentObject {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_package_id")
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private BookingPackageEntity bookingPackage;
 
 }

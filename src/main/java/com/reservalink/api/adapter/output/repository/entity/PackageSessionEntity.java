@@ -6,13 +6,14 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.Audited;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Audited
 @Table(name = "package_session")
 public class PackageSessionEntity extends PersistentObject {
 
@@ -24,7 +25,7 @@ public class PackageSessionEntity extends PersistentObject {
     private Integer sessionLimit;
 
     @Column(name = "price", nullable = false)
-    private Double price;
+    private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)

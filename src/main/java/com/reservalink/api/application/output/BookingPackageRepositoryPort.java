@@ -1,11 +1,11 @@
 package com.reservalink.api.application.output;
 
-import com.reservalink.api.adapter.output.repository.entity.BookingPackageEntity;
+import com.reservalink.api.domain.BookingPackage;
 
 import java.util.Optional;
 
 public interface BookingPackageRepositoryPort {
-    BookingPackageEntity save(BookingPackageEntity entity);
+    BookingPackage save(BookingPackage domain);
 
-    Optional<BookingPackageEntity> findById(String id);
+    Optional<BookingPackage> findById(String id);
 }

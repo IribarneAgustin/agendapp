@@ -104,7 +104,7 @@ class OfferingManager {
 
     createOfferingCard(offering) {
         const card = document.createElement('div');
-        card.className = 'offering-card bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-600 transition-all duration-200 cursor-pointer';
+        card.className = 'offering-card flex flex-col bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-600 transition-all duration-200 cursor-pointer';
 
         card.addEventListener('click', (e) => {
             if (e.target.closest('.delete-btn') || e.target.closest('.configure-btn')) {
@@ -146,19 +146,19 @@ class OfferingManager {
                 </div>
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Pago Anticipado (Seña)</p>
-                    <p class="text-lg font-bold text-gray-700">
+                    <p class="text-lg font-bold text-gray-900">
                         ${offering.advancePaymentPercentage > 0 ? `${offering.advancePaymentPercentage}% Requerido` : 'No Requerido (0%)'}
                     </p>
                 </div>
                 ${offering.sessionLimit > 0 ? `
-                <div class="col-span-2 mt-2 pt-2 border-t border-indigo-50">
-                    <p class="text-sm text-indigo-500 font-medium">Precio Total del Pack</p>
-                    <p class="text-lg font-bold text-indigo-700">
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Precio Total del Pack</p>
+                    <p class="text-lg font-bold text-gray-900">
                         ${offering.packagePrice ? '$' + offering.packagePrice : 'No definido'}
                     </p>
                 </div>` : ''}
             </div>
-            <div class="flex pt-2">
+            <div class="flex pt-2 mt-auto">
                 <button type="button" class="configure-btn flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-md">
                     Configurar Horarios
                 </button>

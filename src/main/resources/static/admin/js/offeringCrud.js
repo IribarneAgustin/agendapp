@@ -42,17 +42,31 @@ class OfferingCrudManager {
                 window.history.back();
             });
         }
+
+        // --- Pack Toggle Logic ---
+        const packToggle = document.getElementById('packToggle');
+        const packInputsContainer = document.getElementById('packInputsContainer');
+
+        if (packToggle && packInputsContainer) {
+            packToggle.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    packInputsContainer.classList.remove('hidden');
+                } else {
+                    packInputsContainer.classList.add('hidden');
+                    this.clearPackFields();
+                }
+            });
+        }
+
+        // Terms and Conditions counter logic
         const textarea = document.getElementById('termsAndConditions');
         const counter = document.getElementById('termsCounter');
 
         if (textarea && counter) {
-
             const updateCounter = () => {
                 counter.textContent = `${textarea.value.length} / 2000`;
             };
-
             textarea.addEventListener('input', updateCounter);
-
             updateCounter();
         }
     }
@@ -106,12 +120,32 @@ class OfferingCrudManager {
         document.getElementById('name').value = offering.name || '';
         document.getElementById('description').value = offering.description || '';
         document.getElementById('capacity').value = offering.capacity || 1;
-        document.getElementById('sessionLimit').value = offering.sessionLimit || 0;
-        document.getElementById('packagePrice').value = offering.packagePrice || '';
+
+        const hasPack = offering.sessionLimit > 0 && offering.packagePrice !== null;
+        const packToggle = document.getElementById('packToggle');
+        const packInputsContainer = document.getElementById('packInputsContainer');
+
+        if (packToggle && packInputsContainer) {
+            packToggle.checked = hasPack;
+
+            if (hasPack) {
+                packInputsContainer.classList.remove('hidden');
+                document.getElementById('sessionLimit').value = offering.sessionLimit || 0;
+                document.getElementById('packagePrice').value = offering.packagePrice || '';
+            } else {
+                packInputsContainer.classList.add('hidden');
+                this.clearPackFields();
+            }
+        }
 
         const advanceInput = document.getElementById('advancePaymentPercentage');
-        advanceInput.value = offering.advancePaymentPercentage || 0;
-        document.getElementById('advanceValue').textContent = advanceInput.value;
+        if (advanceInput) {
+            advanceInput.value = offering.advancePaymentPercentage || 0;
+            const advanceValueDisplay = document.getElementById('advanceValue');
+            if (advanceValueDisplay) {
+                advanceValueDisplay.textContent = advanceInput.value;
+            }
+        }
 
         const textarea = document.getElementById('termsAndConditions');
         if (textarea) {
@@ -120,16 +154,37 @@ class OfferingCrudManager {
         }
     }
 
+    clearPackFields() {
+        document.getElementById('sessionLimit').value = 0;
+        document.getElementById('packagePrice').value = "";
+    }
+
     async handleFormSubmit(e) {
         e.preventDefault();
 
         const form = e.target;
         const formData = new FormData(form);
+        const packToggle = document.getElementById('packToggle');
 
-        let sessionLimit = parseInt(formData.get('sessionLimit'));
-        if (isNaN(sessionLimit) || sessionLimit <= 0) sessionLimit = null;
-        let packagePrice = parseFloat(formData.get('packagePrice'));
-        if (isNaN(packagePrice) || packagePrice < 0) packagePrice = null;
+        let sessionLimit = null;
+        let packagePrice = null;
+
+        if (packToggle && packToggle.checked) {
+            const sLimit = formData.get('sessionLimit');
+            const pPrice = formData.get('packagePrice');
+
+            if (!sLimit || parseInt(sLimit) <= 0) {
+                this.showAlert('Por favor, indica una cantidad válida de sesiones.', 'warning');
+                return; // Stops execution
+            }
+            if (!pPrice || parseFloat(pPrice) <= 0) {
+                this.showAlert('Por favor, indica el precio total del pack.', 'warning');
+                return; // Stops execution
+            }
+
+            sessionLimit = parseInt(sLimit);
+            packagePrice = parseFloat(pPrice);
+        }
 
         const offeringData = {
             userId: this.user.id,
@@ -144,10 +199,6 @@ class OfferingCrudManager {
 
         if (!offeringData.name) {
             this.showAlert('El nombre del servicio es requerido', 'error');
-            return;
-        }
-        if (offeringData.capacity < 1) {
-            this.showAlert('La capacidad debe ser al menos 1', 'error');
             return;
         }
 
@@ -173,9 +224,7 @@ class OfferingCrudManager {
                     this.isEditMode ? 'Servicio actualizado correctamente' : 'Servicio creado correctamente',
                     'success'
                 );
-
                 window.history.back();
-
             } else if (response.status === 401) {
                 this.handleUnauthorized();
             } else {

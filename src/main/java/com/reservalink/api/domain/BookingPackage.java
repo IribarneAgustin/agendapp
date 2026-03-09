@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -16,6 +18,9 @@ public class BookingPackage {
     private String customerName;
     private String customerPhone;
     private Integer sessionsUsed;
+    private Integer sessionsTotal;
     private BookingPackageStatus status;
     private String externalPaymentId;
+    private BigDecimal pricePaid;
+    private Boolean enabled;
 }
