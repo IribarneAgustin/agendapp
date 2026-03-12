@@ -19,4 +19,6 @@ public class BookingSearchRequest {
     private LocalDate startDate;
     private String month;
     private String offeringId;
+    private String resourceId;
+    private LocalDate fromDate;
 }

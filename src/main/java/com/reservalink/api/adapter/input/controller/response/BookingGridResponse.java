@@ -23,4 +23,5 @@ public class BookingGridResponse {
     private Double paid;
     private String serviceName;
     private Integer quantity;
+    private String resourceName;
 }

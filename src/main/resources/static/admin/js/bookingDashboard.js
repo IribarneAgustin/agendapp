@@ -15,7 +15,8 @@ class BookingDashboardManager {
     bookings = [];
     offerings = [];
     isFilterOpen = false;
-
+    resourceIdFilter = 'ALL';
+    resourceSelect;
     // --- Constants ---
     PAGE_SIZE = 10;
     API_BOOKING_URL;
@@ -47,6 +48,7 @@ class BookingDashboardManager {
         // Initialize constants dependent on window context
         this.API_BOOKING_URL = `${BASE_URL}/booking/user/`;
         this.API_OFFERING_URL = `${BASE_URL}/users/`;
+        this.API_RESOURCE_URL = `${BASE_URL}/resource/user/`;
     }
 
     /**
@@ -135,16 +137,28 @@ class BookingDashboardManager {
         params.append('pageNumber', pageNumber.toString());
         params.append('pageSize', pageSize.toString());
 
-        if (this.bookingTypeFilter === 'INCOMING' && !this.startDateFilter) {
+        if (this.startDateFilter) {
+            params.append('fromDate', this.startDateFilter);
+        } else if (this.bookingTypeFilter === 'INCOMING') {
             const today = new Date().toISOString().split('T')[0];
-            params.append('startDate', today);
-        } else if (this.startDateFilter) {
-            params.append('startDate', this.startDateFilter);
+            params.append('fromDate', today);
         }
 
-        if (this.clientNameFilter) params.append('clientName', this.clientNameFilter);
-        if (this.monthFilter && this.monthFilter !== 'ALL') params.append('month', this.monthFilter);
-        if (this.offeringIdFilter && this.offeringIdFilter !== 'ALL') params.append('offeringId', this.offeringIdFilter);
+        if (this.resourceIdFilter && this.resourceIdFilter !== 'ALL') {
+            params.append('resourceId', this.resourceIdFilter);
+        }
+
+        if (this.clientNameFilter) {
+            params.append('clientName', this.clientNameFilter);
+        }
+
+        if (this.monthFilter && this.monthFilter !== 'ALL') {
+            params.append('month', this.monthFilter);
+        }
+
+        if (this.offeringIdFilter && this.offeringIdFilter !== 'ALL') {
+            params.append('offeringId', this.offeringIdFilter);
+        }
 
         const url = `${this.API_BOOKING_URL}${this.userId}?${params.toString()}`;
 
@@ -156,7 +170,9 @@ class BookingDashboardManager {
                 }
             });
 
-            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
 
             const result = await response.json();
 
@@ -205,6 +221,25 @@ class BookingDashboardManager {
             console.error("Fallo al cancelar la reserva:", error);
             this.showStatusMessage(`Error al cancelar: ${error.message}`, true);
             return false;
+        }
+    }
+
+    async fetchResources() {
+        if (!this.authToken) return [];
+        try {
+            const response = await fetch(`${this.API_RESOURCE_URL}${this.userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error("Fallo al obtener profesionales:", error);
+            return [];
         }
     }
 
@@ -270,6 +305,19 @@ class BookingDashboardManager {
         return { status: 'UNKNOWN', color: 'bg-yellow-100 text-yellow-700', text: 'Desconocido' };
     }
 
+    generateResourceOptions(resourceList) {
+        const options = [{ value: 'ALL', text: 'Todos los Profesionales' }];
+
+        resourceList.forEach(res => {
+            const fullName = `${res.name || ''} ${res.lastName || ''}`.trim() || 'Sin nombre';
+            options.push({ value: res.id, text: fullName });
+        });
+
+        this.resourceSelect.innerHTML = options.map(opt =>
+            `<option value="${opt.value}" ${opt.value === this.resourceIdFilter ? 'selected' : ''}>${opt.text}</option>`
+        ).join('');
+    }
+
     /** Renders the booking status badge (CONFIRMED/CANCELLED). */
     renderStatusBadge(status) {
         const colorClass = this.STATUS_COLORS_ES[status] || 'bg-gray-100 text-gray-700';
@@ -282,27 +330,23 @@ class BookingDashboardManager {
         return `<span class="px-3 py-1 text-xs font-semibold rounded-full ${colorClass}">${text.toUpperCase()}</span>`;
     }
 
-    /** Renders the bookings table. */
     renderBookingsTable() {
-        // Clear the existing table body content before rendering new data
         this.tableBody.innerHTML = '';
 
         this.bookings.forEach(booking => {
-            // --- 1. Safely Extract Simple Fields with Fallbacks ---
             const bookingId = booking.id;
-
             const serviceName = booking.serviceName ?? 'N/A';
+            const resourceName = booking.resourceName ?? 'Sin profesional';
             const clientName = booking.clientName ?? 'N/A';
             const clientEmail = booking.clientEmail ?? 'N/A';
+            const clientPhone = booking.clientPhone ?? 'Sin teléfono';
             const paid = (typeof booking.paid === 'number' && booking.paid !== null)
                                ? "$" + booking.paid.toFixed(2) : 'N/A';
             const bookingStatus = booking.status;
             const quantity = booking.quantity;
 
-            // --- 2. Date/Time Safety Check and Time Range Calculation ---
             let formattedDate = 'N/A';
-            let formattedTimeRange = ''; // Now holds start and end time
-            let timeStatus = { text: 'Unknown', color: 'bg-gray-200 text-gray-700' };
+            let formattedTimeRange = '';
             let isDateValid = false;
 
             if (booking.startDateTime && booking.endDateTime) {
@@ -310,59 +354,52 @@ class BookingDashboardManager {
                     const startDate = new Date(booking.startDateTime);
                     const endDate = new Date(booking.endDateTime);
                     formattedDate = startDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-
-                    const formattedStartTime = startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-                    const formattedEndTime = endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-                    // Combine start and end time for display (e.g., "10:00 - 11:00")
-                    formattedTimeRange = `${formattedStartTime} - ${formattedEndTime}`;
-
-                    timeStatus = this.getBookingTimeStatus(booking.startDateTime, booking.endDateTime);
+                    const fStart = startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    const fEnd = endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    formattedTimeRange = `${fStart} - ${fEnd}`;
                     isDateValid = true;
                 } catch (e) {
-                    console.error("Error formatting date for booking ID:", bookingId, e);
+                    console.error("Error formatting date:", e);
                 }
             }
 
             const isSelected = bookingId === this.selectedBookingId;
-
-            // --- 4. Create and Populate Row Element ---
             const row = document.createElement('tr');
-            // Only make the row clickable if a valid ID exists
             row.className = `row-item cursor-pointer transition duration-150 ${isSelected ? 'bg-indigo-50 border-l-4 border-indigo-600' : 'hover:bg-gray-50'}`;
 
             if (bookingId) {
                 row.dataset.bookingId = bookingId;
-                // Use an arrow function to preserve 'this' and pass the booking ID
                 row.onclick = () => this.handleRowClick(bookingId);
-            } else {
-                 // Disable cursor pointer if no ID is available
-                 row.className = row.className.replace('cursor-pointer', 'cursor-default');
             }
 
             row.innerHTML = `
-                <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900 border-b border-gray-200">
-                    <div class="flex items-center space-x-2">
-                        <span>${serviceName}</span>
+                <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                    <div class="text-sm font-bold text-gray-900">${serviceName}</div>
+                    <div class="text-xs text-indigo-600 font-medium mt-1 flex items-center">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                        </svg>
+                        ${resourceName}
                     </div>
                 </td>
-                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 border-b border-gray-200">
-                    <div class="font-medium">${clientName}</div>
+                <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                    <div class="text-sm font-semibold text-gray-900">${clientName}</div>
                     <div class="text-xs text-gray-500">${clientEmail}</div>
+                    <div class="text-xs text-gray-600 mt-0.5 font-medium">${clientPhone}</div>
                 </td>
-                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 border-b border-gray-200">
-                    ${formattedDate}
-                    ${isDateValid ? `<br><span class="text-xs font-semibold text-indigo-600">${formattedTimeRange}</span>` : ''}
+                <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
+                    <div class="text-sm text-gray-900">${formattedDate}</div>
+                    ${isDateValid ? `<div class="text-xs font-bold text-indigo-500">${formattedTimeRange}</div>` : ''}
                 </td>
                 <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 border-b border-gray-200">
                     <div class="flex items-center space-x-2">
                         <span>${quantity}</span>
                     </div>
                 </td>
-                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 align-middle border-b border-gray-200">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 border-b border-gray-200">
                     ${paid}
                 </td>
-                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 align-middle border-b border-gray-200">
+                <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
                     ${this.renderStatusBadge(bookingStatus)}
                 </td>
             `;
@@ -442,7 +479,7 @@ class BookingDashboardManager {
         this.monthFilter = this.monthSelect.value;
         this.offeringIdFilter = this.offeringSelect.value;
         this.bookingTypeFilter = this.bookingTypeSelect.value;
-
+        this.resourceIdFilter = this.resourceSelect.value;
         // Reload to page 0 with new filters
         this.loadBookingsAndRender(0, true);
     }
@@ -485,6 +522,7 @@ class BookingDashboardManager {
         this.filterContent = document.getElementById('filterContent');
         this.toggleIcon = document.getElementById('toggleIcon');
         this.statusMessage = document.getElementById('statusMessage');
+        this.resourceSelect = document.getElementById('resourceFilter');
     }
 
     setupEventListeners() {
@@ -496,6 +534,7 @@ class BookingDashboardManager {
         this.offeringSelect.addEventListener('change', this.applyFilters);
         this.bookingTypeSelect.addEventListener('change', this.applyFilters);
         this.startDateInput.addEventListener('change', this.applyFilters);
+        this.resourceSelect.addEventListener('change', this.applyFilters);
 
         this.clientNameInput.addEventListener('input', () => {
             clearTimeout(this.debounceTimer);
@@ -515,8 +554,9 @@ class BookingDashboardManager {
 
         this.offerings = await this.fetchOfferings();
         this.generateOfferingOptions(this.offerings);
-
         this.generateMonthOptions();
+        const resources = await this.fetchResources();
+        this.generateResourceOptions(resources);
 
         await this.loadBookingsAndRender(0, true);
 

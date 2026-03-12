@@ -21,15 +21,18 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
             FROM BookingEntity b
             INNER JOIN b.slotTimeEntity st
             INNER JOIN st.offeringEntity o
+            INNER JOIN st.resourceEntity r
             WHERE (
                 :clientName IS NULL OR
                 LOWER(b.name) LIKE LOWER(CONCAT('%', :clientName, '%'))
             )
-              AND (:startDate IS NULL OR DATE(st.startDateTime) >= :startDate)
+              AND (:startDate IS NULL OR DATE(st.startDateTime) = :startDate)
+              AND (:fromDate IS NULL OR DATE(st.startDateTime) >= :fromDate)
               AND (:month IS NULL OR FUNCTION('DATE_FORMAT', st.startDateTime, '%m') = :month)
               AND (:offeringId IS NULL OR o.id = :offeringId)
               AND (o.userEntity.id = :userId)
               AND (b.status IN ('CONFIRMED', 'CANCELLED'))
+              AND (:resourceId IS NULL OR r.id = :resourceId )
             ORDER BY st.startDateTime ASC
             """)
     Page<BookingEntity> findBookingGrid(
@@ -38,6 +41,8 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
             @Param("startDate") LocalDate startDate,
             @Param("month") String month,
             @Param("offeringId") String offeringId,
+            @Param("resourceId") String resourceId,
+            @Param("fromDate") LocalDate fromDate,
             Pageable pageable
     );
 

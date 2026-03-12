@@ -134,6 +134,8 @@ public class BookingServiceImpl implements BookingService {
                 bookingSearchRequest.getStartDate(),
                 bookingSearchRequest.getMonth(),
                 bookingSearchRequest.getOfferingId(),
+                bookingSearchRequest.getResourceId(),
+                bookingSearchRequest.getFromDate(),
                 pageable
         );
 
@@ -154,6 +156,7 @@ public class BookingServiceImpl implements BookingService {
                             .paid(amountPaid)
                             .status(b.getStatus())
                             .quantity(b.getQuantity())
+                            .resourceName(b.getSlotTimeEntity().getResourceEntity().getName() + " " + b.getSlotTimeEntity().getResourceEntity().getLastName())
                             .build();
                 }
         );
