@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 public class Booking {
     private String id;
-    private String slotTimeId;
+    private SlotTime slotTime;
     private String email;
     private String phoneNumber;
     private String name;

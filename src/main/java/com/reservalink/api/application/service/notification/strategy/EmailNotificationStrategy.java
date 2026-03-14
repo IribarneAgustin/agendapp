@@ -18,6 +18,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.StringWriter;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -54,7 +55,7 @@ public class EmailNotificationStrategy implements NotificationStrategy {
 
     @Override
     @Async
-    public void send(NotificationTarget target, NotificationMotive motive, Map<String, String> args) {
+    public CompletableFuture<Void> send(NotificationTarget target, NotificationMotive motive, Map<String, String> args) {
         try {
             String email = target.getEmail();
             if (email == null) {
@@ -86,11 +87,11 @@ public class EmailNotificationStrategy implements NotificationStrategy {
 
             log.info("Email sent via Mailgun to {}", email);
 
+            return CompletableFuture.completedFuture(null);
+
         } catch (Exception e) {
             log.error("Unexpected error sending email", e);
-            throw new RuntimeException(
-                    "Error sending email notification for motive " + motive.name(), e
-            );
+            return CompletableFuture.failedFuture(new RuntimeException("Error sending email notification for motive " + motive.name(), e));
         }
     }
 }

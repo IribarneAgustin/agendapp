@@ -6,6 +6,7 @@ import com.reservalink.api.adapter.output.repository.entity.SubscriptionPaymentE
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
 import com.reservalink.api.application.service.notification.strategy.NotificationStrategy;
 import com.reservalink.api.application.service.notification.strategy.NotificationStrategyResolver;
+import com.reservalink.api.domain.Booking;
 import com.reservalink.api.domain.PaymentStatus;
 import com.reservalink.api.utils.GenericAppConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -253,39 +254,29 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendBookingReminder(List<BookingEntity> incomingBookingList, NotificationChannel channel) {
+    public void sendBookingReminder(Booking booking, NotificationChannel channel) {
         log.info("Sending {} reminders for incoming bookings.", channel);
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
-        incomingBookingList.forEach(booking -> {
+        Map<String, String> args = new HashMap<>();
+        args.put("name", booking.getName());
+        args.put("serviceName", booking.getSlotTime().getOffering().getName());
+        args.put("date", booking.getSlotTime()
+                .getStartDateTime()
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        args.put("time", booking.getSlotTime().getStartDateTime().toLocalTime().format(timeFormatter));
+        args.put("cancelLink", baseURL + "/booking/" + booking.getId());
+        args.put("bookingId", booking.getId());
 
-            String subscriptionId = booking
-                    .getSlotTimeEntity()
-                    .getOfferingEntity()
-                    .getUserEntity()
-                    .getSubscriptionEntity()
-                    .getId();
+        NotificationTarget target = NotificationTarget.builder()
+                .email(booking.getEmail())
+                .phone(booking.getPhoneNumber())
+                .build();
 
-            Map<String, String> args = new HashMap<>();
-            args.put("name", booking.getName());
-            args.put("serviceName", booking.getSlotTimeEntity().getOfferingEntity().getName());
-            args.put("date", booking.getSlotTimeEntity()
-                    .getStartDateTime()
-                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-            args.put("time", booking.getSlotTimeEntity().getStartDateTime().toLocalTime().format(timeFormatter));
-            args.put("cancelLink", baseURL + "/booking/" + booking.getId());
-            args.put("subscriptionId", subscriptionId);
-            args.put("bookingId", booking.getId());
-
-            NotificationTarget target = NotificationTarget.builder()
-                    .email(booking.getEmail())
-                    .phone(booking.getPhoneNumber())
-                    .build();
-
-            notificationStrategyResolver
-                    .resolve(channel)
-                    .send(target, NotificationMotive.BOOKING_REMINDER, args);
-        });
+        notificationStrategyResolver
+                .resolve(channel)
+                .send(target, NotificationMotive.BOOKING_REMINDER, args)
+                .join();
     }
 
     @Override

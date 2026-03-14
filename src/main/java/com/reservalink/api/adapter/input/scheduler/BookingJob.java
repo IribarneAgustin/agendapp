@@ -4,7 +4,6 @@ import com.reservalink.api.application.service.booking.BookingReminderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -16,10 +15,8 @@ public class BookingJob {
         this.bookingReminderService = bookingReminderService;
     }
 
-    @Scheduled(cron = "0 0 12 * * *")
-    @Transactional(rollbackFor = Exception.class)
+    @Scheduled(cron = "0 0/15 * * * *")
     public void sendBookingReminders() {
-        log.info("Cron job triggered: sendBookingReminders");
         bookingReminderService.sendReminders();
     }
 }

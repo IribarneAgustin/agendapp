@@ -4,6 +4,7 @@ import com.reservalink.api.adapter.input.controller.request.BookingRequest;
 import com.reservalink.api.adapter.input.controller.request.BookingSearchRequest;
 import com.reservalink.api.adapter.input.controller.response.BookingGridResponse;
 import com.reservalink.api.adapter.input.controller.response.BookingResponse;
+import com.reservalink.api.application.output.BookingRepositoryPort;
 import com.reservalink.api.application.validator.PhoneNumberValidator;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
@@ -18,6 +19,7 @@ import com.reservalink.api.adapter.output.repository.BookingRepository;
 import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
 import com.reservalink.api.application.service.payment.PaymentService;
 import com.reservalink.api.application.service.notification.NotificationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,7 @@ import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
 
@@ -40,16 +43,9 @@ public class BookingServiceImpl implements BookingService {
     private final PaymentService paymentService;
     private final PaymentRepository bookingPaymentRepository;
     private final PhoneNumberValidator phoneNumberValidator;
+    private final BookingReminderService bookingReminderService;
+    private final BookingRepositoryPort bookingRepositoryPort;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, SlotTimeRepository slotTimeRepository, ModelMapper modelMapper, NotificationService notificationService, PaymentService paymentService, PaymentRepository bookingPaymentRepository, PhoneNumberValidator phoneNumberValidator) {
-        this.bookingRepository = bookingRepository;
-        this.slotTimeRepository = slotTimeRepository;
-        this.modelMapper = modelMapper;
-        this.notificationService = notificationService;
-        this.paymentService = paymentService;
-        this.bookingPaymentRepository = bookingPaymentRepository;
-        this.phoneNumberValidator = phoneNumberValidator;
-    }
 
     @Override
     public BookingResponse create(BookingRequest bookingRequest, Boolean isAdmin) throws Exception {
@@ -75,7 +71,7 @@ public class BookingServiceImpl implements BookingService {
         }
 
         Integer newCapacity = slotTimeEntity.getCapacityAvailable() - bookingRequest.getQuantity();
-        if(newCapacity < 0){
+        if (newCapacity < 0){
             log.warn("No capacity available for slotTimeId: {}. Booking creation ignored for {}", bookingRequest.getSlotTimeId(), bookingRequest.getEmail());
             throw new BusinessRuleException(BusinessErrorCodes.NO_CAPACITY_AVAILABLE.name());
         }
@@ -104,7 +100,8 @@ public class BookingServiceImpl implements BookingService {
             slotTimeRepository.saveAndFlush(slotTimeEntity);
 
             bookingEntity.setStatus(BookingStatus.CONFIRMED);
-            bookingRepository.saveAndFlush(bookingEntity);
+            bookingEntity = bookingRepository.saveAndFlush(bookingEntity);
+            bookingReminderService.scheduleReminder(bookingRepositoryPort.findById(bookingEntity.getId()).orElseThrow());
         }
 
         sendBookingConfirmedNotifications(bookingEntity);
@@ -142,7 +139,7 @@ public class BookingServiceImpl implements BookingService {
         return bookingPage.map(b -> {
                     Double amountPaid = null;
                     Integer advancePaymentPercentage = b.getSlotTimeEntity().getOfferingEntity().getAdvancePaymentPercentage();
-                    if(b.getSlotTimeEntity().getPrice() != null && advancePaymentPercentage != null && advancePaymentPercentage > 0) {
+                    if (b.getSlotTimeEntity().getPrice() != null && advancePaymentPercentage != null && advancePaymentPercentage > 0) {
                         amountPaid = b.getSlotTimeEntity().getPrice() * (b.getSlotTimeEntity().getOfferingEntity().getAdvancePaymentPercentage() / 100.0);
                     }
                     return BookingGridResponse.builder()
@@ -170,7 +167,7 @@ public class BookingServiceImpl implements BookingService {
         SlotTimeEntity slotTimeEntity = bookingEntityToCancel.getSlotTimeEntity();
 
         if (!isValidStateToCancel(slotTimeEntity, bookingEntityToCancel)) {
-           throw new IllegalArgumentException("The booking to cancel is already cancelled or is related with invalid slot");
+            throw new IllegalArgumentException("The booking to cancel is already cancelled or is related with invalid slot");
         }
 
         slotTimeEntity.setCapacityAvailable(slotTimeEntity.getCapacityAvailable() + bookingEntityToCancel.getQuantity());
@@ -179,7 +176,7 @@ public class BookingServiceImpl implements BookingService {
 
         slotTimeRepository.saveAndFlush(slotTimeEntity);
         bookingRepository.saveAndFlush(bookingEntityToCancel);
-
+        bookingReminderService.cancelReminders(bookingId.toString());
         try {
             notificationService.sendBookingCancelled(bookingEntityToCancel);
         } catch (Exception e) {
@@ -211,9 +208,10 @@ public class BookingServiceImpl implements BookingService {
             bookingEntity.setStatus(BookingStatus.CONFIRMED);
             bookingRepository.save(bookingEntity);
 
+            bookingReminderService.scheduleReminder(bookingRepositoryPort.findById(bookingEntity.getId()).orElseThrow());
             sendBookingConfirmedNotifications(bookingEntity);
         } else {
-            log.warn("Payment was not completed successfully for the externalPaymentId: {}. The booking was not confirmed.", externalPaymentId );
+            log.warn("Payment was not completed successfully for the externalPaymentId: {}. The booking was not confirmed.", externalPaymentId);
         }
     }
 

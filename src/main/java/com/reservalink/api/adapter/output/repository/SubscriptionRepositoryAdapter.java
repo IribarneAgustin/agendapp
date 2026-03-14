@@ -36,6 +36,11 @@ public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort
         return toDomain(saved);
     }
 
+    @Override
+    public String findActiveSubscriptionIdByBookingId(String bookingId) {
+        return jpaRepository.findSubscriptionIdByBookingId(bookingId);
+    }
+
     private Subscription toDomain(SubscriptionEntity entity) {
         if (entity == null) {
             return null;

@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -31,29 +32,35 @@ public class WhatsappNotificationStrategy implements NotificationStrategy {
     }
 
     @Override
-    public void send(NotificationTarget target,
-                     NotificationMotive motive,
-                     Map<String, String> args) {
+    public CompletableFuture<Void> send(NotificationTarget target,
+                                        NotificationMotive motive,
+                                        Map<String, String> args) {
+        try {
+            String phone = target.getPhone();
+            if (phone == null) {
+                throw new IllegalArgumentException("Phone number required for WhatsApp notification");
+            }
 
-        String phone = target.getPhone();
-        if (phone == null) {
-            throw new IllegalArgumentException("Phone number required for WhatsApp notification");
+            log.info("Sending whatsapp notification for booking {}", args.get("bookingId"));
+
+            WhatsappAppointmentReminderRequest request =
+                    WhatsappAppointmentReminderRequest.of(
+                            phone,
+                            args.get("name"),
+                            args.get("serviceName"),
+                            args.get("date"),
+                            args.get("time"),
+                            args.get("bookingId")
+                    );
+
+            whatsAppClientPort.sendMessage(request);
+
+            log.info("Whatsapp notification sent for booking {}", args.get("bookingId"));
+
+            return CompletableFuture.completedFuture(null);
+        } catch (Exception e) {
+            log.error("WhatsApp failed for booking {}", args.get("bookingId"), e);
+            return CompletableFuture.failedFuture(e);
         }
-
-        log.info("Sending whatsapp notification for booking {}", args.get("bookingId"));
-
-        WhatsappAppointmentReminderRequest request =
-                WhatsappAppointmentReminderRequest.of(
-                        phone,
-                        args.get("name"),
-                        args.get("serviceName"),
-                        args.get("date"),
-                        args.get("time"),
-                        args.get("bookingId")
-                );
-
-        whatsAppClientPort.sendMessage(request);
-
-        log.info("Whatsapp notification sent for booking {}", args.get("bookingId"));
     }
 }

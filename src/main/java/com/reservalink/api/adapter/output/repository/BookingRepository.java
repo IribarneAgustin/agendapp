@@ -1,7 +1,6 @@
 package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
-import com.reservalink.api.domain.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +11,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface BookingRepository extends JpaRepository<BookingEntity, String> {
@@ -72,9 +72,6 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
             """)
     Integer getIncomingBookingsCountBySlotId(@Param("slotTimeId") String slotTimeId, @Param("now") LocalDateTime now);
 
-    List<BookingEntity> findBySlotTimeEntityStartDateTimeBetweenAndStatusAndEnabledTrue(LocalDateTime start, LocalDateTime end, BookingStatus status);
-
-
     @Query("""
                 SELECT COUNT(b.id) > 0
                 FROM BookingEntity b
@@ -105,4 +102,7 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
             """)
     Integer getIncomingBookingsCountByResourceId(@Param("resourceId") String resourceId, @Param("now") LocalDateTime now);
 
+    Optional<BookingEntity> findByIdAndEnabledTrue(String id);
+
+    List<BookingEntity> findAllByIdInAndEnabledTrue(List<String> bookingIds);
 }

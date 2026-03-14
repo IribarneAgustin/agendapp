@@ -8,4 +8,6 @@ public interface SubscriptionRepositoryPort {
     Optional<Subscription> findById(String subscriptionId);
 
     Subscription update(Subscription subscription);
+
+    String findActiveSubscriptionIdByBookingId(String bookingId);
 }

@@ -5,6 +5,7 @@ import com.reservalink.api.application.service.notification.NotificationMotive;
 import com.reservalink.api.application.service.notification.NotificationTarget;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public interface NotificationStrategy {
 
@@ -12,5 +13,5 @@ public interface NotificationStrategy {
 
     String getTemplatePath();
 
-    void send(NotificationTarget target, NotificationMotive motive, Map<String, String> args);
+    CompletableFuture<Void> send(NotificationTarget target, NotificationMotive motive, Map<String, String> args);
 }

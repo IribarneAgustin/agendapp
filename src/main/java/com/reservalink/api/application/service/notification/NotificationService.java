@@ -3,6 +3,7 @@ package com.reservalink.api.application.service.notification;
 import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionPaymentEntity;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
+import com.reservalink.api.domain.Booking;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ public interface NotificationService {
 
     void sendRecoverExpired(Map<Integer, List<UserEntity>> notificationsMap);
 
-    void sendBookingReminder(List<BookingEntity> incomingBookingList, NotificationChannel channel);
+    void sendBookingReminder(Booking booking, NotificationChannel channel);
 
     void sendResetPasswordRequest(String userEmail, String rawToken);
 

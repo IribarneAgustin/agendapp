@@ -138,7 +138,7 @@ class BookingDashboardManager {
         params.append('pageSize', pageSize.toString());
 
         if (this.startDateFilter) {
-            params.append('fromDate', this.startDateFilter);
+            params.append('startDate', this.startDateFilter);
         } else if (this.bookingTypeFilter === 'INCOMING') {
             const today = new Date().toISOString().split('T')[0];
             params.append('fromDate', today);
