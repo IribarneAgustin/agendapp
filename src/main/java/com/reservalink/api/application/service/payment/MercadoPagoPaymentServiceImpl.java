@@ -14,8 +14,9 @@ import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.application.output.UserRepositoryPort;
-import com.reservalink.api.application.service.notification.NotificationService;
 import com.reservalink.api.application.service.feature.FeatureLifecycleService;
+import com.reservalink.api.application.service.feature.FeaturePricingService;
+import com.reservalink.api.application.service.notification.NotificationService;
 import com.reservalink.api.domain.FeatureName;
 import com.reservalink.api.domain.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
@@ -25,6 +26,7 @@ import com.reservalink.api.domain.PaymentType;
 import com.reservalink.api.domain.Subscription;
 import com.reservalink.api.domain.SubscriptionFeature;
 import com.reservalink.api.domain.User;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -43,35 +45,26 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MercadoPagoPaymentServiceImpl implements PaymentService {
 
     private final UserRepository userRepository;
-
     private final PaymentAccountTokenRepository tokenRepository;
-
     private final RestTemplate restTemplate;
-
     private final PaymentRepository paymentRepository;
-
     private final NotificationService notificationService;
-
     private final SubscriptionRepositoryPort subscriptionRepositoryPort;
-
     private final FeatureLifecycleService featureLifecycleService;
-
     private final FeatureUsageRepositoryPort featureUsageRepositoryPort;
-
     private final UserRepositoryPort userRepositoryPort;
-
     private final SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort;
-
     private final Environment environment;
+    private final FeaturePricingService featurePricingService;
 
     @Value("${api.base.url}")
     private String baseURL;
@@ -82,31 +75,6 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
     @Value("${app.subscription.price}")
     private BigDecimal subscriptionPrice;
 
-
-    public MercadoPagoPaymentServiceImpl(UserRepository userRepository,
-                                         PaymentAccountTokenRepository tokenRepository,
-                                         RestTemplate restTemplate,
-                                         PaymentRepository paymentRepository,
-                                         NotificationService notificationService,
-                                         SubscriptionRepositoryPort subscriptionRepositoryPort,
-                                         FeatureLifecycleService featureLifecycleService,
-                                         FeatureUsageRepositoryPort featureUsageRepositoryPort,
-                                         UserRepositoryPort userRepositoryPort,
-                                         SubscriptionFeatureRepositoryPort subscriptionFeatureRepositoryPort,
-                                         Environment environment) {
-        this.userRepository = userRepository;
-        this.tokenRepository = tokenRepository;
-        this.restTemplate = restTemplate;
-        this.paymentRepository = paymentRepository;
-        this.notificationService = notificationService;
-        this.subscriptionRepositoryPort = subscriptionRepositoryPort;
-        this.featureLifecycleService = featureLifecycleService;
-        this.featureUsageRepositoryPort = featureUsageRepositoryPort;
-        this.userRepositoryPort = userRepositoryPort;
-        this.subscriptionFeatureRepositoryPort = subscriptionFeatureRepositoryPort;
-        this.environment = environment;
-    }
-
     @Override
     public String createSubscriptionCheckoutURL(String userId, List<FeatureUsage> features) {
         String url = "https://api.mercadopago.com/checkout/preferences";
@@ -115,7 +83,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         headers.setBearerAuth(mercadoPagoAppToken);
 
         String externalId = "SUBSCRIPTION-" + userId;
-        BigDecimal featuresPricing = calculateFeaturesPricing(features);
+        BigDecimal featuresPricing = featurePricingService.calculateFeaturesPricing(features);
 
         Map<String, Object> body = Map.of(
                 "items", new Object[]{
@@ -133,10 +101,10 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                         "failure", baseURL + "/public/subscription-payment.html?success=false"
                 ),
                 "auto_return", "approved",
-                "metadata" , Map.of(
+                "metadata", Map.of(
                         "premiumFeatures", features.isEmpty() ? Collections.emptyList() : features.stream()
-                        .map(FeatureUsage::getSubscriptionFeatureId)
-                        .toList())
+                                .map(FeatureUsage::getSubscriptionFeatureId)
+                                .toList())
         );
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
@@ -147,24 +115,6 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         } else {
             throw new RuntimeException("Error creating subscription preference");
         }
-    }
-
-    private BigDecimal calculateFeaturesPricing(List<FeatureUsage> features) {
-        if (features == null || features.isEmpty()) {
-            return BigDecimal.ZERO;
-        }
-        List<String> subscriptionFeatureIds = features.stream()
-                .map(FeatureUsage::getSubscriptionFeatureId)
-                .distinct()
-                .toList();
-
-        List<SubscriptionFeature> subscriptionFeatures =
-                subscriptionFeatureRepositoryPort.findAllByIds(subscriptionFeatureIds);
-
-        return subscriptionFeatures.stream()
-                .map(SubscriptionFeature::getPrice)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Override
@@ -256,8 +206,8 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
 
             switch (PaymentType.fromExternalReference(externalId)) {
                 case SUBSCRIPTION -> processSubscriptionPayment(externalId, approved, payment);
-                case FEATURE      -> processFeaturePayment(externalId, approved);
-                case BOOKING      -> processBookingPayment(externalId, approved);
+                case FEATURE -> processFeaturePayment(externalId, approved);
+                case BOOKING -> processBookingPayment(externalId, approved);
             }
 
         } catch (Exception e) {
@@ -336,6 +286,9 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
             List<String> premiumFeatureIds = extractPremiumFeatureIds(payment);
             if (!premiumFeatureIds.isEmpty()) {
                 featureLifecycleService.renew(premiumFeatureIds, subscriptionEntity.getId());
+                List<FeatureUsage> featureUsagesAvailable = featureUsageRepositoryPort.findAllAvailableByUserId(userId);
+                String updatedCheckoutURL = createSubscriptionCheckoutURL(userId, featureUsagesAvailable);
+                subscriptionEntity.setCheckoutLink(updatedCheckoutURL);
             }
 
         }
@@ -359,13 +312,15 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                     .orElseThrow(() -> new IllegalArgumentException("Feature Usage Id not found: " + featureUsageId));
 
             //TODO: when more features premium be added, refactor to handle the name correctly. (fetch from their repo)
-            featureUsageRepositoryPort.findByUserSubscriptionIdAndFeatureNameAndStatus(featureUsage.getSubscriptionId(), FeatureName.WHATSAPP_NOTIFICATIONS , FeatureStatus.ACTIVE)
+            featureUsageRepositoryPort.findByUserSubscriptionIdAndFeatureNameAndStatus(featureUsage.getSubscriptionId(), FeatureName.WHATSAPP_NOTIFICATIONS, FeatureStatus.ACTIVE)
                     .ifPresent(activeFeature -> {
                         activeFeature.setFeatureStatus(FeatureStatus.EXCHANGED);
                         featureUsageRepositoryPort.update(activeFeature);
                     });
 
             featureUsage.setFeatureStatus(FeatureStatus.ACTIVE);
+            featureUsage.setFirstCycle(true);
+            featureUsage.setActivatedAt(LocalDateTime.now());
             featureUsageRepositoryPort.update(featureUsage);
 
             String userSubscriptionId = featureUsage.getSubscriptionId();
@@ -373,7 +328,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
                     .orElseThrow(() -> new IllegalArgumentException("Subscription Id not found: " + userSubscriptionId));
 
             User user = userRepositoryPort.findBySubscriptionId(userSubscriptionId)
-                    .orElseThrow(() -> new IllegalArgumentException("User not found for subscription id: " + userSubscriptionId));;
+                    .orElseThrow(() -> new IllegalArgumentException("User not found for subscription id: " + userSubscriptionId));
 
             String newSubscriptionCheckoutURL = createSubscriptionCheckoutURL(user.getId(), List.of(featureUsage));
             userSubscription.setCheckoutLink(newSubscriptionCheckoutURL);

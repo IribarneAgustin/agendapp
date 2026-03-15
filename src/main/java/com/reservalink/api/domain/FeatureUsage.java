@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -16,4 +18,6 @@ public class FeatureUsage {
     private Boolean enabled;
     private FeatureStatus featureStatus;
     private Integer usage;
+    private boolean firstCycle;
+    private LocalDateTime activatedAt;
 }
