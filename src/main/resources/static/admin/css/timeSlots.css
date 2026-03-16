@@ -1,0 +1,243 @@
+/* ============================================
+   timeSlots.css — Time-Slots Admin Page Styles
+   ============================================ */
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f9fafb;
+}
+
+/* ----- Calendar Date Cells ----- */
+.date-cell {
+    padding: 0.5rem;
+    text-align: center;
+    font-size: 0.875rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.date-cell:not([disabled]):hover {
+    background-color: #eef2ff;
+    color: #4f46e5;
+    cursor: pointer;
+}
+
+.selected-date {
+    background-color: #4f46e5 !important;
+    color: white !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+    transform: scale(1.05);
+    z-index: 10;
+}
+
+/* Ensure selected date stays strong even on hover/focus (critical for mobile) */
+.selected-date:hover,
+.selected-date:focus,
+.selected-date:active {
+    background-color: #4338ca !important; /* indigo-700 */
+    color: white !important;
+    opacity: 1 !important;
+}
+
+/* Remove default focus outline which can look "transparent" on some mobile browsers */
+.date-cell:focus {
+    outline: none;
+}
+
+.today {
+    box-shadow: 0 0 0 3px #c4b5fd;
+    border-color: transparent !important;
+}
+
+.date-cell[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ----- Recurrence Day Checkboxes ----- */
+.day-checkbox-label {
+    display: block;
+    padding: 0.5rem 0.2rem;
+    text-align: center;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+input[type="checkbox"]:checked + .day-checkbox-label {
+    background-color: #4f46e5;
+    color: white;
+    border-color: #4f46e5;
+}
+
+input[type="checkbox"] {
+    display: none;
+}
+
+/* ----- Existing Slot Items ----- */
+.slot-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.15s;
+}
+
+.slot-item:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 1023px) {
+    .slot-item .slot-details {
+        grid-column: 1 / -1;
+    }
+    .slot-item .slot-actions {
+        display: flex;
+        justify-content: flex-end;
+        grid-column: 1 / -1;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f3f4f6;
+    }
+}
+
+/* ----- Slot Mode Toggle (Individual / Rango) ----- */
+.slot-mode-toggle {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background-color: #f3f4f6;
+    border-radius: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.slot-mode-toggle button {
+    flex: 1;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+    color: #6b7280;
+    background: transparent;
+}
+
+.slot-mode-toggle button.active {
+    background-color: #4f46e5;
+    color: white;
+    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.3);
+}
+
+.slot-mode-toggle button:not(.active):hover {
+    background-color: #e5e7eb;
+}
+
+/* ----- Range Inputs Grid ----- */
+.range-inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.range-inputs-grid .input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.range-inputs-grid .input-group label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+}
+
+.range-inputs-grid .input-group input {
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.range-inputs-grid .input-group input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ----- SweetAlert Preview Table ----- */
+.swal-preview-wrapper {
+    max-height: 60vh;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+}
+
+.swal-preview-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.swal-preview-wrapper::-webkit-scrollbar-track {
+    background: #f9fafb;
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.swal-preview-wrapper::-webkit-scrollbar-thumb {
+    background: #c7d2fe;
+    border-radius: 3px;
+}
+
+.swal-preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.swal-preview-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.swal-preview-table th {
+    background-color: #4f46e5;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.swal-preview-table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #f3f4f6;
+    white-space: nowrap;
+}
+
+.swal-preview-table tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+.swal-preview-table tbody tr:hover {
+    background-color: #eef2ff;
+}
+
+.swal-preview-summary {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #4f46e5;
+    text-align: center;
+}
