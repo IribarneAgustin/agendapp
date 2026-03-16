@@ -113,15 +113,15 @@ public class BookingReminderServiceImpl implements BookingReminderService {
             log.info("Booking {} too close to start time. Skipping reminder scheduling.", booking.getId());
             return;
         }
-        saveJob(booking, trigger, NotificationChannel.EMAIL);
         try {
+            saveJob(booking, trigger, NotificationChannel.EMAIL);
             String subscriptionId = subscriptionRepositoryPort.findActiveSubscriptionIdByBookingId(booking.getId());
             if (subscriptionId != null && featureLifecycleService.canUse(subscriptionId, FeatureName.WHATSAPP_NOTIFICATIONS)) {
                 log.info("Scheduling WhatsApp reminder for Booking {}.", booking.getId());
                 saveJob(booking, trigger, NotificationChannel.WHATSAPP);
             }
         } catch (Exception e) {
-            log.error("Error checking subscription for WhatsApp reminder. BookingId: {}", booking.getId(), e);
+            log.error("Error scheduling reminders for BookingId: {}", booking.getId(), e);
         }
     }
 

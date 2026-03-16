@@ -265,7 +265,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .getStartDateTime()
                 .format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         args.put("time", booking.getSlotTime().getStartDateTime().toLocalTime().format(timeFormatter));
-        args.put("cancelLink", baseURL + "/booking/" + booking.getId());
+        args.put("cancelLink", baseURL + "/booking/" + booking.getId() + "/cancel");
         args.put("bookingId", booking.getId());
 
         NotificationTarget target = NotificationTarget.builder()
