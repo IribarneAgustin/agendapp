@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,7 +25,7 @@ public class BookingReminderJobRepositoryAdapter implements BookingReminderJobRe
     @Override
     public BookingReminderJob save(BookingReminderJob job) {
         BookingReminderJobEntity entity = BookingReminderJobEntity.builder()
-                .id(job.getId() != null ? job.getId() : UUID.randomUUID().toString())
+                .id(job.getId() != null ? job.getId() : null)
                 .booking(BookingEntity.builder().id(job.getBookingId()).build())
                 .triggerDatetime(job.getTriggerDatetime())
                 .status(job.getStatus())

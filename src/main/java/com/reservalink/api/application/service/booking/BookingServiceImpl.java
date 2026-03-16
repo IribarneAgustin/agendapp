@@ -100,7 +100,7 @@ public class BookingServiceImpl implements BookingService {
             slotTimeRepository.saveAndFlush(slotTimeEntity);
 
             bookingEntity.setStatus(BookingStatus.CONFIRMED);
-            bookingEntity = bookingRepository.saveAndFlush(bookingEntity);
+            bookingEntity = bookingRepository.save(bookingEntity);
             bookingReminderService.scheduleReminder(bookingRepositoryPort.findById(bookingEntity.getId()).orElseThrow());
         }
 
