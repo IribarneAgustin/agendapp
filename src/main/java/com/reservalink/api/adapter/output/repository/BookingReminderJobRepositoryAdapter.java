@@ -36,7 +36,7 @@ public class BookingReminderJobRepositoryAdapter implements BookingReminderJobRe
                 .reAttempts(job.getReAttempts())
                 .build();
 
-        BookingReminderJobEntity saved = repository.save(entity);
+        BookingReminderJobEntity saved = repository.saveAndFlush(entity);
 
         return bookingReminderJobMapper.toDomain(saved);
     }
@@ -55,7 +55,7 @@ public class BookingReminderJobRepositoryAdapter implements BookingReminderJobRe
         BookingReminderJobEntity entity = repository.findById(jobId).orElseThrow();
         entity.setStatus(status);
         entity.setProcessedAt(processedAt);
-        repository.save(entity);
+        repository.saveAndFlush(entity);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class BookingReminderJobRepositoryAdapter implements BookingReminderJobRe
         BookingReminderJobEntity entity = repository.findById(jobId).orElseThrow();
         entity.setStatus(BookingReminderJobStatus.RETRY);
         entity.setReAttempts(entity.getReAttempts() + 1);
-        repository.save(entity);
+        repository.saveAndFlush(entity);
     }
 
     @Override
