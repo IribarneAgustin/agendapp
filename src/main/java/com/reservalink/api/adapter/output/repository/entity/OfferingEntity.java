@@ -15,6 +15,8 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.envers.AuditTable;
 import org.hibernate.envers.Audited;
 
+import static org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED;
+
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -49,5 +51,10 @@ public class OfferingEntity extends PersistentObject {
 
     @Column(name = "terms_and_conditions")
     private String termsAndConditions;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    @Audited(targetAuditMode = NOT_AUDITED)
+    private OfferingCategoryEntity category;
 
 }

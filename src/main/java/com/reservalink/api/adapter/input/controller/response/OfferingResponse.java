@@ -28,4 +28,6 @@ public class OfferingResponse {
     private Boolean enabled;
 
     private String termsAndConditions;
+
+    private String categoryId;
 }

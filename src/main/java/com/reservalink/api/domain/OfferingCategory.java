@@ -11,15 +11,10 @@ import lombok.Setter;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Offering {
+public class OfferingCategory {
     private String id;
     private String userId;
     private String name;
-    private String description;
-    private Integer capacity;
-    private Integer advancePaymentPercentage;
-    private Boolean status;
-    private String termsAndConditions;
-    private boolean enabled;
-    private String categoryId;
+    private Boolean enabled;
+    private Boolean isDefault;
 }

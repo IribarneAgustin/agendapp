@@ -7,13 +7,14 @@ import com.reservalink.api.domain.SlotTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class SlotTimeRepositoryAdapter implements SlotTimeRepositoryPort {
 
-    private final SlotTimeJpaRepository jpaRepository;
+    private final SlotTimeRepository jpaRepository;
     private final SlotTimeRepositoryMapper mapper;
 
     @Override
@@ -34,6 +35,18 @@ public class SlotTimeRepositoryAdapter implements SlotTimeRepositoryPort {
         entity.setEnabled(domain.getEnabled());
 
         jpaRepository.save(entity);
+    }
+
+    @Override
+    public List<SlotTime> findByOfferingEntityIdAndEnabledTrue(String offeringId) {
+        return jpaRepository.findByOfferingEntityIdAndEnabledTrue(offeringId).stream()
+                .map(mapper::toDomain).toList();
+    }
+
+    @Override
+    public void saveAll(List<SlotTime> slots) {
+        List<SlotTimeEntity> entities = slots.stream().map(mapper::toEntity).toList();
+        jpaRepository.saveAll(entities);
     }
 
 }

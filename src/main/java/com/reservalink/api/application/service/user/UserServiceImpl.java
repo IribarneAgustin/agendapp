@@ -1,10 +1,13 @@
 package com.reservalink.api.application.service.user;
 
+import com.reservalink.api.application.output.OfferingCategoryServiceRepositoryPort;
 import com.reservalink.api.application.output.ResourceRepositoryPort;
 import com.reservalink.api.adapter.input.controller.request.UserLoginRequest;
 import com.reservalink.api.adapter.input.controller.request.UserRegistrationRequest;
 import com.reservalink.api.adapter.input.controller.request.UserRequest;
 import com.reservalink.api.adapter.input.controller.response.UserAuthResponse;
+import com.reservalink.api.application.service.offering.OfferingCategoryService;
+import com.reservalink.api.domain.OfferingCategory;
 import com.reservalink.api.domain.Resource;
 import com.reservalink.api.domain.User;
 import com.reservalink.api.exception.BusinessErrorCodes;
@@ -22,6 +25,7 @@ import com.reservalink.api.application.service.notification.NotificationService;
 import com.reservalink.api.application.service.payment.PaymentService;
 import com.reservalink.api.utils.GenericAppConstants;
 import com.reservalink.api.utils.TokenHelper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +50,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService, UserDetailsService {
 
     private final UserRepository userRepository;
@@ -57,22 +62,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final NotificationService notificationService;
     private final RecoverPasswordTokenRepository recoverPasswordTokenRepository;
     private final ResourceRepositoryPort resourceRepository;
+    private final OfferingCategoryServiceRepositoryPort categoryRepository;
 
     @Value("${api.base.url}")
     private String baseURL;
-
-    public UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, BCryptPasswordEncoder passwordEncoder, JWTUtils jwtUtils,
-                           BrandRepository brandRepository, PaymentService paymentService, NotificationService notificationService, RecoverPasswordTokenRepository recoverPasswordTokenRepository, ResourceRepositoryPort resourceRepository) {
-        this.userRepository = userRepository;
-        this.modelMapper = modelMapper;
-        this.passwordEncoder = passwordEncoder;
-        this.jwtUtils = jwtUtils;
-        this.brandRepository = brandRepository;
-        this.paymentService = paymentService;
-        this.notificationService = notificationService;
-        this.recoverPasswordTokenRepository = recoverPasswordTokenRepository;
-        this.resourceRepository = resourceRepository;
-    }
 
     public User register(UserRegistrationRequest userRegistrationRequest) {
         UserEntity userEntity = modelMapper.map(userRegistrationRequest, UserEntity.class);
@@ -115,6 +108,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                     .build();
 
             resourceRepository.create(resource);
+
+            OfferingCategory defaultOfferingCategory = OfferingCategory.builder()
+                    .name(GenericAppConstants.DEFAULT_OFFERING_CATEGORY_NAME)
+                    .userId(savedUserEntity.getId())
+                    .enabled(true)
+                    .isDefault(true)
+                    .build();
+            categoryRepository.save(defaultOfferingCategory);
 
             notificationService.sendNewUserRegistered(userEntity);
 

@@ -4,8 +4,8 @@ class OfferingManager {
         this.token = localStorage.getItem('authToken');
         this.user = this.getStoredUser();
         this.offerings = [];
+        this.categories = [];
 
-        // Check authentication
         if (!this.token || !this.user) {
             window.location.href = BASE_URL;
             return;
@@ -17,6 +17,7 @@ class OfferingManager {
     init() {
         this.setupEventListeners();
         this.loadOfferings();
+        this.loadCategories();
     }
 
     getStoredUser() {
@@ -25,18 +26,249 @@ class OfferingManager {
     }
 
     setupEventListeners() {
-        // Navigation
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', this.logout.bind(this));
         }
 
-        // Redirect to new page instead of modal
         const addOfferingBtn = document.getElementById('addOfferingBtn');
         if (addOfferingBtn) {
             addOfferingBtn.addEventListener('click', () => {
                 window.location.href = './offering-crud.html';
             });
+        }
+
+        const openCategoriesBtn = document.getElementById('openCategoriesBtn');
+        if (openCategoriesBtn) {
+            openCategoriesBtn.addEventListener('click', () => this.toggleCategoryModal(true));
+        }
+
+        const saveCategoryBtn = document.getElementById('saveCategoryBtn');
+        if (saveCategoryBtn) {
+            saveCategoryBtn.addEventListener('click', () => this.handleAddCategory());
+        }
+
+        const newCategoryInput = document.getElementById('newCategoryName');
+        if (newCategoryInput) {
+            newCategoryInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleAddCategory();
+            });
+        }
+    }
+
+    toggleCategoryModal(show) {
+        const modal = document.getElementById('categoryModal');
+        if (!modal) return;
+
+        if (show) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            this.renderCategories();
+        } else {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    async loadCategories() {
+        try {
+            const response = await fetch(`${this.baseUrl}/user/${this.user.id}/category`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (response.ok) {
+                this.categories = await response.json();
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
+
+    renderCategories() {
+        const listContainer = document.getElementById('categoriesList');
+        if (!listContainer) return;
+
+        listContainer.innerHTML = '';
+
+        if (this.categories.length === 0) {
+            listContainer.innerHTML = `<p class="text-center text-gray-400 py-4 italic">No hay categorías creadas.</p>`;
+            return;
+        }
+
+        this.categories.forEach(cat => {
+            const item = document.createElement('div');
+            item.className = "flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 mb-2";
+
+            item.innerHTML = `
+                <span class="text-gray-700 font-medium">
+                    ${this.escapeHtml(cat.name)}
+                    ${cat.isDefault ? '<span class="text-xs text-gray-400 ml-2">(por defecto)</span>' : ''}
+                </span>
+
+                <div class="flex items-center gap-2">
+                    ${!cat.isDefault ? `
+                    <button
+                        data-id="${cat.id}"
+                        data-name="${this.escapeHtml(cat.name)}"
+                        class="edit-btn text-gray-400 hover:text-indigo-600 p-1 transition-colors"
+                        title="Editar">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5h2M12 20h9"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16.862 3.487a2.121 2.121 0 113 3L7 19l-4 1 1-4 12.862-12.513z"/>
+                        </svg>
+                    </button>
+                    ` : ''}
+
+                    <button
+                        data-id="${cat.id}"
+                        class="delete-btn text-red-400 hover:text-red-600 p-1 transition-colors"
+                        title="Eliminar">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+
+            item.querySelector('.delete-btn')?.addEventListener('click', (e) => {
+                this.deleteCategory(e.currentTarget.dataset.id);
+            });
+
+            item.querySelector('.edit-btn')?.addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                this.openEditCategory(btn.dataset.id, btn.dataset.name);
+            });
+
+            listContainer.appendChild(item);
+        });
+    }
+
+    async handleAddCategory() {
+        const input = document.getElementById('newCategoryName');
+        const name = input.value.trim();
+
+        if (!name) return;
+
+        try {
+            const response = await fetch(`${this.baseUrl}/user/${this.user.id}/category`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            });
+
+            if (response.ok) {
+                const newCat = await response.json();
+                this.categories.push(newCat);
+                input.value = '';
+                this.renderCategories();
+                this.showAlert('Categoría agregada', 'success');
+            }
+        } catch (error) {
+            this.showAlert('Error al crear categoría', 'error');
+        }
+    }
+
+    async deleteCategory(categoryId) {
+        const result = await Swal.fire({
+            title: '¿Eliminar categoría?',
+            text: "Esto no borrará tus servicios, pero se les quitará esta etiqueta.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#4f46e5',
+            confirmButtonText: 'Eliminar'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`${this.baseUrl}/user/${this.user.id}/category/${categoryId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${this.token}` }
+                });
+
+                if (response.ok) {
+                    this.categories = this.categories.filter(c => c.id !== categoryId);
+                    this.renderCategories();
+                    this.showAlert('Categoría eliminada', 'success');
+                } else {
+                    const contentType = response.headers.get("content-type");
+                    let errorMessage = "Error desconocido";
+                    if (contentType && contentType.includes("application/json")) {
+                        const errorJson = await response.json();
+                        const { errorCode, details } = errorJson;
+                        switch (errorCode) {
+                            case "DELETE_OFFERING_CATEGORY_DEFAULT":
+                                errorMessage = "No es posible eliminar esta categoría.";
+                                break;
+                            default:
+                                errorMessage = `Error: ${errorCode || 'Desconocido'}`;
+                                break;
+                        }
+                    }
+                    this.showAlert(errorMessage, 'error');
+                }
+            } catch (error) {
+                this.showAlert('Error inesperado al eliminar', 'error');
+            }
+        }
+    }
+
+    async openEditCategory(categoryId, currentName) {
+        const { value: newName } = await Swal.fire({
+            title: 'Editar categoría',
+            input: 'text',
+            inputValue: currentName,
+            showCancelButton: true,
+            confirmButtonText: 'Guardar',
+            confirmButtonColor: '#4f46e5',
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'El nombre es obligatorio';
+                }
+            }
+        });
+
+        if (newName) {
+            this.updateCategory(categoryId, newName);
+        }
+    }
+
+    async updateCategory(categoryId, newName) {
+        const name = newName.trim();
+
+        try {
+            const response = await fetch(
+                `${this.baseUrl}/user/${this.user.id}/category/${categoryId}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name })
+                }
+            );
+
+            if (response.ok) {
+                const updated = await response.json();
+
+                this.categories = this.categories.map(c =>
+                    c.id === categoryId ? updated : c
+                );
+
+                this.renderCategories();
+                this.showAlert('Categoría actualizada', 'success');
+            } else {
+                this.showAlert('Error al actualizar', 'error');
+            }
+
+        } catch (e) {
+            this.showAlert('Error inesperado', 'error');
         }
     }
 
@@ -95,7 +327,6 @@ class OfferingManager {
             emptyState.classList.add('hidden');
         }
 
-        // Render offerings
         this.offerings.forEach(offering => {
             const card = this.createOfferingCard(offering);
             container.appendChild(card);
@@ -123,6 +354,7 @@ class OfferingManager {
                     </div>
                     <div class="ml-3">
                         <h3 class="text-xl font-bold text-gray-900">${this.escapeHtml(offering.name)}</h3>
+                        ${offering.categoryName ? `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full mt-1 inline-block">${this.escapeHtml(offering.categoryName)}</span>` : ''}
                     </div>
                 </div>
                 <div class="flex space-x-2">
@@ -134,24 +366,26 @@ class OfferingManager {
                 </div>
             </div>
 
-            <p class="text-gray-600 mb-4 whitespace-pre-line">
+            <p class="text-gray-600 mb-4 whitespace-pre-line line-clamp-2">
                 ${this.escapeHtml(offering.description || '')}
             </p>
 
             <div class="space-y-4 border-t pt-4 border-gray-100">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Capacidad Máx.</p>
-                    <p class="text-lg font-bold text-gray-900">${offering.capacity} persona${offering.capacity !== 1 ? 's' : ''}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Pago Anticipado (Seña)</p>
-                    <p class="text-lg font-bold text-gray-700">
-                        ${offering.advancePaymentPercentage > 0 ? `${offering.advancePaymentPercentage}% Requerido` : 'No Requerido (0%)'}
-                    </p>
+                <div class="flex justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider">Capacidad</p>
+                        <p class="text-sm font-bold text-gray-900">${offering.capacity} pers.</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wider text-right">Seña</p>
+                        <p class="text-sm font-bold text-gray-700 text-right">
+                            ${offering.advancePaymentPercentage > 0 ? `${offering.advancePaymentPercentage}%` : '0%'}
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="flex pt-2">
-                <button type="button" class="configure-btn flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-md">
+            <div class="flex pt-4">
+                <button type="button" class="configure-btn flex-1 bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-sm">
                     Configurar Horarios
                 </button>
             </div>
@@ -169,7 +403,6 @@ class OfferingManager {
     }
 
     editOffering(offeringId) {
-        // Redirect to new page in edit mode
         window.location.href = `./offering-crud.html?id=${offeringId}`;
     }
 
@@ -280,9 +513,7 @@ class OfferingManager {
     }
 }
 
-// Global reference for onclick handlers
 let offeringManager;
-
 document.addEventListener('DOMContentLoaded', () => {
     offeringManager = new OfferingManager();
 });

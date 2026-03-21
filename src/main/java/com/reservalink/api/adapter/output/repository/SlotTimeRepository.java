@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 
 public interface SlotTimeRepository extends JpaRepository<SlotTimeEntity, String> {
@@ -71,4 +72,6 @@ public interface SlotTimeRepository extends JpaRepository<SlotTimeEntity, String
                   AND st.enabled = true
             """)
     void deleteByResourceId(@Param("resourceId") String resourceId);
+
+    Optional<SlotTimeEntity> findByIdAndEnabledTrue(String id);
 }

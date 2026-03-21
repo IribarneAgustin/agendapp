@@ -7,6 +7,7 @@ class OfferingCrudManager {
         this.currentOfferingId = urlParams.get('id');
         this.isEditMode = !!this.currentOfferingId;
         this.currentOffering = null;
+        this.categories = [];
 
         if (!this.token || !this.user) {
             window.location.href = this.baseUrl;
@@ -19,6 +20,8 @@ class OfferingCrudManager {
     async init() {
         this.setupEventListeners();
         this.updateUIForMode();
+
+        await this.loadCategories();
 
         if (this.isEditMode) {
             await this.loadOfferingData();
@@ -46,13 +49,11 @@ class OfferingCrudManager {
         const counter = document.getElementById('termsCounter');
 
         if (textarea && counter) {
-
             const updateCounter = () => {
                 counter.textContent = `${textarea.value.length} / 2000`;
             };
 
             textarea.addEventListener('input', updateCounter);
-
             updateCounter();
         }
     }
@@ -87,6 +88,7 @@ class OfferingCrudManager {
                 if (offering) {
                     this.currentOffering = offering;
                     this.populateForm(offering);
+                    this.applyCategorySelection();
                 } else {
                     this.showAlert('Servicio no encontrado', 'error');
                     setTimeout(() => window.history.back(), 2000);
@@ -118,11 +120,35 @@ class OfferingCrudManager {
         }
     }
 
+    applyCategorySelection() {
+        const select = document.getElementById('category');
+        if (!select) {
+            return;
+        }
+
+        let targetValue = '';
+
+        if (this.currentOffering?.categoryId) {
+            const rawId = typeof this.currentOffering.categoryId === 'object' ? this.currentOffering.categoryId.id : this.currentOffering.categoryId;
+            const categoryExists = this.categories.some(cat => String(cat.id) === String(rawId));
+
+            if (categoryExists) {
+                targetValue = rawId;
+            } else {
+                console.warn(`Category ID ${rawId} not found in available categories. Defaulting to placeholder.`);
+            }
+        }
+
+        select.value = targetValue;
+    }
+
     async handleFormSubmit(e) {
         e.preventDefault();
 
         const form = e.target;
         const formData = new FormData(form);
+
+        const categoryValue = formData.get('category');
 
         const offeringData = {
             userId: this.user.id,
@@ -130,7 +156,8 @@ class OfferingCrudManager {
             description: formData.get('description').trim(),
             capacity: parseInt(formData.get('capacity')),
             advancePaymentPercentage: parseInt(formData.get('advancePaymentPercentage')) || 0,
-            termsAndConditions: formData.get('termsAndConditions') || null
+            termsAndConditions: formData.get('termsAndConditions') || null,
+            categoryId: categoryValue || null
         };
 
         if (!offeringData.name) {
@@ -183,6 +210,51 @@ class OfferingCrudManager {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
         window.location.href = this.baseUrl;
+    }
+
+    async loadCategories() {
+        try {
+            const response = await fetch(`${this.baseUrl}/user/${this.user.id}/category`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+
+            if (response.ok) {
+                this.categories = await response.json();
+                this.renderCategorySelect();
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
+
+    renderCategorySelect() {
+        const select = document.getElementById('category');
+        const container = document.getElementById('categoryContainer');
+
+        if (!select || !container) return;
+
+        if (this.categories.length === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        container.classList.remove('hidden');
+
+        select.innerHTML = '';
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Seleccionar categoría...';
+        select.appendChild(placeholder);
+
+        this.categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            select.appendChild(option);
+        });
+
+        this.applyCategorySelection();
     }
 
     showAlert(message, icon = 'info') {

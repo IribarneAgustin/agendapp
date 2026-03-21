@@ -2,15 +2,18 @@ package com.reservalink.api.application.service.offering;
 
 import com.reservalink.api.adapter.input.controller.request.OfferingRequest;
 import com.reservalink.api.adapter.input.controller.response.OfferingResponse;
+import com.reservalink.api.adapter.output.repository.BookingRepository;
+import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
+import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
+import com.reservalink.api.application.output.OfferingCategoryServiceRepositoryPort;
+import com.reservalink.api.application.output.OfferingRepositoryPort;
+import com.reservalink.api.application.output.SlotTimeRepositoryPort;
+import com.reservalink.api.domain.Offering;
+import com.reservalink.api.domain.OfferingCategory;
+import com.reservalink.api.domain.SlotTime;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
-import com.reservalink.api.adapter.output.repository.BookingRepository;
-import com.reservalink.api.adapter.output.repository.OfferingRepository;
-import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
-import com.reservalink.api.adapter.output.repository.UserRepository;
-import com.reservalink.api.adapter.output.repository.entity.OfferingEntity;
-import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
-import com.reservalink.api.adapter.output.repository.entity.UserEntity;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -24,43 +27,40 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class OfferingServiceImpl implements OfferingService {
 
-    private final OfferingRepository offeringRepository;
-    private final ModelMapper modelMapper;
-    private final SlotTimeRepository slotTimeRepository;
+    private final OfferingRepositoryPort offeringRepository;
+    private final OfferingCategoryServiceRepositoryPort categoryRepositoryPort;
     private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
+    private final SlotTimeRepositoryPort slotTimeRepository;
+    private final ModelMapper modelMapper;
 
-    public OfferingServiceImpl(OfferingRepository offeringRepository, ModelMapper modelMapper, SlotTimeRepository slotTimeRepository, BookingRepository bookingRepository, UserRepository userRepository) {
-        this.offeringRepository = offeringRepository;
-        this.modelMapper = modelMapper;
-        this.slotTimeRepository = slotTimeRepository;
-        this.bookingRepository = bookingRepository;
-        this.userRepository = userRepository;
+    @Override
+    public OfferingResponse create(OfferingRequest request) {
+        Offering offering = modelMapper.map(request, Offering.class);
+        offering.setEnabled(true);
+
+        String categoryId = resolveCategoryId(request);
+        offering.setCategoryId(categoryId);
+
+        Offering saved = offeringRepository.save(offering);
+        return modelMapper.map(saved, OfferingResponse.class);
     }
 
     @Override
-    public OfferingResponse create(OfferingRequest offeringRequest) {
-        OfferingEntity offeringEntity = modelMapper.map(offeringRequest, OfferingEntity.class);
-        UserEntity user = userRepository.findById(offeringRequest.getUserId().toString())
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + offeringRequest.getUserId()));
-        offeringEntity.setEnabled(true);
-        offeringEntity.setUserEntity(user);
-        return modelMapper.map(offeringRepository.save(offeringEntity), OfferingResponse.class);
-    }
-
-    @Override
-    public OfferingResponse update(OfferingRequest offeringRequest) {
-        if (offeringRequest.getId() == null) {
+    public OfferingResponse update(OfferingRequest request) {
+        if (request.getId() == null) {
             throw new IllegalArgumentException("Invalid offering id");
         }
-        OfferingEntity existing = offeringRepository.findById(offeringRequest.getId().toString())
-                .orElseThrow(() -> new IllegalArgumentException("Offering not found with id: " + offeringRequest.getId()));
+        Offering existing = offeringRepository.findById(request.getId().toString())
+                .orElseThrow(() -> new IllegalArgumentException("Offering not found"));
+        modelMapper.map(request, existing);
 
-        modelMapper.map(offeringRequest, existing);
+        String categoryId = resolveCategoryId(request);
+        existing.setCategoryId(categoryId);
 
-        OfferingEntity updated = offeringRepository.save(existing);
+        Offering updated = offeringRepository.save(existing);
 
         return modelMapper.map(updated, OfferingResponse.class);
     }
@@ -70,8 +70,8 @@ public class OfferingServiceImpl implements OfferingService {
         if (userId == null) {
             throw new IllegalArgumentException("Invalid user id");
         }
-        List<OfferingEntity> offeringEntities = offeringRepository.findByUserEntityIdAndEnabledTrue(userId.toString());
-        return offeringEntities.stream()
+        return offeringRepository.findByUserId(userId.toString())
+                .stream()
                 .map(off -> modelMapper.map(off, OfferingResponse.class))
                 .collect(Collectors.toList());
     }
@@ -81,7 +81,7 @@ public class OfferingServiceImpl implements OfferingService {
         if (id == null) {
             throw new IllegalArgumentException("Invalid offering id");
         }
-        OfferingEntity existing = offeringRepository.findById(id.toString())
+        Offering existing = offeringRepository.findById(id.toString())
                 .orElseThrow(() -> new IllegalArgumentException("Offering not found with id: " + id));
 
         Integer incomingBookings = bookingRepository.getIncomingBookingsCount(existing.getId(), LocalDateTime.now());
@@ -92,16 +92,24 @@ public class OfferingServiceImpl implements OfferingService {
 
         existing.setEnabled(false);
 
-        List<SlotTimeEntity> slotTimeEntityList = slotTimeRepository.findByOfferingEntityIdAndEnabledTrue(id.toString());
-        if (!ObjectUtils.isEmpty(slotTimeEntityList)) {
-            log.info("Disabling {} active slots for the service {}", slotTimeEntityList.size(), id);
-            slotTimeEntityList.forEach(slotTime -> {
-                slotTime.setEnabled(false);
-            });
-            slotTimeRepository.saveAll(slotTimeEntityList);
+        List<SlotTime> slots = slotTimeRepository.findByOfferingEntityIdAndEnabledTrue(id.toString());
+        if (!ObjectUtils.isEmpty(slots)) {
+            log.info("Disabling {} active slots for the service {}", slots.size(), id);
+            slots.forEach(slot -> slot.setEnabled(false));
+            slotTimeRepository.saveAll(slots);
         }
 
         offeringRepository.save(existing);
     }
 
+    private String resolveCategoryId(OfferingRequest request) {
+        if (request.getCategoryId() != null) {
+            return request.getCategoryId().toString();
+        }
+
+        OfferingCategory defaultCategory = categoryRepositoryPort.findByUserIdAndIsDefault(request.getUserId().toString())
+                .orElseThrow(() -> new IllegalArgumentException("Default category not found"));
+
+        return defaultCategory.getId();
+    }
 }

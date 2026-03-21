@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface OfferingRepository extends JpaRepository<OfferingEntity, String> {
     List<OfferingEntity> findByUserEntityIdAndEnabledTrue(String userId);
+
+    List<OfferingEntity> findAllByEnabledTrueAndCategoryId(String categoryId);
 }
