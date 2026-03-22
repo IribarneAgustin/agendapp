@@ -10,6 +10,9 @@ class UserOfferingsManager {
         this.groupedSlotsByDate = {}; // Slots grouped by date 'YYYY-MM-DD'
         this.currentDate = new Date(); // Date object to track current calendar view
         this.selectedDateKey = null; // 'YYYY-MM-DD' of the currently selected date in the calendar
+        this.categories = [];
+        this.allOfferings = [];
+        this.selectedCategoryId = null;
 
         this.servicesContainer = document.getElementById('servicesContainer');
         this.bookingPanel = document.getElementById('bookingPanel');
@@ -79,12 +82,94 @@ class UserOfferingsManager {
             }
 
             const offerings = await response.json();
-            this.displayOfferings(offerings);
+            this.allOfferings = offerings;
+            this.categories = await this.loadCategoriesInUse();
+
+            if (this.categories.length > 0) {
+                this.renderCategorySelector(this.categories);
+                this.selectedCategoryId = this.categories[0].id;
+                const filtered = offerings.filter(o => o.categoryId === this.selectedCategoryId);
+                this.displayOfferings(filtered);
+            } else {
+                this.displayOfferings(offerings);
+            }
 
         } catch (error) {
             console.error('Error loading offerings:', error);
             this.showError('No se pudieron cargar los servicios. Verifica la URL y la disponibilidad del backend.');
         }
+    }
+
+     async loadCategoriesInUse() {
+            try {
+                const response = await fetch(`${this.baseUrl}/user/${this.userId}/category/in-use`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (!response.ok) return [];
+                return await response.json();
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                return [];
+            }
+        }
+
+    renderCategorySelector(categories) {
+        const container = document.getElementById('categorySelectorContainer');
+        const buttonsContainer = document.getElementById('categoryButtonsContainer');
+
+        if (!container || !buttonsContainer) return;
+
+        buttonsContainer.innerHTML = '';
+
+        categories.forEach((cat, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.categoryId = cat.id;
+
+            const label = cat.isDefault ? 'Otros' : cat.name;
+            btn.textContent = label;
+
+            let btnClasses = [
+                'px-5', 'py-2.5', 'rounded-full', 'text-sm', 'font-semibold',
+                'border', 'transition-all', 'duration-200', 'cursor-pointer',
+                'shadow-sm', 'hover:shadow-md', 'hover:-translate-y-0.5'
+            ];
+
+            if (index === 0) {
+                btnClasses.push('bg-indigo-600', 'text-white', 'border-indigo-600', 'shadow-indigo-500/30');
+            } else {
+                btnClasses.push('bg-white/70', 'text-gray-700', 'border-gray-200', 'hover:border-indigo-300', 'hover:text-indigo-600');
+            }
+
+            btn.className = btnClasses.join(' ');
+
+            btn.addEventListener('click', () => {
+                this.selectedCategoryId = cat.id;
+
+                buttonsContainer.querySelectorAll('button').forEach(b => {
+                    b.className = [
+                        'px-5', 'py-2.5', 'rounded-full', 'text-sm', 'font-semibold',
+                        'border', 'transition-all', 'duration-200', 'cursor-pointer',
+                        'shadow-sm', 'hover:shadow-md', 'hover:-translate-y-0.5',
+                        'bg-white/70', 'text-gray-700', 'border-gray-200', 'hover:border-indigo-300', 'hover:text-indigo-600'
+                    ].join(' ');
+                });
+                btn.className = [
+                    'px-5', 'py-2.5', 'rounded-full', 'text-sm', 'font-semibold',
+                    'border', 'transition-all', 'duration-200', 'cursor-pointer',
+                    'shadow-sm', 'hover:shadow-md', 'hover:-translate-y-0.5',
+                    'bg-indigo-600', 'text-white', 'border-indigo-600', 'shadow-indigo-500/30'
+                ].join(' ');
+
+                const filtered = this.allOfferings.filter(o => o.categoryId === cat.id);
+                this.displayOfferings(filtered);
+            });
+
+            buttonsContainer.appendChild(btn);
+        });
+
+        container.classList.remove('hidden');
     }
 
     displayOfferings(offerings) {
@@ -100,6 +185,11 @@ class UserOfferingsManager {
         this.bookingPanel.classList.add('hidden');
 
         if(profileHeader) profileHeader.classList.remove('hidden');
+
+        if (this.categories.length > 0) {
+            const catContainer = document.getElementById('categorySelectorContainer');
+            if (catContainer) catContainer.classList.remove('hidden');
+        }
 
         const activeOfferings = offerings.filter(offering => offering.enabled);
 

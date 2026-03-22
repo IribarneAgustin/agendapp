@@ -15,76 +15,87 @@
         }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex flex-col min-h-screen">
 
-<!-- Login Card Container -->
-<div class="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-md">
+<!-- Main Content Area -->
+<main class="flex-grow flex items-center justify-center p-4">
+    <div class="bg-white p-8 sm:p-10 rounded-3xl shadow-2xl w-full max-w-sm sm:max-w-md">
 
-    <!-- Logo and Title -->
-    <div class="flex flex-col items-center mb-6">
-        <svg class="w-16 h-16 text-indigo-600 mb-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 4h-3a2 2 0 00-2-2H8a2 2 0 00-2 2H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1 2v12H6V6h12zM9 10h6v2H9v-2zm0 4h6v2H9v-2z"/>
-        </svg>
-        <h1 class="text-3xl font-bold text-center text-gray-900">ReservaLink</h1>
-        <p class="mt-2 text-sm text-center text-gray-500">
-            Inicia sesión en tu cuenta
-        </p>
-    </div>
-
-    <!-- Form -->
-    <form id="loginForm" method="post" class="space-y-6">
-        <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-                Correo Electrónico
-            </label>
-            <div class="mt-1">
-                <input id="email" name="email" type="email" autocomplete="email" required
-                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
-            </div>
+        <!-- Logo and Title -->
+        <div class="flex flex-col items-center mb-6">
+            <svg class="w-16 h-16 text-indigo-600 mb-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19 4h-3a2 2 0 00-2-2H8a2 2 0 00-2 2H4a2 2 0 00-2 2v14a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm-1 2v12H6V6h12zM9 10h6v2H9v-2zm0 4h6v2H9v-2z"/>
+            </svg>
+            <h1 class="text-3xl font-bold text-center text-gray-900">ReservaLink</h1>
+            <p class="mt-2 text-sm text-center text-gray-500">
+                Inicia sesión en tu cuenta
+            </p>
         </div>
 
-        <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
-                Contraseña
-            </label>
-            <div class="mt-1">
-                <input id="password" name="password" type="password" autocomplete="current-password" required
-                       class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+        <!-- Form -->
+        <form id="loginForm" method="post" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">
+                    Correo Electrónico
+                </label>
+                <div class="mt-1">
+                    <input id="email" name="email" type="email" autocomplete="email" required
+                           class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                </div>
             </div>
-        </div>
 
-        <div class="flex items-center justify-between">
-            <div class="text-sm">
-                <a href="public/reset-password.html" class="font-medium text-indigo-600 hover:text-indigo-500">
-                    ¿Olvidaste tu contraseña?
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700">
+                    Contraseña
+                </label>
+                <div class="mt-1">
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                           class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <div class="text-sm">
+                    <a href="public/reset-password.html" class="font-medium text-indigo-600 hover:text-indigo-500">
+                        ¿Olvidaste tu contraseña?
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
+                    Iniciar Sesión
+                </button>
+            </div>
+        </form>
+
+        <!-- Registration Link -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                ¿No tienes una cuenta?
+                <a href="public/register.html" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    Regístrate aquí
                 </a>
-            </div>
+            </p>
         </div>
 
-        <div>
-            <button type="submit"
-                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                Iniciar Sesión
-            </button>
-        </div>
-    </form>
-
-    <!-- Registration Link -->
-    <div class="mt-6 text-center">
-        <p class="text-sm text-gray-600">
-            ¿No tienes una cuenta?
-            <a href="public/register.html" class="font-medium text-indigo-600 hover:text-indigo-500">
-                Regístrate aquí
-            </a>
-        </p>
+        <!-- Message Box (hidden by default) -->
+        <div id="messageBox" class="mt-6 p-4 rounded-lg text-sm text-center font-medium hidden"></div>
     </div>
+</main>
 
-    <!-- Message Box (hidden by default) -->
-    <div id="messageBox" class="mt-6 p-4 rounded-lg text-sm text-center font-medium hidden"></div>
-</div>
+<!-- Footer -->
+<footer class="text-center text-xs text-gray-500 py-6">
+    <p>© 2026 ReservaLink. Todos los derechos reservados.</p>
+    <p class="mt-1">
+        <a href="public/terms.html" class="text-indigo-600 hover:underline">
+            Términos y Condiciones
+        </a>
+    </p>
+</footer>
 
 <script src="./commons/config.js"></script>
 <script src="./public/js/login.js"></script>
-
 </body>
 </html>
