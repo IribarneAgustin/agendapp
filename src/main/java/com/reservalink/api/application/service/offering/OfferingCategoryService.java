@@ -1,6 +1,5 @@
 package com.reservalink.api.application.service.offering;
 
-import com.reservalink.api.adapter.input.controller.request.CategoryRequest;
 import com.reservalink.api.domain.OfferingCategory;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,4 +14,6 @@ public interface OfferingCategoryService {
     void deleteCategory(String categoryId);
 
     OfferingCategory update(OfferingCategory categoryRequest);
+
+    List<OfferingCategory> getCategoriesInUseByUserId(String userId);
 }

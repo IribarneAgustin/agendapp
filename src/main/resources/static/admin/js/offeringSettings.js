@@ -168,6 +168,22 @@ class OfferingManager {
                 input.value = '';
                 this.renderCategories();
                 this.showAlert('Categoría agregada', 'success');
+            } else {
+                const contentType = response.headers.get("content-type");
+                let errorMessage = "Error desconocido";
+                if (contentType && contentType.includes("application/json")) {
+                    const errorJson = await response.json();
+                    const { errorCode, details } = errorJson;
+                    switch (errorCode) {
+                        case "OFFERING_CATEGORY_ALREADY_EXISTS":
+                            errorMessage = "Ya existe una categoria con ese nombre.";
+                            break;
+                        default:
+                            errorMessage = `Error: ${errorCode || 'Desconocido'}`;
+                            break;
+                    }
+                }
+                this.showAlert(errorMessage, 'error');
             }
         } catch (error) {
             this.showAlert('Error al crear categoría', 'error');

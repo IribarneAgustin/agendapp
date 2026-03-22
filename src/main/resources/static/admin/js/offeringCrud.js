@@ -247,10 +247,19 @@ class OfferingCrudManager {
         placeholder.textContent = 'Seleccionar categoría...';
         select.appendChild(placeholder);
 
+        const maxLength = 30;
+
         this.categories.forEach(cat => {
             const option = document.createElement('option');
             option.value = cat.id;
-            option.textContent = cat.name;
+
+            const name = cat.name.length > maxLength
+                ? cat.name.substring(0, maxLength) + '...'
+                : cat.name;
+
+            option.textContent = name;
+            option.title = cat.name;
+
             select.appendChild(option);
         });
 

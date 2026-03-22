@@ -57,4 +57,10 @@ public class OfferingCategoryController {
         categoryService.deleteCategory(categoryId.toString());
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/in-use")
+    public ResponseEntity<List<OfferingCategory>> getCategoriesInUse(@PathVariable UUID userId) {
+        List<OfferingCategory> categoriesInUse = categoryService.getCategoriesInUseByUserId(userId.toString());
+        return ResponseEntity.ok(categoriesInUse);
+    }
 }

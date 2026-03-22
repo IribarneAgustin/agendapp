@@ -37,7 +37,8 @@ public class SecurityConfig {
             "/index.html",
             "/commons/config.js",
             "/public/**",
-            "/test/**"
+            "/test/**",
+            "/user/*/category/in-use"
 
     );
 
