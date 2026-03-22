@@ -12,19 +12,6 @@ CREATE TABLE offering_category (
     CONSTRAINT fk_offering_category_user FOREIGN KEY (user_id) REFERENCES user(id)
 );
 
---CREATE UNIQUE INDEX uq_one_default_per_user
---ON offering_category (
---    user_id,
---    (CASE WHEN is_default THEN 1 ELSE NULL END)
---);
-
---CREATE UNIQUE INDEX uq_category_active_name
---ON offering_category (
---    user_id,
---    name,
---   (CASE WHEN enabled THEN 1 ELSE NULL END)
---);
-
 ALTER TABLE offering ADD COLUMN category_id VARCHAR(36);
 ALTER TABLE offering_audit ADD COLUMN category_id VARCHAR(36);
 
