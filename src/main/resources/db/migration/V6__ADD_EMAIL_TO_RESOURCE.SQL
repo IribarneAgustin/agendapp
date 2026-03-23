@@ -1,0 +1,5 @@
+ALTER TABLE resource
+ADD COLUMN email VARCHAR(100);
+
+ALTER TABLE resource_audit
+ADD COLUMN email VARCHAR(100);

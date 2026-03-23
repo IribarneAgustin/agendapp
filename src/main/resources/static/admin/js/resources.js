@@ -1,6 +1,7 @@
 const resourceSelect = document.getElementById('resourceSelect');
 const nameInput = document.getElementById('name');
 const lastNameInput = document.getElementById('lastName');
+const emailInput = document.getElementById('email');
 
 const saveBtn = document.getElementById('saveBtn');
 const deleteBtn = document.getElementById('deleteBtn');
@@ -169,6 +170,7 @@ function onResourceSelected(e) {
 
     nameInput.value = resource?.name || '';
     lastNameInput.value = resource?.lastName || '';
+    emailInput.value = resource?.email || '';
 
     deleteBtn.disabled = resources.length <= 1;
 }
@@ -176,6 +178,7 @@ function onResourceSelected(e) {
 function getPayload() {
     const name = nameInput.value.trim();
     const lastName = lastNameInput.value.trim();
+    const email = emailInput.value.trim();
 
     if (!name) {
         Swal.fire({
@@ -185,7 +188,23 @@ function getPayload() {
         return null;
     }
 
-    return { name, lastName };
+    if (email && !isValidEmail(email)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Email inválido'
+        });
+        return null;
+    }
+
+    return {
+        name,
+        lastName,
+        email: email || null
+    };
+}
+
+function isValidEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function resetForm() {
@@ -194,6 +213,7 @@ function resetForm() {
 
     nameInput.value = '';
     lastNameInput.value = '';
+    emailInput.value = '';
 
     deleteBtn.disabled = true;
 }

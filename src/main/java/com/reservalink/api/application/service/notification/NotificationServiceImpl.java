@@ -77,8 +77,10 @@ public class NotificationServiceImpl implements NotificationService {
         adminArgs.put("time", timeFormatted);
         adminArgs.put("quantity", bookingEntity.getQuantity().toString());
 
+        String resourceEmail = bookingEntity.getSlotTimeEntity().getResourceEntity().getEmail();
+
         NotificationTarget targetUser = NotificationTarget.builder()
-                .email(userEntity.getEmail())
+                .email(resourceEmail != null ? resourceEmail : userEntity.getEmail())
                 .build();
 
         notificationStrategy.send(targetUser, NotificationMotive.ADMIN_BOOKING_CONFIRMED, adminArgs);
@@ -145,8 +147,10 @@ public class NotificationServiceImpl implements NotificationService {
         adminArgs.put("date", dateFormatted);
         adminArgs.put("time", timeFormatted);
 
+        String resourceEmail = bookingEntity.getSlotTimeEntity().getResourceEntity().getEmail();
+
         NotificationTarget targetUser = NotificationTarget.builder()
-                .email(user.getEmail())
+                .email(resourceEmail != null ? resourceEmail : user.getEmail())
                 .build();
 
         strategy.send(targetUser, NotificationMotive.ADMIN_BOOKING_CANCELLED, adminArgs);

@@ -236,7 +236,7 @@ class UserOfferingsManager {
                         </span>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-3 group-hover:text-indigo-600 transition-colors">${offering.name}</h3>
-                    <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
+                    <p class="text-gray-600 text-sm leading-relaxed whitespace-pre-line break-words">
                       ${offering.description || ''}
                     </p>
                 </div>
@@ -590,7 +590,7 @@ class UserOfferingsManager {
                 </div>
                 <h4 class="text-xl font-bold text-gray-900">${offering.name}</h4>
             </div>
-            <p class="text-gray-600 text-sm pl-1 whitespace-pre-line">
+            <p class="text-gray-600 text-sm pl-1 whitespace-pre-line break-words">
                 ${offering.description || ''}
             </p>
         `;

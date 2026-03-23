@@ -16,4 +16,5 @@ public class Resource {
     private String lastName;
     private Boolean isDefault;
     private Boolean enabled;
+    private String email;
 }

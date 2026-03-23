@@ -39,4 +39,7 @@ public class ResourceEntity extends PersistentObject {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity userEntity;
+
+    @Column(name = "email")
+    private String email;
 }

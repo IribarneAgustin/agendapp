@@ -48,7 +48,7 @@ public class ResourceRepositoryAdapter implements ResourceRepositoryPort {
         UserEntity userRef = new UserEntity();
         userRef.setId(resource.getUserId());
         entity.setUserEntity(userRef);
-
+        entity.setEmail(resource.getEmail());
         ResourceEntity saved = resourceJpaRepository.save(entity);
         return modelMapper.map(saved, Resource.class);
     }
@@ -60,6 +60,7 @@ public class ResourceRepositoryAdapter implements ResourceRepositoryPort {
         entity.setName(resource.getName());
         entity.setLastName(resource.getLastName());
         entity.setIsDefault(resource.getIsDefault());
+        entity.setEmail(resource.getEmail());
         return modelMapper.map(resourceJpaRepository.save(entity), Resource.class);
     }
 

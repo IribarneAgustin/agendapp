@@ -1,3 +1,6 @@
 package com.reservalink.api.adapter.input.controller.request;
 
-public record ResourceRequest(String name, String lastName, boolean isDefault) {}
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
+
+public record ResourceRequest(@NotNull String name, String lastName, boolean isDefault, @Email String email) {}

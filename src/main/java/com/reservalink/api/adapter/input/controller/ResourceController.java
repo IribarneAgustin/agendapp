@@ -3,6 +3,7 @@ package com.reservalink.api.adapter.input.controller;
 import com.reservalink.api.adapter.input.controller.request.ResourceRequest;
 import com.reservalink.api.domain.Resource;
 import com.reservalink.api.application.service.user.ResourceService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,12 +45,13 @@ public class ResourceController {
     }
 
     @PostMapping("/user/{userId}")
-    public ResponseEntity<Resource> create(@PathVariable String userId, @RequestBody ResourceRequest request) {
+    public ResponseEntity<Resource> create(@PathVariable String userId, @Valid @RequestBody ResourceRequest request) {
         Resource resource = Resource.builder()
                 .name(request.name())
                 .lastName(request.lastName())
                 .isDefault(request.isDefault())
                 .userId(userId)
+                .email(request.email())
                 .build();
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -57,12 +59,13 @@ public class ResourceController {
     }
 
     @PutMapping("/{resourceId}")
-    public ResponseEntity<Resource> update(@PathVariable String resourceId, @RequestBody ResourceRequest request) {
+    public ResponseEntity<Resource> update(@PathVariable String resourceId, @Valid @RequestBody ResourceRequest request) {
         Resource resource = Resource.builder()
                 .id(resourceId)
                 .name(request.name())
                 .lastName(request.lastName())
                 .isDefault(request.isDefault())
+                .email(request.email())
                 .build();
         return ResponseEntity
                 .status(HttpStatus.OK)
