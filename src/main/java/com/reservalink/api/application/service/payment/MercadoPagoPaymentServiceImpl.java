@@ -294,6 +294,7 @@ public class MercadoPagoPaymentServiceImpl implements PaymentService {
         }
         SubscriptionPaymentEntity subscriptionPayment = SubscriptionPaymentEntity.builder()
                 .subscriptionEntity(user.getSubscriptionEntity())
+                .enabled(true)
                 .externalId(externalId)
                 .paymentStatus(approved ? PaymentStatus.COMPLETED : PaymentStatus.FAILED)
                 .paymentMethod(PaymentMethod.MERCADO_PAGO)

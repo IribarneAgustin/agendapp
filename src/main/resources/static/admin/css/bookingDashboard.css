@@ -144,8 +144,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-bottom: 3px;
   }
 
-  /* Estado */
+  /* N° Reserva */
   td:nth-of-type(6)::before {
+    content: "N° Reserva del Cliente";
+    font-weight: 600;
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin-bottom: 3px;
+  }
+
+  /* Estado */
+  td:nth-of-type(7)::before {
     content: "Estado";
     font-weight: 600;
     color: #6b7280;

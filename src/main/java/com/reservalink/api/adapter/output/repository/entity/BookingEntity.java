@@ -50,4 +50,7 @@ public class BookingEntity extends PersistentObject {
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
+    @Column(name = "booking_number")
+    private Integer bookingNumber;
+
 }

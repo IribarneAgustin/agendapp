@@ -33,7 +33,7 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
               AND (o.userEntity.id = :userId)
               AND (b.status IN ('CONFIRMED', 'CANCELLED'))
               AND (:resourceId IS NULL OR r.id = :resourceId )
-            ORDER BY st.startDateTime ASC
+            ORDER BY st.startDateTime DESC
             """)
     Page<BookingEntity> findBookingGrid(
             @Param("userId") String userId,
@@ -105,4 +105,15 @@ public interface BookingRepository extends JpaRepository<BookingEntity, String> 
     Optional<BookingEntity> findByIdAndEnabledTrue(String id);
 
     List<BookingEntity> findAllByIdInAndEnabledTrue(List<String> bookingIds);
+
+    @Query("""
+                SELECT COALESCE(MAX(b.bookingNumber), 0)
+                FROM BookingEntity b
+                JOIN b.slotTimeEntity st
+                JOIN st.offeringEntity o
+                WHERE b.phoneNumber = :phoneNumber
+                  AND o.userEntity.id = :userId
+                  AND b.status IN ('CONFIRMED', 'CANCELLED')
+            """)
+    Integer findMaxBookingNumber(String phoneNumber, String userId);
 }

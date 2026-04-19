@@ -10,4 +10,6 @@ public interface BookingRepositoryPort {
     Optional<Booking> findById(String bookingId);
 
     List<Booking> findAllByIds(List<String> bookingIds);
+
+    Integer findMaxBookingNumberByPhoneNumberAndUserId(String email, String userId);
 }

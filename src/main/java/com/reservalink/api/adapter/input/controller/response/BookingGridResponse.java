@@ -19,9 +19,10 @@ public class BookingGridResponse {
     private String clientPhone;
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
-    private BookingStatus status; //CONFIRMED, CANCELLED
+    private BookingStatus status;
     private Double paid;
     private String serviceName;
     private Integer quantity;
     private String resourceName;
+    private Integer bookingNumber;
 }

@@ -28,4 +28,9 @@ public class BookingRepositoryAdapter implements BookingRepositoryPort {
                 .map(bookingRepositoryMapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public Integer findMaxBookingNumberByPhoneNumberAndUserId(String phoneNumber, String userId) {
+        return bookingJpaRepository.findMaxBookingNumber(phoneNumber, userId);
+    }
 }

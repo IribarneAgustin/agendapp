@@ -4,21 +4,21 @@ import com.reservalink.api.adapter.input.controller.request.BookingRequest;
 import com.reservalink.api.adapter.input.controller.request.BookingSearchRequest;
 import com.reservalink.api.adapter.input.controller.response.BookingGridResponse;
 import com.reservalink.api.adapter.input.controller.response.BookingResponse;
-import com.reservalink.api.application.output.BookingRepositoryPort;
-import com.reservalink.api.application.validator.PhoneNumberValidator;
-import com.reservalink.api.exception.BusinessErrorCodes;
-import com.reservalink.api.exception.BusinessRuleException;
+import com.reservalink.api.adapter.output.repository.BookingRepository;
 import com.reservalink.api.adapter.output.repository.PaymentRepository;
+import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
 import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
 import com.reservalink.api.adapter.output.repository.entity.BookingPaymentEntity;
-import com.reservalink.api.domain.BookingStatus;
-import com.reservalink.api.domain.PaymentStatus;
 import com.reservalink.api.adapter.output.repository.entity.ResourceEntity;
 import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
-import com.reservalink.api.adapter.output.repository.BookingRepository;
-import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
-import com.reservalink.api.application.service.payment.PaymentService;
+import com.reservalink.api.application.output.BookingRepositoryPort;
 import com.reservalink.api.application.service.notification.NotificationService;
+import com.reservalink.api.application.service.payment.PaymentService;
+import com.reservalink.api.application.validator.PhoneNumberValidator;
+import com.reservalink.api.domain.BookingStatus;
+import com.reservalink.api.domain.PaymentStatus;
+import com.reservalink.api.exception.BusinessErrorCodes;
+import com.reservalink.api.exception.BusinessRuleException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -27,7 +27,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -56,18 +55,15 @@ public class BookingServiceImpl implements BookingService {
 
         ResourceEntity resourceEntity = slotTimeEntity.getResourceEntity();
 
-        boolean isResourceBusy =
-                bookingRepository.existsOverlappingBookingForResource(
-                        resourceEntity.getId(),
-                        slotTimeEntity.getOfferingEntity().getId(),
-                        slotTimeEntity.getEndDateTime(),
-                        slotTimeEntity.getStartDateTime()
-                );
+        boolean isResourceBusy = bookingRepository.existsOverlappingBookingForResource(
+                resourceEntity.getId(),
+                slotTimeEntity.getOfferingEntity().getId(),
+                slotTimeEntity.getEndDateTime(),
+                slotTimeEntity.getStartDateTime()
+        );
 
         if (isResourceBusy) {
-            throw new BusinessRuleException(
-                    BusinessErrorCodes.RESOURCE_NOT_AVAILABLE.name()
-            );
+            throw new BusinessRuleException(BusinessErrorCodes.RESOURCE_NOT_AVAILABLE.name());
         }
 
         Integer newCapacity = slotTimeEntity.getCapacityAvailable() - bookingRequest.getQuantity();
@@ -76,6 +72,8 @@ public class BookingServiceImpl implements BookingService {
             throw new BusinessRuleException(BusinessErrorCodes.NO_CAPACITY_AVAILABLE.name());
         }
 
+        Integer bookingNumber = resolveBookingNumber(bookingRequest.getPhoneNumber(), slotTimeEntity.getOfferingEntity().getUserEntity().getId());
+
         BookingEntity bookingEntity = BookingEntity.builder()
                 .enabled(true)
                 .slotTimeEntity(slotTimeEntity)
@@ -83,6 +81,7 @@ public class BookingServiceImpl implements BookingService {
                 .email(bookingRequest.getEmail())
                 .phoneNumber(cleanPhoneNumber)
                 .quantity(bookingRequest.getQuantity())
+                .bookingNumber(bookingNumber)
                 .build();
 
         if (paymentRequired(slotTimeEntity) && !isAdmin) {
@@ -154,6 +153,7 @@ public class BookingServiceImpl implements BookingService {
                             .status(b.getStatus())
                             .quantity(b.getQuantity())
                             .resourceName(b.getSlotTimeEntity().getResourceEntity().getName() + " " + b.getSlotTimeEntity().getResourceEntity().getLastName())
+                            .bookingNumber(b.getBookingNumber())
                             .build();
                 }
         );
@@ -185,8 +185,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private static boolean isValidStateToCancel(SlotTimeEntity slotTimeEntity, BookingEntity bookingEntityToCancel) {
-        return slotTimeEntity != null && slotTimeEntity.getEnabled() && slotTimeEntity.getEndDateTime().isAfter(LocalDateTime.now())
-                && !bookingEntityToCancel.getStatus().equals(BookingStatus.CANCELLED);
+        return slotTimeEntity != null && slotTimeEntity.getEnabled() && !bookingEntityToCancel.getStatus().equals(BookingStatus.CANCELLED);
     }
 
     @Override
@@ -215,4 +214,7 @@ public class BookingServiceImpl implements BookingService {
         }
     }
 
+    private Integer resolveBookingNumber(String phoneNumber, String userId) {
+        return bookingRepositoryPort.findMaxBookingNumberByPhoneNumberAndUserId(phoneNumber, userId) + 1;
+    }
 }

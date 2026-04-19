@@ -214,7 +214,7 @@ class BookingDashboardManager {
                 throw new Error(`Error al cancelar: ${errorData.message || response.status}`);
             }
 
-            this.showStatusMessage(`Reserva ID: ${bookingId.substring(0, 8)}... cancelada exitosamente.`);
+            this.showStatusMessage(`Reserva cancelada exitosamente.`);
             return true;
 
         } catch (error) {
@@ -344,6 +344,7 @@ class BookingDashboardManager {
                                ? "$" + booking.paid.toFixed(2) : 'N/A';
             const bookingStatus = booking.status;
             const quantity = booking.quantity;
+            const bookingNumber = booking.bookingNumber ?? '-';
 
             let formattedDate = 'N/A';
             let formattedTimeRange = '';
@@ -398,6 +399,11 @@ class BookingDashboardManager {
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 border-b border-gray-200">
                     ${paid}
+                </td>
+                <td class="px-6 py-3 whitespace-nowrap text-sm text-gray-700 border-b border-gray-200">
+                    <div class="flex items-center space-x-2">
+                        <span>${bookingNumber}</span>
+                    </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap border-b border-gray-200">
                     ${this.renderStatusBadge(bookingStatus)}
