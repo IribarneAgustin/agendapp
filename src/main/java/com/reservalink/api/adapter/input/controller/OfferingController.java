@@ -1,5 +1,6 @@
 package com.reservalink.api.adapter.input.controller;
 
+import com.reservalink.api.adapter.input.controller.request.OfferingOrderRequest;
 import com.reservalink.api.adapter.input.controller.request.OfferingRequest;
 import com.reservalink.api.adapter.input.controller.response.OfferingResponse;
 import com.reservalink.api.application.service.offering.OfferingService;
@@ -60,5 +61,12 @@ public class OfferingController {
         log.info("Request to delete the following offering received: {}", offeringId);
         offeringService.delete(offeringId);
         log.info("Offering deleted successfully");
+    }
+
+    @PostMapping("/order")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void orderOfferings(@PathVariable UUID userId, @RequestBody List<OfferingOrderRequest> request) {
+        offeringService.orderOfferings(userId, request);
+        log.info("Offering order set successfully");
     }
 }

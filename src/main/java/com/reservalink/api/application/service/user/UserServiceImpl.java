@@ -134,7 +134,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             throw new BadCredentialsException("Invalid credentials");
         }
         String jwt = jwtUtils.generateToken(userEntity);
-        log.info("User logged successfully");
         return UserAuthResponse.builder()
                 .token(jwt)
                 .id(userEntity.getId())

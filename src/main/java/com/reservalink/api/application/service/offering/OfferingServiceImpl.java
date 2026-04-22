@@ -1,10 +1,9 @@
 package com.reservalink.api.application.service.offering;
 
+import com.reservalink.api.adapter.input.controller.request.OfferingOrderRequest;
 import com.reservalink.api.adapter.input.controller.request.OfferingRequest;
 import com.reservalink.api.adapter.input.controller.response.OfferingResponse;
 import com.reservalink.api.adapter.output.repository.BookingRepository;
-import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
-import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
 import com.reservalink.api.application.output.OfferingCategoryServiceRepositoryPort;
 import com.reservalink.api.application.output.OfferingRepositoryPort;
 import com.reservalink.api.application.output.SlotTimeRepositoryPort;
@@ -22,6 +21,7 @@ import org.springframework.util.ObjectUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -91,6 +91,7 @@ public class OfferingServiceImpl implements OfferingService {
         }
 
         existing.setEnabled(false);
+        existing.setDisplayOrder(0);
 
         List<SlotTime> slots = slotTimeRepository.findByOfferingEntityIdAndEnabledTrue(id.toString());
         if (!ObjectUtils.isEmpty(slots)) {
@@ -100,6 +101,42 @@ public class OfferingServiceImpl implements OfferingService {
         }
 
         offeringRepository.save(existing);
+    }
+
+    @Override
+    public void orderOfferings(UUID userId, List<OfferingOrderRequest> request) {
+        if (request == null || request.isEmpty()) {
+            throw new IllegalArgumentException("Request must not be null or empty");
+        }
+
+        Set<Integer> uniqueOrders = request.stream()
+                .map(OfferingOrderRequest::order)
+                .collect(Collectors.toSet());
+
+        if (uniqueOrders.size() != request.size()) {
+            throw new IllegalArgumentException("Duplicate order values");
+        }
+
+        List<Offering> offeringList = offeringRepository.findByUserId(userId.toString());
+
+        if (request.size() != offeringList.size()) {
+            throw new IllegalArgumentException("All offerings must be included in reorder request");
+        }
+
+        Map<String, Integer> orderMap = request.stream()
+                .collect(Collectors.toMap(
+                        OfferingOrderRequest::offeringId,
+                        OfferingOrderRequest::order
+                ));
+
+        offeringList.forEach(offering -> {
+            Integer newOrder = orderMap.get(offering.getId());
+            if (newOrder != null) {
+                offering.setDisplayOrder(newOrder);
+            }
+        });
+
+        offeringRepository.saveAll(offeringList);
     }
 
     private String resolveCategoryId(OfferingRequest request) {

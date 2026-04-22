@@ -1,5 +1,6 @@
 package com.reservalink.api.application.service.offering;
 
+import com.reservalink.api.adapter.input.controller.request.OfferingOrderRequest;
 import com.reservalink.api.adapter.input.controller.request.OfferingRequest;
 import com.reservalink.api.adapter.input.controller.response.OfferingResponse;
 
@@ -14,4 +15,6 @@ public interface OfferingService {
     List<OfferingResponse> findAllByUserId(UUID userId);
 
     void delete(UUID offeringId);
+
+    void orderOfferings(UUID userId, List<OfferingOrderRequest> request);
 }

@@ -55,9 +55,8 @@ public class BookingController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<Page<BookingGridResponse>> findAll(@PathVariable UUID userId, @Valid @ModelAttribute BookingSearchRequest bookingSearchRequest) {
-        log.info("Request to fetch bookings for the user {} received", userId);
         Page<BookingGridResponse> response = bookingService.findBookingGrid(userId, bookingSearchRequest);
-        log.info("Bookings fetched successfully");
+        log.info("Bookings fetched successfully by the user {}", userId);
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(response);

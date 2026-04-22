@@ -42,7 +42,7 @@ class RegistrationManager {
 
         // New BrandName/Slug validation
         if (!this.isValidSlug(userData.brandName.toLowerCase())) {
-            this.showMessage('El Nombre de Marca debe ser corto, en minúsculas, y solo puede contener letras, números y guiones (ej: mi-tienda-online).', 'error');
+            this.showMessage('El Nombre de Marca solo puede contener letras, números o guiones (ej: mi-tienda-online).', 'error');
             return false;
         }
 

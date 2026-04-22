@@ -30,4 +30,6 @@ public class OfferingResponse {
     private String termsAndConditions;
 
     private String categoryId;
+
+    private Integer displayOrder;
 }

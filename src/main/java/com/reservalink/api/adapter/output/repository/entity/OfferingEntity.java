@@ -57,4 +57,6 @@ public class OfferingEntity extends PersistentObject {
     @Audited(targetAuditMode = NOT_AUDITED)
     private OfferingCategoryEntity category;
 
+    @Column(name = "display_order")
+    private Integer displayOrder;
 }

@@ -31,6 +31,7 @@ public class OfferingRepositoryMapper {
                 .userId(entity.getUserEntity() != null ? entity.getUserEntity().getId() : null)
                 .enabled(entity.getEnabled())
                 .categoryId(entity.getCategory().getId())
+                .displayOrder(entity.getDisplayOrder())
                 .build();
     }
 
@@ -64,6 +65,7 @@ public class OfferingRepositoryMapper {
                 .enabled(domain.isEnabled())
                 .userEntity(UserEntity.builder().id(domain.getUserId()).build())
                 .category(OfferingCategoryEntity.builder().id(domain.getCategoryId()).build())
+                .displayOrder(domain.getDisplayOrder())
                 .build();
     }
 }

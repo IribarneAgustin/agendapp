@@ -5,6 +5,7 @@ class OfferingManager {
         this.user = this.getStoredUser();
         this.offerings = [];
         this.categories = [];
+        this.tempOfferingsOrder = [];
 
         if (!this.token || !this.user) {
             window.location.href = BASE_URL;
@@ -53,6 +54,107 @@ class OfferingManager {
             newCategoryInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') this.handleAddCategory();
             });
+        }
+
+        const openOrderBtn = document.getElementById('openOrderBtn');
+        if (openOrderBtn) {
+            openOrderBtn.addEventListener('click', () => this.toggleOrderModal(true));
+        }
+    }
+
+    toggleOrderModal(show) {
+        const modal = document.getElementById('orderModal');
+        if (!modal) return;
+
+        if (show) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            // Clone the array so we don't mutate the UI until saved
+            this.tempOfferingsOrder = [...this.offerings];
+            this.renderOrderList();
+        } else {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    renderOrderList() {
+        const listContainer = document.getElementById('orderList');
+        if (!listContainer) return;
+        listContainer.innerHTML = '';
+
+        if (this.tempOfferingsOrder.length === 0) {
+            listContainer.innerHTML = `<p class="text-center text-gray-400 py-4 italic">No hay servicios para ordenar.</p>`;
+            return;
+        }
+
+        this.tempOfferingsOrder.forEach((offering, index) => {
+            const item = document.createElement('div');
+            item.className = "flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200 mb-2";
+
+            item.innerHTML = `
+                <span class="text-gray-700 font-medium text-sm">
+                    <span class="text-gray-400 mr-2">${index + 1}.</span>
+                    ${this.escapeHtml(offering.name)}
+                </span>
+                <div class="flex items-center gap-1">
+                    <button onclick="offeringManager.moveOffering(${index}, -1)"
+                            class="p-1 text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            ${index === 0 ? 'disabled' : ''}>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                    </button>
+                    <button onclick="offeringManager.moveOffering(${index}, 1)"
+                            class="p-1 text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            ${index === this.tempOfferingsOrder.length - 1 ? 'disabled' : ''}>
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                </div>
+            `;
+            listContainer.appendChild(item);
+        });
+    }
+
+    moveOffering(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= this.tempOfferingsOrder.length) return;
+
+        // Swap elements
+        const temp = this.tempOfferingsOrder[index];
+        this.tempOfferingsOrder[index] = this.tempOfferingsOrder[newIndex];
+        this.tempOfferingsOrder[newIndex] = temp;
+
+        this.renderOrderList();
+    }
+
+    async saveOrder() {
+        // Map to the structure expected by the backend
+        const orderRequest = this.tempOfferingsOrder.map((offering, index) => ({
+            offeringId: offering.id,
+            order: index + 1 // Incremental starting from 1
+        }));
+
+        try {
+            const response = await fetch(`${this.baseUrl}/users/${this.user.id}/offerings/order`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(orderRequest)
+            });
+
+            if (response.ok) {
+                // Update local state and re-render main grid
+                this.offerings = [...this.tempOfferingsOrder];
+                this.renderOfferings();
+                this.toggleOrderModal(false);
+                this.showAlert('Orden guardado correctamente', 'success');
+            } else {
+                this.showAlert('Error al guardar el orden', 'error');
+            }
+        } catch (error) {
+            console.error('Error saving order:', error);
+            this.showAlert('Error inesperado al guardar', 'error');
         }
     }
 

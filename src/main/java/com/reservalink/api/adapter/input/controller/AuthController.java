@@ -45,7 +45,6 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UserAuthResponse> login(@RequestBody UserLoginRequest request,
                                                   HttpServletResponse response) {
-        log.info("User login request received");
         UserAuthResponse authResponse = userService.login(request);
 
         ResponseCookie cookie = ResponseCookie.from("jwt", authResponse.getToken())
@@ -57,7 +56,7 @@ public class AuthController {
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
-
+        log.info("User {} logged successfully", authResponse.getEmail());
         return ResponseEntity.ok(authResponse);
     }
 

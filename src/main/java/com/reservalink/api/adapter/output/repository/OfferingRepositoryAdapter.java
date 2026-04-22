@@ -42,7 +42,7 @@ public class OfferingRepositoryAdapter implements OfferingRepositoryPort {
 
     @Override
     public List<Offering> findByUserId(String userId) {
-        return offeringJpaRepository.findByUserEntityIdAndEnabledTrue(userId)
+        return offeringJpaRepository.findByUserEntityIdAndEnabledTrueOrderByDisplayOrderAsc(userId)
                 .stream()
                 .map(offeringRepositoryMapper::toDomain)
                 .toList();

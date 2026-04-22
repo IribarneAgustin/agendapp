@@ -22,4 +22,5 @@ public class Offering {
     private String termsAndConditions;
     private boolean enabled;
     private String categoryId;
+    private Integer displayOrder;
 }
