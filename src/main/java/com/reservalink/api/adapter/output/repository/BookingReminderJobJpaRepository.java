@@ -1,7 +1,7 @@
 package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.BookingReminderJobEntity;
-import com.reservalink.api.domain.BookingReminderJobStatus;
+import com.reservalink.api.domain.enums.BookingReminderJobStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

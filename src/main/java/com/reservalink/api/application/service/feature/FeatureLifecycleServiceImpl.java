@@ -2,8 +2,8 @@ package com.reservalink.api.application.service.feature;
 
 import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
-import com.reservalink.api.domain.FeatureName;
-import com.reservalink.api.domain.FeatureStatus;
+import com.reservalink.api.domain.enums.FeatureName;
+import com.reservalink.api.domain.enums.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
 import com.reservalink.api.domain.SubscriptionFeature;
 import com.reservalink.api.exception.BusinessErrorCodes;
@@ -42,6 +42,7 @@ public class FeatureLifecycleServiceImpl implements FeatureLifecycleService {
                     .subscriptionId(subscriptionId)
                     .subscriptionFeatureId(expiredFeatureUsage.getId())
                     .enabled(Boolean.TRUE)
+                    .firstCycle(false)
                     .usage(0)
                     .build();
 

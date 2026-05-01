@@ -1,6 +1,7 @@
 package com.reservalink.api.domain;
 
 import com.reservalink.api.application.service.notification.NotificationChannel;
+import com.reservalink.api.domain.enums.BookingReminderJobStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;

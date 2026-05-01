@@ -1,6 +1,6 @@
 package com.reservalink.api.adapter.output.repository.entity;
 
-import com.reservalink.api.domain.PaymentMethod;
+import com.reservalink.api.domain.enums.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;

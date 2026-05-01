@@ -1,4 +1,4 @@
-package com.reservalink.api.domain;
+package com.reservalink.api.domain.enums;
 
 public enum PaymentType {
     SUBSCRIPTION,

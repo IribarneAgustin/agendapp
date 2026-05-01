@@ -1,6 +1,6 @@
 package com.reservalink.api.application.dto;
 
-import com.reservalink.api.domain.FeatureStatus;
+import com.reservalink.api.domain.enums.FeatureStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

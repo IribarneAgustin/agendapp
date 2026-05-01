@@ -5,7 +5,7 @@ import com.reservalink.api.adapter.output.repository.entity.BookingReminderJobEn
 import com.reservalink.api.adapter.output.repository.mapper.BookingReminderJobMapper;
 import com.reservalink.api.application.output.BookingReminderJobRepositoryPort;
 import com.reservalink.api.domain.BookingReminderJob;
-import com.reservalink.api.domain.BookingReminderJobStatus;
+import com.reservalink.api.domain.enums.BookingReminderJobStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

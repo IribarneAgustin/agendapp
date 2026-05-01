@@ -1,7 +1,7 @@
 package com.reservalink.api.adapter.output.repository.entity;
 
-import com.reservalink.api.domain.PaymentMethod;
-import com.reservalink.api.domain.PaymentStatus;
+import com.reservalink.api.domain.enums.PaymentMethod;
+import com.reservalink.api.domain.enums.PaymentStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.DiscriminatorType;

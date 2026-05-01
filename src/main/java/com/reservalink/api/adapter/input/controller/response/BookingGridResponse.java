@@ -1,6 +1,6 @@
 package com.reservalink.api.adapter.input.controller.response;
 
-import com.reservalink.api.domain.BookingStatus;
+import com.reservalink.api.domain.enums.BookingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

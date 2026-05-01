@@ -2,7 +2,7 @@ package com.reservalink.api.application.service.payment;
 
 import com.reservalink.api.application.dto.TokenResponse;
 import com.reservalink.api.adapter.output.repository.entity.PaymentAccountTokenEntity;
-import com.reservalink.api.domain.PaymentMethod;
+import com.reservalink.api.domain.enums.PaymentMethod;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
 import com.reservalink.api.adapter.output.repository.PaymentAccountTokenRepository;
 import com.reservalink.api.adapter.output.repository.UserRepository;

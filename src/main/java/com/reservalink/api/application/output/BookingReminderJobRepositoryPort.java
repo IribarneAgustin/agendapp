@@ -1,7 +1,7 @@
 package com.reservalink.api.application.output;
 
 import com.reservalink.api.domain.BookingReminderJob;
-import com.reservalink.api.domain.BookingReminderJobStatus;
+import com.reservalink.api.domain.enums.BookingReminderJobStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;

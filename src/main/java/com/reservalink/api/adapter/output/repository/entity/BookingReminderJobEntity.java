@@ -1,7 +1,7 @@
 package com.reservalink.api.adapter.output.repository.entity;
 
 import com.reservalink.api.application.service.notification.NotificationChannel;
-import com.reservalink.api.domain.BookingReminderJobStatus;
+import com.reservalink.api.domain.enums.BookingReminderJobStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

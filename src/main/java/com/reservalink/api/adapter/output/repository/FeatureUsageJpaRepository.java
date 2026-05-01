@@ -1,8 +1,8 @@
 package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.FeatureUsageEntity;
-import com.reservalink.api.domain.FeatureName;
-import com.reservalink.api.domain.FeatureStatus;
+import com.reservalink.api.domain.enums.FeatureName;
+import com.reservalink.api.domain.enums.FeatureStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
