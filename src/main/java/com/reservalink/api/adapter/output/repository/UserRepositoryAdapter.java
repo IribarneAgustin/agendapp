@@ -29,6 +29,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         return Optional.ofNullable(toDomain(userEntity));
     }
 
+    @Override
+    public Optional<User> findById(String userId) {
+        return userRepository.findByIdAndEnabledTrue(userId).map(this::toDomain);
+    }
+
     private Subscription toDomain(SubscriptionEntity entity) {
         if (entity == null) {
             return null;
@@ -39,6 +44,8 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
                 .creationDateTime(entity.getCreationDateTime())
                 .expiration(entity.getExpiration())
                 .checkoutLink(entity.getCheckoutLink())
+                .subscriptionPlanId(entity.getSubscriptionPlan().getId())
+                .selectedResourcesLimit(entity.getSelectedResourcesLimit())
                 .build();
     }
 

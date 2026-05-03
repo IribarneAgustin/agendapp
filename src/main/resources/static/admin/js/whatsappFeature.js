@@ -48,8 +48,18 @@ class FeaturesManager {
             changeBtn.addEventListener('click', () => {
                 document.getElementById('active-state').classList.add('hidden');
                 document.getElementById('selection-state').classList.remove('hidden');
-                document.getElementById('selection-state')
-                    .scrollIntoView({ behavior: 'smooth' });
+                const backBtn = document.getElementById('btn-back-wa');
+                if (backBtn) backBtn.classList.remove('hidden');
+            });
+        }
+
+        const backBtn = document.getElementById('btn-back-wa');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                document.getElementById('selection-state').classList.add('hidden');
+                document.getElementById('active-state').classList.remove('hidden');
+
+                backBtn.classList.add('hidden');
             });
         }
     }

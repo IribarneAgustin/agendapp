@@ -6,6 +6,7 @@ import com.reservalink.api.domain.Booking;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,5 +33,10 @@ public class BookingRepositoryAdapter implements BookingRepositoryPort {
     @Override
     public Integer findMaxBookingNumberByPhoneNumberAndUserId(String phoneNumber, String userId) {
         return bookingJpaRepository.findMaxBookingNumber(phoneNumber, userId);
+    }
+
+    @Override
+    public boolean existsOverlappingBookingForResource(String resourceId, String id, LocalDateTime endDateTime, LocalDateTime startDateTime) {
+        return bookingJpaRepository.existsOverlappingBookingForResource(resourceId, id, endDateTime, startDateTime);
     }
 }

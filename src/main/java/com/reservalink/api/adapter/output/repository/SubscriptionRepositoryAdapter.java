@@ -1,6 +1,7 @@
 package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
+import com.reservalink.api.adapter.output.repository.entity.SubscriptionPlanEntity;
 import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.domain.Subscription;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,8 @@ public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort
         entity.setExpired(subscription.getExpired());
         entity.setCheckoutLink(subscription.getCheckoutLink());
         entity.setExpiration(subscription.getExpiration());
+        entity.setSubscriptionPlan(SubscriptionPlanEntity.builder().id(subscription.getSubscriptionPlanId()).build());
+        entity.setSelectedResourcesLimit(subscription.getSelectedResourcesLimit());
 
         SubscriptionEntity saved = jpaRepository.saveAndFlush(entity);
 
@@ -51,6 +54,8 @@ public class SubscriptionRepositoryAdapter implements SubscriptionRepositoryPort
                 .creationDateTime(entity.getCreationDateTime())
                 .expiration(entity.getExpiration())
                 .checkoutLink(entity.getCheckoutLink())
+                .subscriptionPlanId(entity.getSubscriptionPlan().getId())
+                .selectedResourcesLimit(entity.getSelectedResourcesLimit())
                 .build();
     }
 }

@@ -4,8 +4,8 @@ import com.reservalink.api.adapter.output.repository.entity.FeatureUsageEntity;
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionFeatureEntity;
 import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
-import com.reservalink.api.domain.FeatureName;
-import com.reservalink.api.domain.FeatureStatus;
+import com.reservalink.api.domain.enums.FeatureName;
+import com.reservalink.api.domain.enums.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +36,8 @@ public class FeatureUsageRepositoryAdapter implements FeatureUsageRepositoryPort
                 .subscriptionFeatureEntity(SubscriptionFeatureEntity.builder().id(featureUsage.getSubscriptionFeatureId()).build())
                 .featureStatus(featureUsage.getFeatureStatus())
                 .usage(featureUsage.getUsage())
+                .isFirstCycle(featureUsage.isFirstCycle())
+                .activatedAt(featureUsage.getActivatedAt())
                 .enabled(featureUsage.getEnabled())
                 .build();
         FeatureUsageEntity saved = featureUsageJpaRepository.save(entity);
@@ -56,6 +58,8 @@ public class FeatureUsageRepositoryAdapter implements FeatureUsageRepositoryPort
         entity.setEnabled(featureUsage.getEnabled());
         entity.setSubscriptionEntity(SubscriptionEntity.builder().id(featureUsage.getSubscriptionId()).build());
         entity.setSubscriptionFeatureEntity(SubscriptionFeatureEntity.builder().id(featureUsage.getSubscriptionFeatureId()).build());
+        entity.setActivatedAt(featureUsage.getActivatedAt());
+        entity.setIsFirstCycle(featureUsage.isFirstCycle());
         FeatureUsageEntity updated = featureUsageJpaRepository.save(entity);
         return toDomain(updated);
     }
@@ -100,6 +104,8 @@ public class FeatureUsageRepositoryAdapter implements FeatureUsageRepositoryPort
                         .featureStatus(e.getFeatureStatus())
                         .usage(e.getUsage())
                         .enabled(e.getEnabled())
+                        .activatedAt(e.getActivatedAt())
+                        .firstCycle(e.getIsFirstCycle())
                         .build()
                 )
                 .orElse(null);

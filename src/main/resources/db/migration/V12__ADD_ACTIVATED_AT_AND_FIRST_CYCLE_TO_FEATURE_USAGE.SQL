@@ -1,0 +1,3 @@
+ALTER TABLE feature_usage
+ADD COLUMN activated_at DATETIME NULL,
+ADD COLUMN is_first_cycle TINYINT(1) NULL DEFAULT 0;

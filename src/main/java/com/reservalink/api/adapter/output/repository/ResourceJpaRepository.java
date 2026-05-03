@@ -22,4 +22,6 @@ public interface ResourceJpaRepository extends JpaRepository<ResourceEntity, Str
                   AND st.capacityAvailable <> 0
             """)
     List<ResourceEntity> findAllByEnabledTrueAndUserIdAndOfferingId(String userId, String offeringId);
+
+    List<ResourceEntity> findAllByEnabledTrueAndUserEntity_SubscriptionEntity_Id(String subscriptionId);
 }

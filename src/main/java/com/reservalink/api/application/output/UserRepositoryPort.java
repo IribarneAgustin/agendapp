@@ -9,4 +9,6 @@ public interface UserRepositoryPort {
     Optional<Subscription> findUserSubscriptionByUserId(String userId);
 
     Optional<User> findBySubscriptionId(String userSubscriptionId);
+
+    Optional<User> findById(String userId);
 }

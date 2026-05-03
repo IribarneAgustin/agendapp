@@ -9,16 +9,19 @@ import com.reservalink.api.adapter.output.repository.PaymentRepository;
 import com.reservalink.api.adapter.output.repository.SlotTimeRepository;
 import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
 import com.reservalink.api.adapter.output.repository.entity.BookingPaymentEntity;
-import com.reservalink.api.adapter.output.repository.entity.ResourceEntity;
 import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
 import com.reservalink.api.application.output.BookingRepositoryPort;
+import com.reservalink.api.application.output.UserRepositoryPort;
 import com.reservalink.api.application.service.notification.NotificationService;
-import com.reservalink.api.application.service.payment.PaymentService;
+import com.reservalink.api.application.service.payment.CheckoutService;
+import com.reservalink.api.application.service.subscription.SubscriptionUsageService;
+import com.reservalink.api.application.validator.BookingValidator;
 import com.reservalink.api.application.validator.PhoneNumberValidator;
-import com.reservalink.api.domain.BookingStatus;
-import com.reservalink.api.domain.PaymentStatus;
-import com.reservalink.api.exception.BusinessErrorCodes;
-import com.reservalink.api.exception.BusinessRuleException;
+import com.reservalink.api.domain.Subscription;
+import com.reservalink.api.domain.enums.BookingStatus;
+import com.reservalink.api.domain.enums.FeatureName;
+import com.reservalink.api.domain.enums.PaymentStatus;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -34,16 +37,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class BookingServiceImpl implements BookingService {
 
-
     private final BookingRepository bookingRepository;
     private final SlotTimeRepository slotTimeRepository;
     private final ModelMapper modelMapper;
     private final NotificationService notificationService;
-    private final PaymentService paymentService;
     private final PaymentRepository bookingPaymentRepository;
     private final PhoneNumberValidator phoneNumberValidator;
     private final BookingReminderService bookingReminderService;
     private final BookingRepositoryPort bookingRepositoryPort;
+    private final BookingValidator bookingValidator;
+    private final SubscriptionUsageService subscriptionUsageService;
+    private final UserRepositoryPort userRepositoryPort;
+    private final CheckoutService checkoutService;
 
 
     @Override
@@ -51,27 +56,10 @@ public class BookingServiceImpl implements BookingService {
         SlotTimeEntity slotTimeEntity = slotTimeRepository.findById(bookingRequest.getSlotTimeId().toString())
                 .orElseThrow(() -> new IllegalArgumentException("The SlotTimeId: " + bookingRequest.getSlotTimeId() + " does not exists"));
 
+        bookingValidator.validate(bookingRequest);
+
         String cleanPhoneNumber = phoneNumberValidator.formatAndValidate(bookingRequest.getPhoneNumber());
-
-        ResourceEntity resourceEntity = slotTimeEntity.getResourceEntity();
-
-        boolean isResourceBusy = bookingRepository.existsOverlappingBookingForResource(
-                resourceEntity.getId(),
-                slotTimeEntity.getOfferingEntity().getId(),
-                slotTimeEntity.getEndDateTime(),
-                slotTimeEntity.getStartDateTime()
-        );
-
-        if (isResourceBusy) {
-            throw new BusinessRuleException(BusinessErrorCodes.RESOURCE_NOT_AVAILABLE.name());
-        }
-
         Integer newCapacity = slotTimeEntity.getCapacityAvailable() - bookingRequest.getQuantity();
-        if (newCapacity < 0){
-            log.warn("No capacity available for slotTimeId: {}. Booking creation ignored for {}", bookingRequest.getSlotTimeId(), bookingRequest.getEmail());
-            throw new BusinessRuleException(BusinessErrorCodes.NO_CAPACITY_AVAILABLE.name());
-        }
-
         Integer bookingNumber = resolveBookingNumber(bookingRequest.getPhoneNumber(), slotTimeEntity.getOfferingEntity().getUserEntity().getId());
 
         BookingEntity bookingEntity = BookingEntity.builder()
@@ -88,7 +76,7 @@ public class BookingServiceImpl implements BookingService {
             log.info("Creating new Booking with required payment");
             bookingEntity.setStatus(BookingStatus.PENDING);
             BookingEntity bookingEntitySaved = bookingRepository.saveAndFlush(bookingEntity);
-            String checkoutURL = paymentService.createBookingCheckoutURL(bookingEntitySaved, bookingRequest.getQuantity());
+            String checkoutURL = checkoutService.createBookingCheckoutURL(bookingEntitySaved, bookingRequest.getQuantity());
 
             return BookingResponse.builder()
                     .checkoutURL(checkoutURL)
@@ -101,6 +89,10 @@ public class BookingServiceImpl implements BookingService {
             bookingEntity.setStatus(BookingStatus.CONFIRMED);
             bookingEntity = bookingRepository.save(bookingEntity);
             bookingReminderService.scheduleReminder(bookingRepositoryPort.findById(bookingEntity.getId()).orElseThrow());
+
+            Subscription subscription = userRepositoryPort.findUserSubscriptionByUserId(slotTimeEntity.getOfferingEntity().getUserEntity().getId())
+                    .orElseThrow(EntityNotFoundException::new);
+            subscriptionUsageService.consume(subscription.getId(), subscription.getSubscriptionPlanId(), FeatureName.BOOKINGS);
         }
 
         sendBookingConfirmedNotifications(bookingEntity);
@@ -209,6 +201,10 @@ public class BookingServiceImpl implements BookingService {
 
             bookingReminderService.scheduleReminder(bookingRepositoryPort.findById(bookingEntity.getId()).orElseThrow());
             sendBookingConfirmedNotifications(bookingEntity);
+
+            Subscription subscription = userRepositoryPort.findUserSubscriptionByUserId(slotTimeEntity.getOfferingEntity().getUserEntity().getId())
+                    .orElseThrow(EntityNotFoundException::new);
+            subscriptionUsageService.consume(subscription.getId(), subscription.getSubscriptionPlanId(), FeatureName.BOOKINGS);
         } else {
             log.warn("Payment was not completed successfully for the externalPaymentId: {}. The booking was not confirmed.", externalPaymentId);
         }

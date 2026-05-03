@@ -1,30 +1,33 @@
 package com.reservalink.api.application.service.user;
 
-import com.reservalink.api.application.output.OfferingCategoryServiceRepositoryPort;
-import com.reservalink.api.application.output.ResourceRepositoryPort;
 import com.reservalink.api.adapter.input.controller.request.UserLoginRequest;
 import com.reservalink.api.adapter.input.controller.request.UserRegistrationRequest;
 import com.reservalink.api.adapter.input.controller.request.UserRequest;
 import com.reservalink.api.adapter.input.controller.response.UserAuthResponse;
-import com.reservalink.api.application.service.offering.OfferingCategoryService;
-import com.reservalink.api.domain.OfferingCategory;
-import com.reservalink.api.domain.Resource;
-import com.reservalink.api.domain.User;
-import com.reservalink.api.exception.BusinessErrorCodes;
-import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.adapter.output.repository.BrandRepository;
 import com.reservalink.api.adapter.output.repository.RecoverPasswordTokenRepository;
 import com.reservalink.api.adapter.output.repository.UserRepository;
 import com.reservalink.api.adapter.output.repository.entity.BrandEntity;
 import com.reservalink.api.adapter.output.repository.entity.RecoverPasswordTokenEntity;
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionEntity;
+import com.reservalink.api.adapter.output.repository.entity.SubscriptionPlanEntity;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
+import com.reservalink.api.application.output.OfferingCategoryServiceRepositoryPort;
+import com.reservalink.api.application.output.ResourceRepositoryPort;
+import com.reservalink.api.application.output.SubscriptionPlanRepositoryPort;
+import com.reservalink.api.application.service.notification.NotificationService;
 import com.reservalink.api.config.security.Authority;
 import com.reservalink.api.config.security.JWTUtils;
-import com.reservalink.api.application.service.notification.NotificationService;
-import com.reservalink.api.application.service.payment.PaymentService;
+import com.reservalink.api.domain.OfferingCategory;
+import com.reservalink.api.domain.Resource;
+import com.reservalink.api.domain.SubscriptionPlan;
+import com.reservalink.api.domain.User;
+import com.reservalink.api.domain.enums.SubscriptionPlanCode;
+import com.reservalink.api.exception.BusinessErrorCodes;
+import com.reservalink.api.exception.BusinessRuleException;
 import com.reservalink.api.utils.GenericAppConstants;
 import com.reservalink.api.utils.TokenHelper;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -42,7 +45,6 @@ import org.springframework.stereotype.Service;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,16 +55,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService, UserDetailsService {
 
+    private static final Integer DEFAULT_SELECTED_RESOURCES_LIMT = 2;
+    public final String DEFAULT_CHECKOUT_PATH = "/public/subscription-plans.html";
+
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final BCryptPasswordEncoder passwordEncoder;
     private final JWTUtils jwtUtils;
     private final BrandRepository brandRepository;
-    private final PaymentService paymentService;
     private final NotificationService notificationService;
     private final RecoverPasswordTokenRepository recoverPasswordTokenRepository;
     private final ResourceRepositoryPort resourceRepository;
     private final OfferingCategoryServiceRepositoryPort categoryRepository;
+    private final SubscriptionPlanRepositoryPort subscriptionPlanRepositoryPort;
 
     @Value("${api.base.url}")
     private String baseURL;
@@ -85,19 +90,21 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                     .build());
             userEntity.setBrandEntity(brandEntity);
 
-            UserEntity savedUserEntity = userRepository.saveAndFlush(userEntity);
-            String checkoutLink = paymentService.createSubscriptionCheckoutURL(savedUserEntity.getId(), Collections.emptyList());
+            SubscriptionPlan subscriptionPlan = subscriptionPlanRepositoryPort.findByCode(SubscriptionPlanCode.FREE_TIER)
+                    .orElseThrow(EntityNotFoundException::new);
 
             SubscriptionEntity subscriptionEntity = SubscriptionEntity.builder()
                     .expired(Boolean.FALSE)
                     .enabled(Boolean.TRUE)
                     .creationDateTime(LocalDateTime.now())
                     .expiration(LocalDateTime.now().plusDays(GenericAppConstants.FREE_TIER_DAYS))
-                    .checkoutLink(checkoutLink)
+                    .checkoutLink(baseURL + DEFAULT_CHECKOUT_PATH)
+                    .subscriptionPlan(SubscriptionPlanEntity.builder().id(subscriptionPlan.getId()).build())
+                    .selectedResourcesLimit(DEFAULT_SELECTED_RESOURCES_LIMT)
                     .build();
             userEntity.setSubscriptionEntity(subscriptionEntity);
 
-            savedUserEntity = userRepository.saveAndFlush(userEntity);
+            UserEntity savedUserEntity = userRepository.saveAndFlush(userEntity);
 
             Resource resource = Resource.builder()
                     .name(savedUserEntity.getName())

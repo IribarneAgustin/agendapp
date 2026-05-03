@@ -1,6 +1,6 @@
 package com.reservalink.api.adapter.output.repository.entity;
 
-import com.reservalink.api.domain.FeatureStatus;
+import com.reservalink.api.domain.enums.FeatureStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,6 +14,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+
+import java.time.LocalDateTime;
 
 
 @NoArgsConstructor
@@ -40,4 +42,10 @@ public class FeatureUsageEntity extends PersistentObject {
     @Column(name = "feature_status", nullable = false)
     @Enumerated(EnumType.STRING)
     private FeatureStatus featureStatus;
+
+    @Column(name = "activated_at")
+    private LocalDateTime activatedAt;
+
+    @Column(name = "is_first_cycle")
+    private Boolean isFirstCycle;
 }

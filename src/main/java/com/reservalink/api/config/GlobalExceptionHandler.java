@@ -16,13 +16,13 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> unexpectedErrorHandler(Exception e){
+    public ResponseEntity<String> unexpectedErrorHandler(Exception e) {
         log.error("Unexpected error:" + e.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<String> unauthorizedExceptionHandler(BadCredentialsException e){
+    public ResponseEntity<String> unauthorizedExceptionHandler(BadCredentialsException e) {
         log.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
     }
@@ -32,8 +32,8 @@ public class GlobalExceptionHandler {
         log.error(e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of(
-                    "errorCode", e.getCode(),
-                    "details", e.getDetails()
+                        "errorCode", e.getCode(),
+                        "details", e.getDetails()
                 ));
     }
 
@@ -43,5 +43,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleBadRequest(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
 
 }

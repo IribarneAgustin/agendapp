@@ -2,7 +2,7 @@ package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionFeatureEntity;
 import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
-import com.reservalink.api.domain.FeatureName;
+import com.reservalink.api.domain.enums.FeatureName;
 import com.reservalink.api.domain.SubscriptionFeature;
 import org.springframework.stereotype.Component;
 

@@ -2,12 +2,13 @@ package com.reservalink.api.application.service.notification;
 
 import com.reservalink.api.adapter.output.repository.entity.BookingEntity;
 import com.reservalink.api.adapter.output.repository.entity.SlotTimeEntity;
-import com.reservalink.api.adapter.output.repository.entity.SubscriptionPaymentEntity;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
 import com.reservalink.api.application.service.notification.strategy.NotificationStrategy;
 import com.reservalink.api.application.service.notification.strategy.NotificationStrategyResolver;
 import com.reservalink.api.domain.Booking;
-import com.reservalink.api.domain.PaymentStatus;
+import com.reservalink.api.domain.SubscriptionPayment;
+import com.reservalink.api.domain.User;
+import com.reservalink.api.domain.enums.PaymentStatus;
 import com.reservalink.api.utils.GenericAppConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -157,7 +158,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void sendSubscriptionPayment(SubscriptionPaymentEntity subscriptionPayment, UserEntity user) {
+    public void sendSubscriptionPayment(SubscriptionPayment subscriptionPayment, User user, String recoverSubscriptionLink) {
         log.info("Sending subscription payment notification for user {}", user.getEmail());
         NotificationStrategy strategy = notificationStrategyResolver.resolve(NotificationChannel.EMAIL);
         boolean success = subscriptionPayment.getPaymentStatus().equals(PaymentStatus.COMPLETED);
@@ -174,7 +175,7 @@ public class NotificationServiceImpl implements NotificationService {
         args.put("month", month);
 
         if (!success) {
-            args.put("recoverSubscriptionLink", user.getSubscriptionEntity().getCheckoutLink());
+            args.put("recoverSubscriptionLink", recoverSubscriptionLink);
             args.put("failed", "true");
         } else {
             args.put("success", "true");

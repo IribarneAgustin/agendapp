@@ -1,6 +1,6 @@
 package com.reservalink.api.application.output;
 
-import com.reservalink.api.domain.FeatureName;
+import com.reservalink.api.domain.enums.FeatureName;
 import com.reservalink.api.domain.SubscriptionFeature;
 
 import java.util.List;

@@ -21,4 +21,6 @@ public interface ResourceRepositoryPort {
     Resource findResourceDomainById(String resourceId);
 
     List<Resource> findAllByUserIdAndOfferingId(String userId, String offeringId);
+
+    List<Resource> findAllBySubscriptionId(String subscriptionId);
 }

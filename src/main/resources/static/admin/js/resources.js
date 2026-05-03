@@ -57,7 +57,28 @@ async function saveResource() {
         );
 
         if (!response.ok) {
-            throw new Error();
+            const errorCode = await handleError(response);
+            if (errorCode === 'FEATURE_LIMIT_EXCEEDED') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Llegaste al límite de tu plan',
+                    html: `
+                        <p>Tu plan actual no permite agregar más profesionales.</p>
+                        <p><b>Actualizá tu plan para seguir creciendo</b></p>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonText: 'Actualizar plan',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#6366f1'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '/admin/subscription-status.html';
+                    }
+                });
+                return;
+            } else {
+                throw new Error("Error inesperado.");
+            }
         }
 
         Swal.fire({
@@ -216,4 +237,13 @@ function resetForm() {
     emailInput.value = '';
 
     deleteBtn.disabled = true;
+}
+
+async function handleError(response) {
+    try {
+        const body = await response.json();
+        return body.errorCode;
+    } catch {
+        return null;
+    }
 }

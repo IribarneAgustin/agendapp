@@ -29,4 +29,6 @@ public interface UserRepository extends JpaRepository<UserEntity, String> {
     Optional<SubscriptionEntity> findByUserIdAndEnabledTrue(String userId);
 
     Optional<UserEntity> findBySubscriptionEntity_IdAndEnabledTrue(String userSubscriptionId);
+
+    Optional<UserEntity> findByIdAndEnabledTrue(String userId);
 }

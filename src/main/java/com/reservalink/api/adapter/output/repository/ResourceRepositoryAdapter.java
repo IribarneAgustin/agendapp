@@ -1,9 +1,10 @@
 package com.reservalink.api.adapter.output.repository;
 
-import com.reservalink.api.domain.Resource;
-import com.reservalink.api.application.output.ResourceRepositoryPort;
 import com.reservalink.api.adapter.output.repository.entity.ResourceEntity;
 import com.reservalink.api.adapter.output.repository.entity.UserEntity;
+import com.reservalink.api.application.output.ResourceRepositoryPort;
+import com.reservalink.api.domain.Resource;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
@@ -11,15 +12,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
+@RequiredArgsConstructor
 public class ResourceRepositoryAdapter implements ResourceRepositoryPort {
 
     private final ResourceJpaRepository resourceJpaRepository;
     private final ModelMapper modelMapper;
-
-    public ResourceRepositoryAdapter(ResourceJpaRepository resourceJpaRepository, ModelMapper modelMapper) {
-        this.resourceJpaRepository = resourceJpaRepository;
-        this.modelMapper = modelMapper;
-    }
 
     @Override
     public List<Resource> findAllByUserId(String userId) {
@@ -68,6 +65,14 @@ public class ResourceRepositoryAdapter implements ResourceRepositoryPort {
     @Override
     public List<Resource> findAllByUserIdAndOfferingId(String userId, String offeringId) {
         return resourceJpaRepository.findAllByEnabledTrueAndUserIdAndOfferingId(userId, offeringId)
+                .stream()
+                .map(entity -> modelMapper.map(entity, Resource.class))
+                .toList();
+    }
+
+    @Override
+    public List<Resource> findAllBySubscriptionId(String subscriptionId) {
+        return resourceJpaRepository.findAllByEnabledTrueAndUserEntity_SubscriptionEntity_Id(subscriptionId)
                 .stream()
                 .map(entity -> modelMapper.map(entity, Resource.class))
                 .toList();

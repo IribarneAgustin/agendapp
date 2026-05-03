@@ -2,8 +2,8 @@ package com.reservalink.api.adapter.input.controller;
 
 import com.reservalink.api.adapter.input.controller.request.MpWebhookRequest;
 import com.reservalink.api.adapter.input.controller.request.MpWebhookType;
-import com.reservalink.api.application.service.booking.BookingService;
 import com.reservalink.api.application.service.payment.PaymentService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,15 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/payment")
+@RequiredArgsConstructor
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final BookingService bookingService;
-
-    public PaymentController(PaymentService paymentService, BookingService bookingService) {
-        this.paymentService = paymentService;
-        this.bookingService = bookingService;
-    }
 
     @PostMapping("/mercadopago/webhook")
     public ResponseEntity<Void> handleMpWebhook(@RequestBody MpWebhookRequest payload) {
@@ -33,10 +28,7 @@ public class PaymentController {
             MpWebhookType type = payload.typeEnum();
             String id = payload.data() != null ? payload.data().id() : null;
             if (MpWebhookType.PAYMENT == type) {
-                String externalId = paymentService.processPaymentWebhook(id);
-                if (externalId != null && !externalId.startsWith("SUBSCRIPTION-") && !externalId.startsWith("FEATURE-")) {
-                    bookingService.confirmBooking(externalId);
-                }
+                paymentService.processPaymentWebhook(id);
             } else {
                 log.warn("Unhandled webhook type: {}", payload.type());
             }

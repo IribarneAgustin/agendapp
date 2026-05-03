@@ -1,6 +1,5 @@
 package com.reservalink.api.domain;
 
-import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,4 +17,6 @@ public class Subscription {
     private LocalDateTime creationDateTime;
     private LocalDateTime expiration;
     private String checkoutLink;
+    private String subscriptionPlanId;
+    private Integer selectedResourcesLimit;
 }

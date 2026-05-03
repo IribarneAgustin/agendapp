@@ -5,24 +5,31 @@ import com.reservalink.api.application.dto.FeatureUsageDetail;
 import com.reservalink.api.application.dto.FeatureUsageResponse;
 import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionFeatureRepositoryPort;
+import com.reservalink.api.application.output.SubscriptionPlanRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.application.output.UserRepositoryPort;
+import com.reservalink.api.application.service.payment.CheckoutService;
 import com.reservalink.api.application.service.payment.PaymentService;
-import com.reservalink.api.domain.FeatureStatus;
 import com.reservalink.api.domain.FeatureUsage;
 import com.reservalink.api.domain.Subscription;
 import com.reservalink.api.domain.SubscriptionFeature;
+import com.reservalink.api.domain.SubscriptionPlan;
+import com.reservalink.api.domain.enums.FeatureStatus;
 import com.reservalink.api.exception.BusinessErrorCodes;
 import com.reservalink.api.exception.BusinessRuleException;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class FeatureUsageServiceImpl implements FeatureUsageService {
 
     private final SubscriptionFeatureRepositoryPort subscriptionFeatureRepository;
@@ -30,14 +37,8 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
     private final PaymentService paymentService;
     private final FeatureUsageRepositoryPort featureUsageRepositoryPort;
     private final SubscriptionRepositoryPort subscriptionRepositoryPort;
-
-    public FeatureUsageServiceImpl(SubscriptionFeatureRepositoryPort subscriptionFeatureRepository, UserRepositoryPort userRepositoryPort, PaymentService paymentService, FeatureUsageRepositoryPort featureUsageRepositoryPort, SubscriptionRepositoryPort subscriptionRepositoryPort) {
-        this.subscriptionFeatureRepository = subscriptionFeatureRepository;
-        this.userRepositoryPort = userRepositoryPort;
-        this.paymentService = paymentService;
-        this.featureUsageRepositoryPort = featureUsageRepositoryPort;
-        this.subscriptionRepositoryPort = subscriptionRepositoryPort;
-    }
+    private final CheckoutService checkoutService;
+    private final SubscriptionPlanRepositoryPort subscriptionPlanRepositoryPort;
 
 
     @Override
@@ -53,6 +54,7 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
                 .subscriptionId(subscription.getId())
                 .featureStatus(FeatureStatus.PENDING)
                 .enabled(true)
+                .firstCycle(false)
                 .usage(0)
                 .build();
 
@@ -80,8 +82,9 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
         featureUsage.setFeatureStatus(FeatureStatus.DELETED);
         featureUsageRepositoryPort.update(featureUsage);
 
-        List<FeatureUsage> featureUsagesAvailable = featureUsageRepositoryPort.findAllAvailableByUserId(userId);
-        String newSubscriptionCheckoutURL = paymentService.createSubscriptionCheckoutURL(userId, featureUsagesAvailable);
+        SubscriptionPlan currentPlan = subscriptionPlanRepositoryPort.findByUserId(UUID.fromString(userId))
+                .orElseThrow(() -> new EntityNotFoundException("Subscription plan not found"));
+        String newSubscriptionCheckoutURL = checkoutService.createSubscriptionCheckoutUrl(userId, currentPlan.getCode(), subscription.getSelectedResourcesLimit());
         subscription.setCheckoutLink(newSubscriptionCheckoutURL);
         subscriptionRepositoryPort.update(subscription);
     }

@@ -1,7 +1,7 @@
 package com.reservalink.api.adapter.output.repository;
 
 import com.reservalink.api.adapter.output.repository.entity.SubscriptionFeatureEntity;
-import com.reservalink.api.domain.FeatureName;
+import com.reservalink.api.domain.enums.FeatureName;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

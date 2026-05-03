@@ -2,6 +2,7 @@ package com.reservalink.api.application.output;
 
 import com.reservalink.api.domain.Booking;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,4 +13,6 @@ public interface BookingRepositoryPort {
     List<Booking> findAllByIds(List<String> bookingIds);
 
     Integer findMaxBookingNumberByPhoneNumberAndUserId(String email, String userId);
+
+    boolean existsOverlappingBookingForResource(String resourceId, String id, LocalDateTime endDateTime, LocalDateTime startDateTime);
 }

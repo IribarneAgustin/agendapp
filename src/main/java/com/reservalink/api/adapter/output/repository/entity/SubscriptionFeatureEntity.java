@@ -1,6 +1,6 @@
 package com.reservalink.api.adapter.output.repository.entity;
 
-import com.reservalink.api.domain.FeatureName;
+import com.reservalink.api.domain.enums.FeatureName;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
