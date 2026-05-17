@@ -1,5 +1,6 @@
 package com.reservalink.api.application.dto;
 
+import com.reservalink.api.domain.enums.SubscriptionPlanCode;
 import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
@@ -11,6 +12,8 @@ import java.util.Map;
 @SuperBuilder
 public class SubscriptionPaymentMetadata extends PaymentMetadata {
     private List<String> premiumFeatureIds;
+    private SubscriptionPlanCode subscriptionPlanCode;
+    private Integer selectedResourcesLimit;
 
     @Override
     public Map<String, Object> toMap() {
@@ -19,6 +22,8 @@ public class SubscriptionPaymentMetadata extends PaymentMetadata {
             premiumFeatureIds = Collections.emptyList();
         }
         map.put("premiumFeatures", premiumFeatureIds);
+        map.put("subscriptionPlan", subscriptionPlanCode);
+        map.put("selectedResourcesLimit", selectedResourcesLimit);
         return map;
     }
 }

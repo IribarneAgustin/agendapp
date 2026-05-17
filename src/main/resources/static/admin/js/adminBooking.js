@@ -642,7 +642,7 @@ class UserOfferingsManager {
                 if (errorBody?.errorCode === "NO_CAPACITY_AVAILABLE") {
                     throw new Error('El horario que intentaste reservar acaba de agotarse. Por favor, selecciona otro.');
                 }
-                throw new Error(errorBody.message || 'Error desconocido al crear la reserva.');
+                throw new Error(errorBody.message || 'Error inesperado al crear la reserva.');
             }
 
             const result = await response.json();

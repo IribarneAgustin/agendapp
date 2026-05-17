@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @Builder
 @Data
 public class SubscriptionPayment {
+    private String id;
     private BigDecimal amount;
     private LocalDateTime paymentDate;
     private PaymentMethod paymentMethod;

@@ -60,7 +60,7 @@ public class FeatureUsageServiceImpl implements FeatureUsageService {
 
         FeatureUsage savedFeatureUsage = featureUsageRepositoryPort.create(newFeatureUsage);
 
-        String checkoutURL = paymentService.createPremiumFeatureCheckoutURL(subscriptionFeature, savedFeatureUsage.getId());
+        String checkoutURL = checkoutService.createPremiumFeatureCheckoutURL(subscriptionFeature, savedFeatureUsage.getId(), userId);
 
         return FeatureUsageResponse.builder()
                 .featureUsage(savedFeatureUsage)

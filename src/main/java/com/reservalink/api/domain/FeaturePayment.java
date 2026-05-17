@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookingPayment {
+public class FeaturePayment {
     private String id;
     private BigDecimal amount;
     private LocalDateTime paymentDate;
@@ -22,5 +22,5 @@ public class BookingPayment {
     private String externalId;
     private PaymentStatus paymentStatus;
     private boolean enabled;
-    private String bookingId;
+    private String featureUsageId;
 }

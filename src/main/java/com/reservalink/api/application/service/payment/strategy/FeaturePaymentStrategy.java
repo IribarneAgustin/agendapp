@@ -2,16 +2,20 @@ package com.reservalink.api.application.service.payment.strategy;
 
 import com.reservalink.api.application.dto.PaymentDetails;
 import com.reservalink.api.application.output.FeatureUsageRepositoryPort;
+import com.reservalink.api.application.output.PaymentRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionPlanRepositoryPort;
 import com.reservalink.api.application.output.SubscriptionRepositoryPort;
 import com.reservalink.api.application.output.UserRepositoryPort;
 import com.reservalink.api.application.service.payment.CheckoutService;
+import com.reservalink.api.domain.FeaturePayment;
 import com.reservalink.api.domain.FeatureUsage;
 import com.reservalink.api.domain.Subscription;
+import com.reservalink.api.domain.SubscriptionPayment;
 import com.reservalink.api.domain.SubscriptionPlan;
 import com.reservalink.api.domain.User;
 import com.reservalink.api.domain.enums.FeatureName;
 import com.reservalink.api.domain.enums.FeatureStatus;
+import com.reservalink.api.domain.enums.PaymentStatus;
 import com.reservalink.api.domain.enums.PaymentType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +35,7 @@ public class FeaturePaymentStrategy implements PaymentProcessor {
     private final UserRepositoryPort userRepositoryPort;
     private final CheckoutService checkoutService;
     private final SubscriptionPlanRepositoryPort subscriptionPlanRepositoryPort;
+    private final PaymentRepositoryPort paymentRepositoryPort;
 
     @Override
     public PaymentType getType() {
@@ -41,6 +46,9 @@ public class FeaturePaymentStrategy implements PaymentProcessor {
     public void process(PaymentDetails details) {
         String externalId = details.getExternalId();
         String featureUsageId = externalId.replace("FEATURE-", "");
+        FeaturePayment featurePayment = paymentRepositoryPort.findFeaturePaymentByExternalId(externalId)
+                .orElseThrow(() -> new RuntimeException("Feature Payment not found"));
+
         if (details.isApproved()) {
             log.info("Processing payment for FeatureUsage id {}", featureUsageId);
             FeatureUsage featureUsage = featureUsageRepositoryPort.findById(featureUsageId)
@@ -76,5 +84,11 @@ public class FeaturePaymentStrategy implements PaymentProcessor {
         } else {
             log.info("Feature payment failed for Feature Usage id {}", featureUsageId);
         }
+
+        featurePayment.setPaymentStatus(details.isApproved() ? PaymentStatus.COMPLETED : PaymentStatus.FAILED);
+        featurePayment.setPaymentDate(LocalDateTime.now());
+        featurePayment.setPaymentMethod(details.getPaymentMethod());
+
+        paymentRepositoryPort.save(featurePayment);
     }
 }

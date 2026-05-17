@@ -69,32 +69,4 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
                 .checkoutLink(subscription.getCheckoutLink())
                 .build();
     }
-
-        /*
-
-        Subscription subscription = userRepositoryPort.findUserSubscriptionByUserId(userId.toString())
-        .orElseThrow(() -> new EntityNotFoundException("Subscription not found"));
-
-        if (SubscriptionPlanCode.PROFESSIONAL == planCode) {
-            subscription.setSelectedResourcesLimit(selectedResources);
-        } else {
-            subscription.setSelectedResourcesLimit(targetPlan.getMaxResources());
-        }
-        subscription.setSubscriptionPlanId(targetPlan.getId());
-
-        String externalId = String.format("%s-%s", PaymentType.SUBSCRIPTION.name(), userId);
-        SubscriptionPaymentMetadata metadata = new SubscriptionPaymentMetadata(userId.toString(), planCode, subscription.getSelectedResourcesLimit());
-
-        String checkoutUrl = paymentGatewayPort.generateCheckoutUrl(
-                "ReservaLink - Suscripción " + planCode.name(),
-                finalPrice,
-                externalId,
-                metadata
-        );
-
-        subscription.setCheckoutLink(checkoutUrl);
-
-        subscriptionPlanUsageService.renew(userId.toString(), subscription.getId());
-        subscriptionRepositoryPort.update(subscription);
-    }*/
 }

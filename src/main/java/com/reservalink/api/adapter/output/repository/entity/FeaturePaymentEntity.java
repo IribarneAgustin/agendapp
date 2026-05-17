@@ -18,11 +18,9 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@DiscriminatorValue("BOOKING")
-public class BookingPaymentEntity extends PaymentEntity {
-
+@DiscriminatorValue("FEATURE")
+public class FeaturePaymentEntity extends PaymentEntity {
     @ManyToOne
-    @JoinColumn(name = "booking_id")
-    private BookingEntity bookingEntity;
-
+    @JoinColumn(name = "feature_usage_id")
+    private FeatureUsageEntity featureUsage;
 }

@@ -1,15 +1,16 @@
 class SubscriptionManager {
     constructor() {
         this.baseUrl = typeof BASE_URL !== 'undefined' ? BASE_URL : '';
+        this.userSubscriptionData = null; // Store fetched data here
         this.init();
     }
 
-    init() {
-        document.addEventListener('DOMContentLoaded', () => {
-            this.setupPageTexts();
-            this.initDynamicPricing();
-            this.bindEvents();
-        });
+    async init() {
+        this.setupPageTexts();
+        this.initDynamicPricing();
+        this.bindEvents();
+
+        await this.fetchAndStoreSubscription();
     }
 
     setupPageTexts() {

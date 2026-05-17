@@ -14,6 +14,7 @@ public class SubscriptionUsageRepositoryMapper {
         }
 
         return SubscriptionUsageEntity.builder()
+                .id(domain.getId())
                 .subscription(SubscriptionEntity.builder().id(domain.getSubscriptionId()).build())
                 .bookingUsage(domain.getBookingUsage())
                 .startPeriodDateTime(domain.getStartPeriodDateTime())
@@ -27,6 +28,7 @@ public class SubscriptionUsageRepositoryMapper {
             return null;
         }
         return SubscriptionUsage.builder()
+                .id(entity.getId())
                 .subscriptionId(entity.getSubscription().getId())
                 .bookingUsage(entity.getBookingUsage())
                 .startPeriodDateTime(entity.getStartPeriodDateTime())

@@ -51,7 +51,7 @@ class RegistrationManager {
 
     handleApiError(response, errorBody) {
         const { errorCode, details } = errorBody || {};
-        let errorMessage = 'Error desconocido al registrar usuario. Inténtalo de nuevo.';
+        let errorMessage = 'Error inesperado al registrar usuario. Inténtalo de nuevo.';
 
         if (errorCode === 'UNIQUE_FIELD_ALREADY_EXISTS') {
 

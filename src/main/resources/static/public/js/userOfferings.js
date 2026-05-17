@@ -708,7 +708,7 @@ class UserOfferingsManager {
                     throw new Error('El número de teléfono ingresado es inválido. Por favor, intente nuevamente.');
                 }
 
-                throw new Error(errorBody.message || 'Error desconocido al crear la reserva.');
+                throw new Error(errorBody.message || 'Error inesperado al crear la reserva.');
             }
 
             const result = await response.json();

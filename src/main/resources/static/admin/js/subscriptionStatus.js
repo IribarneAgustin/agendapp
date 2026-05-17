@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    let subscriptionData = null;
     try {
-        const data = await fetchSubscription();
-        renderMainPlanMetrics(data);
-        window.userSubscriptionData = data;
+        subscriptionData = await fetchSubscription();
+        renderMainPlanMetrics(subscriptionData);
+        window.userSubscriptionData = subscriptionData;
     } catch (e) {
         console.error('Error loading subscription:', e);
     }
-
-    initDynamicPricing();
+    initDynamicPricing(subscriptionData);
 });
 
 async function fetchSubscription() {
@@ -30,10 +30,36 @@ window.handleCheckout = async function(planCode) {
     const baseUrl = typeof BASE_URL !== 'undefined' ? BASE_URL : '';
     const userDataStorage = JSON.parse(localStorage.getItem('userData'));
 
-    let selectedResources = 0;
+    let selectedResources = 2; // Default limit for BASIC and FREE_TIER
+
     if (planCode === 'PROFESSIONAL') {
         const slider = document.getElementById('pro-slider');
         selectedResources = slider ? parseInt(slider.value) : 2;
+    }
+
+    if (window.userSubscriptionData && window.userSubscriptionData.features) {
+        const resourceFeature = window.userSubscriptionData.features.find(f => f.featureName === 'RESOURCES');
+        const currentlyUsed = resourceFeature ? (resourceFeature.used ?? 0) : 0;
+
+        if (selectedResources < currentlyUsed) {
+            const excess = currentlyUsed - selectedResources;
+
+            Swal.fire({
+                title: 'Acción requerida',
+                text: `Actualmente tienes ${currentlyUsed} profesionales activos. Para cambiar a este límite (${selectedResources}), primero debes desactivar o eliminar ${excess} profesional(es).`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ir a Profesionales',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/admin/resources.html';
+                }
+            });
+            return;
+        }
     }
 
     const { isConfirmed } = await Swal.fire({
@@ -172,14 +198,28 @@ function markActivePlanInComparison(planCode) {
         const btn = card.querySelector('button');
         if (btn) {
             if (code === normalized) {
-                btn.disabled = true;
-                btn.className = "w-full py-2 bg-gray-100 text-gray-400 rounded-xl font-bold text-xs cursor-not-allowed";
-                btn.textContent = "Plan Activo";
-
                 card.classList.add('border-2', 'border-indigo-600');
+
+                if (code === 'PROFESSIONAL') {
+                    // Initially disabled because slider matches current configuration on load
+                    btn.disabled = true;
+                    btn.className = "w-full py-2 bg-gray-100 text-gray-400 rounded-xl font-bold text-xs cursor-not-allowed transition-colors";
+                    btn.textContent = "Plan Activo";
+                    btn.onclick = () => window.handleCheckout(code);
+                } else {
+                    btn.disabled = true;
+                    btn.className = "w-full py-2 bg-gray-100 text-gray-400 rounded-xl font-bold text-xs cursor-not-allowed";
+                    btn.textContent = "Plan Activo";
+                }
             } else {
                 if (code !== 'FREE_TIER') {
                     btn.disabled = false;
+                    if (code === 'PROFESSIONAL') {
+                        btn.className = "w-full py-2 bg-indigo-600 text-white rounded-xl font-bold text-xs hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all";
+                    } else {
+                        btn.className = "w-full py-2 bg-gray-50 border border-gray-200 rounded-xl font-bold text-xs hover:bg-gray-100 transition-colors";
+                    }
+                    btn.textContent = "Elegir Plan";
                     btn.onclick = () => window.handleCheckout(code);
                 }
             }
@@ -187,7 +227,7 @@ function markActivePlanInComparison(planCode) {
     });
 }
 
-function initDynamicPricing() {
+function initDynamicPricing(data) {
     const BASE_PRICE = 29000;
     const PRICE_PER_PRO = 6000;
     const INCLUDED_PROS = 2;
@@ -195,8 +235,20 @@ function initDynamicPricing() {
     const slider = document.getElementById('pro-slider');
     const priceEl = document.getElementById('pro-price');
     const countEl = document.getElementById('pro-count');
+    const proCard = document.getElementById('plan-PROFESSIONAL-card');
 
     if (!slider) return;
+
+    let currentLimit = 2;
+    if (data && data.features) {
+        const resourceFeature = data.features.find(f => f.featureName === 'RESOURCES');
+        if (resourceFeature && resourceFeature.limit) {
+            currentLimit = resourceFeature.limit;
+            slider.value = currentLimit;
+        }
+    }
+
+    const isInitiallyProfessional = data && (data.planName || '').toUpperCase() === 'PROFESSIONAL';
 
     function updatePrice() {
         const pros = parseInt(slider.value);
@@ -205,6 +257,21 @@ function initDynamicPricing() {
 
         if (priceEl) priceEl.textContent = formatPrice(total);
         if (countEl) countEl.textContent = pros;
+
+        if (isInitiallyProfessional && proCard) {
+            const btn = proCard.querySelector('button');
+            if (btn) {
+                if (pros === currentLimit) {
+                    btn.disabled = true;
+                    btn.className = "w-full py-2 bg-gray-100 text-gray-400 rounded-xl font-bold text-xs cursor-not-allowed transition-colors";
+                    btn.textContent = "Plan Activo";
+                } else {
+                    btn.disabled = false;
+                    btn.className = "w-full py-2 bg-indigo-100 text-indigo-700 rounded-xl font-bold text-xs hover:bg-indigo-200 transition-colors";
+                    btn.textContent = "Actualizar Cantidad";
+                }
+            }
+        }
     }
 
     slider.addEventListener('input', updatePrice);

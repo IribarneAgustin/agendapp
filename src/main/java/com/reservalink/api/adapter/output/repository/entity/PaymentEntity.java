@@ -28,7 +28,7 @@ import java.time.LocalDateTime;
 @Audited
 @AuditTable(value="payment_audit")
 @DiscriminatorColumn(name = "payment_type", discriminatorType = DiscriminatorType.STRING)
-public abstract class Payment extends PersistentObject {
+public abstract class PaymentEntity extends PersistentObject {
 
     @Column(name = "amount")
     private BigDecimal amount;

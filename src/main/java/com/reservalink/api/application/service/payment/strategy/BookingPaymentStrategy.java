@@ -2,19 +2,23 @@ package com.reservalink.api.application.service.payment.strategy;
 
 import com.reservalink.api.application.dto.PaymentDetails;
 import com.reservalink.api.application.output.PaymentRepositoryPort;
+import com.reservalink.api.application.service.booking.BookingService;
 import com.reservalink.api.domain.BookingPayment;
 import com.reservalink.api.domain.enums.PaymentMethod;
 import com.reservalink.api.domain.enums.PaymentStatus;
 import com.reservalink.api.domain.enums.PaymentType;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class BookingPaymentStrategy implements PaymentProcessor {
 
     private final PaymentRepositoryPort paymentRepositoryPort;
+    private final BookingService bookingService;
 
     @Override
     public PaymentType getType() {
@@ -32,5 +36,6 @@ public class BookingPaymentStrategy implements PaymentProcessor {
             payment.setPaymentStatus(PaymentStatus.FAILED);
         }
         paymentRepositoryPort.save(payment);
+        bookingService.confirmBooking(details.getExternalId());
     }
 }

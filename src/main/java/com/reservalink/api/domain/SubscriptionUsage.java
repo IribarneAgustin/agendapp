@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @Data
 public class SubscriptionUsage {
+    private String id;
     private String subscriptionId;
     private Integer bookingUsage;
     private LocalDateTime startPeriodDateTime;

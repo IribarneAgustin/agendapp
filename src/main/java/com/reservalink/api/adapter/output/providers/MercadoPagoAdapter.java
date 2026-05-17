@@ -3,6 +3,7 @@ package com.reservalink.api.adapter.output.providers;
 import com.reservalink.api.application.dto.PaymentCheckoutRequest;
 import com.reservalink.api.application.dto.PaymentDetails;
 import com.reservalink.api.application.output.PaymentGatewayPort;
+import com.reservalink.api.domain.enums.PaymentMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -42,6 +43,7 @@ public class MercadoPagoAdapter implements PaymentGatewayPort {
         Map<String, Object> body = Map.of(
                 "items", List.of(Map.of(
                         "title", request.getTitle(),
+                        "description", request.getDescription(),
                         "quantity", 1,
                         "currency_id", request.getCurrency().name(),
                         "unit_price", request.getAmount()
@@ -93,6 +95,7 @@ public class MercadoPagoAdapter implements PaymentGatewayPort {
                     .approved("approved".equalsIgnoreCase(status))
                     .amount(new BigDecimal(String.valueOf(body.get("transaction_amount"))))
                     .metadata((Map<String, Object>) body.get("metadata"))
+                    .paymentMethod(PaymentMethod.MERCADO_PAGO)
                     .build();
 
         } catch (Exception e) {

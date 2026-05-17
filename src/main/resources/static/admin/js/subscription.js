@@ -209,7 +209,7 @@ class SubscriptionManager {
                 });
             } else {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Error desconocido al cancelar la suscripción.');
+                throw new Error(errorData.message || 'Error inesperado al cancelar la suscripción.');
             }
         } catch (error) {
             console.error('Cancellation Error:', error);

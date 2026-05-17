@@ -19,7 +19,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @DiscriminatorValue("SUBSCRIPTION")
-public class SubscriptionPaymentEntity extends Payment {
+public class SubscriptionPaymentEntity extends PaymentEntity {
 
     @ManyToOne
     @JoinColumn(name = "subscription_id")

@@ -1,5 +1,6 @@
 package com.reservalink.api.application.dto;
 
+import com.reservalink.api.domain.enums.PaymentMethod;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -13,5 +14,6 @@ public class PaymentDetails {
     private final String status;
     private final boolean approved;
     private final BigDecimal amount;
+    private final PaymentMethod paymentMethod;
     private final Map<String, Object> metadata;
 }
